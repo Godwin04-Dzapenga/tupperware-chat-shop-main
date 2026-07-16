@@ -1,125 +1,93 @@
-import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-tupperware.jpg";
-import { useAuth } from "@/lib/auth";
-import { ShieldCheck, Truck, Sparkles } from "lucide-react";
-
-// Rotation array of premium background kitchenware / bottle banner images
-const bannerImages = [
-  heroImage,
-  "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=1200&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=1200&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&auto=format&fit=crop&q=80"
-];
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Sparkles, ShieldCheck, MessageSquare, MapPin, Droplets, Package2, ThermometerSun } from "lucide-react";
 
 export const Hero = () => {
-  const { user } = useAuth();
-  const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  
-  const fullName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "";
-  const firstName = fullName ? fullName.split(" ")[0] : "";
-
-  // Auto-rotate background image every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImgIndex((prev) => (prev + 1) % bannerImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   const scrollToProducts = () => {
     document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const scrollToCategory = (categorySlug: string) => {
-    scrollToProducts();
-    setTimeout(() => {
-      const buttons = document.querySelectorAll("button");
-      buttons.forEach((btn) => {
-        if (btn.textContent?.toLowerCase().includes(categorySlug.toLowerCase())) {
-          (btn as HTMLButtonElement).click();
-        }
-      });
-    }, 100);
-  };
-
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-md h-32 md:h-24">
-      
-      {/* Background Image Carousel Container with smooth crossfade opacity */}
-      <div className="absolute inset-0 z-0">
-        {bannerImages.map((image, index) => (
-          <div
-            key={image}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out`}
-            style={{ 
-              backgroundImage: `url(${image})`,
-              opacity: index === currentImgIndex ? 0.6 : 0
-            }}
-          />
-        ))}
-        {/* Dark Blue-Teal overlay tint for typography legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-primary/45" />
+    <section className="group relative mb-8 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950 shadow-xl [perspective:1200px]">
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-teal-950/40" />
       </div>
 
-      {/* Slim Content Flex Container */}
-      <div className="relative z-10 flex h-full flex-col md:flex-row items-center justify-between gap-2 px-6 py-3.5 md:py-0">
-        
-        {/* Left Side: Dynamic Greeting & Header */}
-        <div className="flex flex-col text-left self-center">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] font-bold text-teal-300 uppercase tracking-widest">Official Store Zimbabwe</span>
-            {user && (
-              <span className="text-[9px] text-white/80 font-medium border-l border-white/20 pl-2">
-                Welcome, <span className="text-primary font-bold">{firstName}</span>
-              </span>
-            )}
+      <div className="relative z-10 flex min-h-[350px] flex-col justify-between p-6 transition-transform duration-500 group-hover:[transform:rotateX(2deg)_rotateY(-2deg)_translateY(-4px)] md:p-10 lg:p-12">
+        <div className="max-w-3xl text-left">
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-teal-300 backdrop-blur-md">
+            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+            Premium Drinkware &amp; Kitchenware
           </div>
-          <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-tight">
-            Kitchen fresh containers, lunch boxes &amp; bottles
+
+          <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            Organize every pour. <span className="bg-gradient-to-r from-teal-300 to-amber-200 bg-clip-text text-transparent">Elevate every kitchen ritual.</span>
           </h1>
-          <p className="text-[9px] text-white/70 hidden sm:block">
-            Premium durability kitchen solutions. Tap categories below to browse collections.
+
+          <p className="mb-6 max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
+            Discover reusable insulated bottles, pantry canisters, and meal-prep essentials designed for cleaner living, everyday hydration, and beautifully organized spaces.
           </p>
-        </div>
 
-        {/* Right Side: Fast Category Filters */}
-        <div className="flex flex-wrap items-center gap-3 self-center">
-          <div className="flex items-center gap-1.5">
-            <button 
-              onClick={() => scrollToCategory("bottles")}
-              className="rounded-full bg-white/15 border border-white/5 px-2.5 py-0.5 text-[9px] font-bold text-white hover:bg-primary transition-all hover:scale-105"
-            >
-              💧 Bottles
-            </button>
-            <button 
-              onClick={() => scrollToCategory("lunch")}
-              className="rounded-full bg-white/15 border border-white/5 px-2.5 py-0.5 text-[9px] font-bold text-white hover:bg-primary transition-all hover:scale-105"
-            >
-              🍱 Lunch Boxes
-            </button>
-            <button 
-              onClick={() => scrollToCategory("containers")}
-              className="rounded-full bg-white/15 border border-white/5 px-2.5 py-0.5 text-[9px] font-bold text-white hover:bg-primary transition-all hover:scale-105"
-            >
-              🫙 Containers
-            </button>
+          <div className="mb-6 flex flex-wrap gap-2">
+            {[
+              "100% BPA-Free",
+              "24hr Cold / 12hr Hot",
+              "Leakproof Guarantee",
+              "Lifetime Warranty",
+            ].map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/85 backdrop-blur-md"
+              >
+                {item}
+              </span>
+            ))}
           </div>
 
-          {/* Inline USP Icons */}
-          <div className="hidden lg:flex items-center gap-3 border-l border-white/10 pl-3 text-[9px] text-white/85">
-            <span className="flex items-center gap-1 font-semibold">
-              <ShieldCheck className="h-3 w-3 text-emerald-400" />
-              Guarantee
-            </span>
-            <span className="flex items-center gap-1 font-semibold">
-              <Truck className="h-3 w-3 text-sky-400" />
-              Delivery
-            </span>
-          </div>
+          <Button
+            variant="default"
+            size="default"
+            onClick={scrollToProducts}
+            className="rounded-full bg-accent px-6 py-5 text-sm font-semibold text-accent-foreground shadow-md transition-all hover:scale-102 hover:bg-accent/90"
+          >
+            Shop Collection
+            <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Button>
         </div>
 
+        <div className="mt-8 grid grid-cols-1 gap-3 border-t border-white/10 pt-6 sm:grid-cols-3">
+          <div className="flex items-center gap-2 text-xs text-white/80">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/20 text-teal-300">
+              <Droplets className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Hydration First</p>
+              <p className="text-white/60">Clean, insulated, everyday-ready</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-white/80">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/20 text-teal-300">
+              <Package2 className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Pantry Systems</p>
+              <p className="text-white/60">Stackable storage that keeps it tidy</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-white/80">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/20 text-teal-300">
+              <ThermometerSun className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Temperature Control</p>
+              <p className="text-white/60">Cold stays cold, hot stays hot</p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };

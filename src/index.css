@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -104,10 +106,20 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", sans-serif;
     background-image:
       radial-gradient(circle at top left, hsl(180 65% 45% / 0.08), transparent 30%),
       radial-gradient(circle at bottom right, hsl(15 85% 60% / 0.09), transparent 28%);
     background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", serif;
   }
 
   ::selection {
@@ -115,59 +127,3 @@ All colors MUST be HSL.
   }
 }
 
-@layer utilities {
-  .scale-108 {
-    --tw-scale-x: 1.08;
-    --tw-scale-y: 1.08;
-    transform: translate(var(--tw-translate-x), var(--tw-translate-y))
-      rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
-      scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-  }
-}
-
-/* Product card shimmer on load */
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.product-card {
-  animation: card-in 0.35s ease both;
-}
-
-/* Premium page entrance animations */
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-header {
-  animation: slide-down 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-#products, .grid, section {
-  animation: scale-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-}

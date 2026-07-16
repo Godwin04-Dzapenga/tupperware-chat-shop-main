@@ -20,9 +20,9 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: ProductCardProps) => {
   return (
-    <article className="product-card group flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-6px_hsl(180_65%_45%/0.25)]">
+    <article className="product-card group flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm [perspective:1200px] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_24px_-6px_hsl(180_65%_45%/0.25)] group-hover:[transform:rotateX(2deg)_rotateY(-2deg)_translateY(-4px)]">
       {/* Image — short height */}
-      <div className="relative h-32 overflow-hidden bg-muted/30 sm:h-36">
+      <div className="relative h-32 overflow-hidden bg-muted/30 [transform-style:preserve-3d] sm:h-36">
         {/* Category ribbon */}
         <span className="absolute left-0 top-2 z-10 rounded-r-full bg-primary px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground shadow">
           Tupperware
