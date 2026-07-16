@@ -87,6 +87,18 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
               <p className="text-muted-foreground leading-relaxed">
                 {product.description || "Premium TuppAfrica product designed to keep your food fresh and organized. Made with high-quality materials for long-lasting durability."}
               </p>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                {[
+                  "LFGB Food-Grade",
+                  "BPA-Free",
+                  "Scratch-Resistant",
+                  "Easy-Clean Finish",
+                ].map((badge) => (
+                  <div key={badge} className="rounded-full border border-border bg-muted/60 px-2 py-1 text-center font-semibold text-foreground/80">
+                    {badge}
+                  </div>
+                ))}
+              </div>
             </div>
             
             <div className="mt-6 space-y-3">
