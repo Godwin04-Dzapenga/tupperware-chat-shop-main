@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Shield, Search } from "lucide-react";
+import { LogIn, Shield, Search, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import logoImage from "@/assets/tuppafrica-logo.jpg";
 import oasisSalesLogo from "@/assets/oasis-sales-logo.jpg";
 import zimbabweFlag from "@/assets/zimbabwe-flag.gif";
@@ -50,6 +50,15 @@ const IndexContent = () => {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const scrollTimer = setTimeout(() => {
+      // Auto scroll to products catalog
+      document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+    }, 5000);
+
+    return () => clearTimeout(scrollTimer);
   }, []);
 
   const fetchData = async () => {
@@ -131,44 +140,63 @@ const IndexContent = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-card/95">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="container mx-auto px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <img src={logoImage} alt="TuppAfrica Logo" className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain" />
-              <img 
-                src={zimbabweFlag} 
-                alt="Zimbabwe Flag" 
-                className="h-7 sm:h-8 md:h-10 lg:h-12 w-auto object-contain transition-transform duration-200 hover:scale-110 cursor-pointer" 
+            <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+              <img src={logoImage} alt="TuppAfrica Logo" className="h-10 w-auto object-contain sm:h-12 md:h-14" />
+              <img
+                src={zimbabweFlag}
+                alt="Zimbabwe Flag"
+                className="h-6 w-auto cursor-pointer object-contain transition-transform duration-200 hover:scale-110 sm:h-7"
               />
             </div>
-            <h1 className="text-base sm:text-xl md:text-2xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex-1 text-center px-1 sm:px-2 min-w-0">
-              TuppAfrica Zimbabwe
-            </h1>
-            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+            <div className="min-w-0 flex-1 px-1 text-center sm:px-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary/80 sm:text-xs">
+                TuppAfrica Zimbabwe
+              </p>
+              <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-sm font-bold text-transparent sm:text-lg md:text-xl lg:text-2xl">
+                Premium Kitchen Solutions
+              </h1>
+            </div>
+            <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
               <Cart onOrder={handleCartOrder} />
+
+              {/* Admin Dashboard — always visible */}
+              <Button
+                onClick={() => navigate("/admin")}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 rounded-full border-primary/40 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground sm:px-3"
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+
               {user ? (
-                <>
-                  {isAdmin && (
-                    <Button onClick={() => navigate("/admin")} variant="outline" size="sm" className="hidden sm:flex">
-                      <Shield className="sm:mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Admin</span>
-                    </Button>
-                  )}
-                  {isAdmin && (
-                    <Button onClick={() => navigate("/admin")} variant="outline" size="sm" className="sm:hidden">
-                      <Shield className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button onClick={signOut} variant="outline" size="sm">
-                    <span className="hidden sm:inline">Sign Out</span>
-                    <span className="sm:hidden">Out</span>
+                <div className="flex items-center gap-2">
+                  <div className="hidden md:flex flex-col items-end text-[10px]">
+                    <span className="font-bold text-foreground">
+                      {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                    </span>
+                    <span className="text-muted-foreground font-medium">Customer</span>
+                  </div>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs uppercase shadow-sm">
+                    {(user.user_metadata?.full_name || user.email || "?")[0]}
+                  </div>
+                  <Button onClick={signOut} variant="ghost" size="sm" className="h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-50">
+                    Sign Out
                   </Button>
-                </>
+                </div>
               ) : (
-                <Button onClick={() => navigate("/auth")} variant="outline" size="sm">
-                  <LogIn className="sm:mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
+                <Button 
+                  onClick={() => navigate("/auth")} 
+                  variant="default" 
+                  size="sm" 
+                  className="h-8 rounded-full bg-primary text-white text-xs hover:bg-primary/90"
+                >
+                  <LogIn className="h-3.5 w-3.5 mr-1" />
+                  Sign In
                 </Button>
               )}
             </div>
@@ -182,44 +210,52 @@ const IndexContent = () => {
 
         {/* Products Section */}
         <section id="products" className="scroll-mt-20">
-          <div className="text-center mb-6 sm:mb-10">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground px-2">Our Products</h2>
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              Browse our collection of premium TuppAfrica products. Click "Order on WhatsApp" to place your order
-              instantly!
+          {/* Section heading */}
+          <div className="mb-6 text-center sm:mb-8">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.35em] text-primary">Featured Collection</p>
+            <h2 className="mb-2 px-2 text-2xl font-extrabold text-foreground sm:text-3xl md:text-4xl">
+              Our Products
+            </h2>
+            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-gradient-to-r from-primary to-accent" />
+            <p className="mx-auto max-w-xl px-4 text-sm text-muted-foreground">
+              Premium Tupperware bottles, lunch boxes, storage containers &amp; more — delivered to your door.
             </p>
           </div>
 
           {/* Search */}
-          <div className="max-w-md mx-auto mb-6 sm:mb-8 px-2">
+          <div className="mx-auto mb-5 max-w-sm px-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search bottles, lunch boxes…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 sm:pl-10 h-10 sm:h-12 rounded-full text-sm sm:text-base"
+                className="h-10 rounded-full pl-9 text-sm"
               />
             </div>
           </div>
 
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-8 sm:mb-12 px-2">
+          <div className="mb-6 flex flex-wrap justify-center gap-2 px-2">
             {categoryOptions.map((category) => (
               <Button
                 key={category.id}
                 variant={activeCategory === category.id ? "default" : "outline"}
                 onClick={() => setActiveCategory(category.id)}
                 size="sm"
-                className="rounded-full px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm transition-all hover:scale-105"
+                className={`rounded-full px-4 py-1 text-xs font-semibold transition-all hover:scale-105 ${
+                  activeCategory === category.id
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-background/80 hover:bg-primary/10 hover:border-primary hover:text-primary"
+                }`}
               >
                 {category.name}
               </Button>
             ))}
           </div>
 
-          {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Products Grid — 4 columns on large screens */}
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -232,12 +268,69 @@ const IndexContent = () => {
           </div>
 
           {filteredProducts.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">
+            <div className="py-16 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/60 text-4xl">
+                🔍
+              </div>
+              <p className="text-base font-medium text-muted-foreground">
                 {searchQuery ? "No products match your search." : "No products found in this category."}
               </p>
             </div>
           )}
+        </section>
+
+        {/* Highlights Section — moved below products section for prioritised visibility */}
+        <section className="mt-16 mb-10 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              icon: ShieldCheck,
+              title: "Trusted quality",
+              text: "Premium kitchen essentials chosen for durability and everyday convenience.",
+              image: "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500&fit=crop&q=80",
+            },
+            {
+              icon: Sparkles,
+              title: "Fresh styles",
+              text: "Modern, practical designs that fit beautifully into any home kitchen.",
+              image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&fit=crop&q=80",
+            },
+            {
+              icon: Truck,
+              title: "Fast local support",
+              text: "Quick help and easy ordering for customers across Harare and beyond.",
+              image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&fit=crop&q=80",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div 
+                key={item.title} 
+                className="group overflow-hidden rounded-[1.25rem] border border-border/70 bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+              >
+                {/* Visual USP Card Header */}
+                <div className="relative h-28 w-full overflow-hidden bg-muted">
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
+                  
+                  {/* Badge positioned over image */}
+                  <div className="absolute bottom-2.5 left-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-4">
+                  <h3 className="mb-1 text-sm font-bold text-foreground">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.text}</p>
+                </div>
+              </div>
+            );
+          })}
         </section>
 
         {/* Quick View Modal */}
@@ -251,37 +344,111 @@ const IndexContent = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-12 sm:mt-20">
-        <div className="container mx-auto px-4 py-8 sm:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Company Info */}
-            <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-4xl sm:text-5xl font-bold text-primary">@</span>
+      <footer className="bg-card border-t border-border mt-16 sm:mt-24 text-card-foreground">
+        <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+            
+            {/* Column 1: Company Profile */}
+            <div className="flex flex-col gap-4 text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-3xl font-extrabold text-primary">@</span>
                 <img
                   src={oasisSalesLogo}
-                  alt="Oasis Sales - Where businesses blossom"
-                  className="h-20 sm:h-24 w-auto object-contain"
+                  alt="Oasis Sales Logo"
+                  className="h-16 w-auto object-contain"
                 />
               </div>
-              <p className="text-sm sm:text-base text-muted-foreground mb-4">Fresh solutions for your kitchen needs</p>
-              <div className="text-sm text-muted-foreground space-y-2">
-                <p className="font-semibold text-foreground">Visit Us:</p>
-                <p>944 New Adylin, Westgate</p>
-                <p>Harare, Zimbabwe</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Oasis Sales is your trusted local distributor of official TuppAfrica premium kitchen solutions. Bringing lifetime freshness to Harare homes.
+              </p>
+              <div className="flex items-center gap-1 bg-primary/5 border border-primary/10 rounded-lg p-2.5 w-fit mt-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Verified Distributor</span>
               </div>
             </div>
 
-            {/* Map */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-center lg:text-left">Find Us Here</h3>
+            {/* Column 2: Quick Links */}
+            <div className="flex flex-col gap-4 text-left">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Quick Links</h3>
+              <ul className="space-y-2.5 text-xs text-muted-foreground font-medium">
+                <li>
+                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
+                    Shop Bottles
+                  </a>
+                </li>
+                <li>
+                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
+                    Lunch Boxes
+                  </a>
+                </li>
+                <li>
+                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
+                    Containers &amp; Storage
+                  </a>
+                </li>
+                <li>
+                  <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1 font-semibold text-foreground/80">
+                    Admin Dashboard
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Contact & Hours */}
+            <div className="flex flex-col gap-4 text-left">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Contact &amp; Hours</h3>
+              <ul className="space-y-3 text-xs text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span>944 New Adylin, Westgate, Harare, Zimbabwe</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <span>+263 784 721 912</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground/80">Mon - Fri</p>
+                    <p className="text-[10px]">8:00 AM - 5:00 PM</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Interactive Map */}
+            <div className="flex flex-col gap-4 text-left">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Find Our Office</h3>
               <LocationMap />
+            </div>
+
+          </div>
+
+          {/* Footer Bottom copyright */}
+          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-[11px] text-muted-foreground font-medium">
+              &copy; {new Date().getFullYear()} TuppAfrica Zimbabwe &amp; Oasis Sales. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
+              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <span className="text-border">|</span>
+              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
             </div>
           </div>
 
-          <div className="text-center pt-6 border-t border-border">
-            <p className="text-xs sm:text-sm text-muted-foreground">© 2025 TuppAfrica Zimbabwe All rights reserved.</p>
-          </div>
         </div>
       </footer>
 

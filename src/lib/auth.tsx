@@ -26,31 +26,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin status when user changes
         if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-          }, 0);
+          setLoading(true);
+          await checkAdminStatus(session.user.id);
         } else {
           setIsAdmin(false);
         }
+        setLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminStatus(session.user.id);
-      }
-      setLoading(false);
-    });
+    // Check for existing session on mount
+    const loadSession = async () => {
+      try {
+        setLoading(true);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await checkAdminStatus(session.user.id);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error("Error loading auth session:", error);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSession();
     return () => subscription.unsubscribe();
   }, []);
 
@@ -84,7 +98,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!error) {
       toast.success("Welcome back!");
-      navigate("/");
+      // Navigation is handled by the calling page (Auth.tsx) so it can
+      // redirect to the intended destination (e.g. /admin)
     }
 
     return { error };

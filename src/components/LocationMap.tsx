@@ -1,78 +1,48 @@
-import { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapPin, ExternalLink } from "lucide-react";
+
+// Google Maps embed — no API key or token required
+const MAPS_EMBED_URL =
+  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3798.123456789!2d30.9870!3d-17.8252!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTfCsDQ5JzMwLjciUyAzMMKwNTknMTMuMiJF!5e0!3m2!1sen!2szw!4v1234567890";
+const DIRECTIONS_URL =
+  "https://www.google.com/maps/dir/?api=1&destination=-17.8252,30.9870";
 
 export const LocationMap = () => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-border shadow-sm">
+      {/* Map iframe — free, no token needed */}
+      <div className="relative h-[260px] w-full bg-muted">
+        <iframe
+          title="Oasis Sales location — 944 New Adylin, Westgate, Harare"
+          src={MAPS_EMBED_URL}
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="h-full w-full"
+        />
+      </div>
 
-  useEffect(() => {
-    if (!mapContainer.current || map.current) return;
-
-    // Initialize map with Mapbox token from environment
-    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-    if (!token) {
-      console.error('Mapbox token not configured');
-      return;
-    }
-
-    mapboxgl.accessToken = token;
-    
-    // Coordinates for Westgate, Harare, Zimbabwe
-    const coordinates: [number, number] = [30.9870, -17.8252];
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: coordinates,
-      zoom: 14,
-    });
-
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Create custom marker element
-    const markerElement = document.createElement('div');
-    markerElement.className = 'custom-marker';
-    markerElement.style.width = '32px';
-    markerElement.style.height = '32px';
-    markerElement.style.backgroundImage = 'url(https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png)';
-    markerElement.style.backgroundSize = 'contain';
-    markerElement.style.cursor = 'pointer';
-
-    // Add marker with popup
-    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-      `<div class="p-2">
-        <h3 class="font-semibold text-sm mb-1">Oasis Sales</h3>
-        <p class="text-xs text-gray-600">944 New Adylin, Westgate<br/>Harare, Zimbabwe</p>
-        <a 
-          href="https://www.google.com/maps/dir/?api=1&destination=-17.8252,30.9870" 
+      {/* Info bar below the map */}
+      <div className="flex items-center justify-between gap-3 bg-card px-4 py-3">
+        <div className="flex items-start gap-2 text-sm">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div>
+            <p className="font-semibold text-foreground">Oasis Sales</p>
+            <p className="text-xs text-muted-foreground">944 New Adylin, Westgate, Harare, Zimbabwe</p>
+          </div>
+        </div>
+        <a
+          href={DIRECTIONS_URL}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-xs text-blue-600 hover:underline mt-1 inline-block"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
-          Get Directions
+          Directions
+          <ExternalLink className="h-3 w-3" />
         </a>
-      </div>`
-    );
-
-    new mapboxgl.Marker(markerElement)
-      .setLngLat(coordinates)
-      .setPopup(popup)
-      .addTo(map.current);
-
-    // Show popup by default
-    popup.addTo(map.current);
-
-    // Cleanup
-    return () => {
-      map.current?.remove();
-    };
-  }, []);
-
-  return (
-    <div className="w-full h-[300px] rounded-lg overflow-hidden shadow-lg border border-border">
-      <div ref={mapContainer} className="w-full h-full" />
+      </div>
     </div>
   );
 };

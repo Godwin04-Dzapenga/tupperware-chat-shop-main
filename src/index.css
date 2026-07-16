@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
@@ -37,26 +37,19 @@ All colors MUST be HSL.
     --ring: 180 65% 45%;
 
     --radius: 0.75rem;
-    
+
     --gradient-hero: linear-gradient(135deg, hsl(180 65% 45%), hsl(190 70% 55%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(180 20% 98%));
     --shadow-card: 0 4px 20px -2px hsl(180 65% 45% / 0.1);
     --shadow-hover: 0 8px 30px -4px hsl(180 65% 45% / 0.2);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -88,7 +81,7 @@ All colors MUST be HSL.
     --border: 200 15% 20%;
     --input: 200 15% 20%;
     --ring: 180 65% 55%;
-    
+
     --gradient-hero: linear-gradient(135deg, hsl(180 65% 35%), hsl(190 70% 45%));
     --gradient-card: linear-gradient(145deg, hsl(200 18% 12%), hsl(200 20% 15%));
     --shadow-card: 0 4px 20px -2px hsl(180 65% 55% / 0.2);
@@ -111,5 +104,70 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top left, hsl(180 65% 45% / 0.08), transparent 30%),
+      radial-gradient(circle at bottom right, hsl(15 85% 60% / 0.09), transparent 28%);
+    background-attachment: fixed;
   }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@layer utilities {
+  .scale-108 {
+    --tw-scale-x: 1.08;
+    --tw-scale-y: 1.08;
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y))
+      rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
+      scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  }
+}
+
+/* Product card shimmer on load */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.product-card {
+  animation: card-in 0.35s ease both;
+}
+
+/* Premium page entrance animations */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+header {
+  animation: slide-down 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+#products, .grid, section {
+  animation: scale-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

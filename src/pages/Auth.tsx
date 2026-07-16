@@ -3,11 +3,12 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Lock, Mail, User, Sparkles, Shield } from "lucide-react";
+import logoImage from "@/assets/tuppafrica-logo.jpg";
+import heroImage from "@/assets/hero-tupperware.jpg";
 
 const emailSchema = z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" }).max(100, { message: "Password must be less than 100 characters" });
@@ -16,6 +17,10 @@ const nameSchema = z.string().trim().min(1, { message: "Name cannot be empty" })
 const Auth = () => {
   const { signIn, signUp, user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -24,9 +29,9 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
 
-  // Redirect if already logged in
+  // Redirect if already logged in — go to intended destination
   if (!loading && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -53,6 +58,9 @@ const Auth = () => {
       } else {
         toast.error(error.message || "An error occurred during sign in");
       }
+    } else {
+      // Navigate to the intended destination (e.g. /admin)
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -85,104 +93,192 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            TuppAfrica
-          </CardTitle>
-          <CardDescription className="text-center">
-            Sign in to manage your store or create an account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+    <div 
+      className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 select-none font-sans bg-cover bg-center"
+      style={{ 
+        backgroundImage: `url(${heroImage})` 
+      }}
+    >
+      {/* Blue tinted overlay matching the website's brand tone */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 via-sky-900/60 to-teal-900/50 backdrop-blur-[4px] pointer-events-none" />
+
+      {/* Main Glassmorphic Wrapper */}
+      <div className="relative w-full max-w-[390px] z-10 transition-all duration-300">
+        
+        {/* Floating return button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute -top-9 left-0 flex items-center gap-1 text-xs font-semibold text-white/95 hover:text-white hover:scale-105 transition-all duration-200"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 drop-shadow" />
+          Back to Store
+        </button>
+
+        {/* Outer card glow */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-blue-400 rounded-2xl blur opacity-25" />
+
+        {/* White Glass Card */}
+        <div className="relative rounded-2xl bg-white/95 border border-white/40 px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.3)]">
+          
+          {/* Header branding */}
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="relative mb-2 p-1.5 rounded-xl bg-white border border-slate-200/50 shadow-sm">
+              {logoImage ? (
+                <img src={logoImage} alt="TuppAfrica Logo" className="h-8 w-auto rounded object-contain" />
+              ) : (
+                <Shield className="h-5 w-5 text-primary" />
+              )}
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-800">
+              TuppAfrica
+            </h2>
+            <p className="text-[11px] text-slate-500 font-medium">
+              Premium bottle and container collections.
+            </p>
+          </div>
+
+          {/* Frosted Tab Switcher */}
+          <div className="flex p-0.5 mb-4 rounded-lg bg-slate-100 border border-slate-200/50">
+            <button
+              onClick={() => setActiveTab("login")}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all duration-300 ${
+                activeTab === "login"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setActiveTab("signup")}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all duration-300 ${
+                activeTab === "signup"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Form Content */}
+          <div className="transition-all duration-300">
+            {activeTab === "login" ? (
+              <form onSubmit={handleLogin} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="login-email" className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-9 h-9.5 bg-white/50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-primary/60 focus:ring-primary/20 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+
+                <div className="space-y-1">
+                  <Label htmlFor="login-password" className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-9 h-9.5 bg-white/50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-primary/60 focus:ring-primary/20 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-9.5 bg-primary hover:bg-primary/95 text-white font-bold rounded-lg transition-all duration-300 hover:scale-[1.01] shadow-md shadow-primary/10 mt-4 text-xs"
+                >
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+            ) : (
+              <form onSubmit={handleSignup} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="signup-name" className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-9 h-9.5 bg-white/50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-primary/60 focus:ring-primary/20 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+
+                <div className="space-y-1">
+                  <Label htmlFor="signup-email" className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-9 h-9.5 bg-white/50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-primary/60 focus:ring-primary/20 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+
+                <div className="space-y-1">
+                  <Label htmlFor="signup-password" className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-9 h-9.5 bg-white/50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-primary/60 focus:ring-primary/20 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-9.5 bg-primary hover:bg-primary/95 text-white font-bold rounded-lg transition-all duration-300 hover:scale-[1.01] shadow-md shadow-primary/10 mt-4 text-xs"
+                >
                   {isLoading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="text-center text-sm text-muted-foreground">
-          By continuing, you agree to our Terms of Service
-        </CardFooter>
-      </Card>
+            )}
+          </div>
+
+          <div className="mt-5 text-center">
+            <span className="text-[9px] text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1 font-semibold">
+              <Sparkles className="h-3 w-3 text-amber-500" />
+              Secure Authentication by Supabase
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
