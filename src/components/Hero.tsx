@@ -14,14 +14,14 @@ export const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-teal-950/40" />
       </div>
 
-      <div className="relative z-10 flex min-h-[350px] flex-col justify-between p-6 transition-transform duration-500 group-hover:[transform:rotateX(2deg)_rotateY(-2deg)_translateY(-4px)] md:p-10 lg:p-12">
+      <div className="relative z-10 flex min-h-[350px] flex-col justify-between p-4 transition-transform duration-500 group-hover:[transform:rotateX(2deg)_rotateY(-2deg)_translateY(-4px)] sm:p-6 md:p-10 lg:p-12">
         <div className="max-w-3xl text-left">
           <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-teal-300 backdrop-blur-md">
             <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             Premium Drinkware &amp; Kitchenware
           </div>
 
-          <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <h1 className="mb-3 text-2xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
             Organize every pour. <span className="bg-gradient-to-r from-teal-300 to-amber-200 bg-clip-text text-transparent">Elevate every kitchen ritual.</span>
           </h1>
 
@@ -49,7 +49,7 @@ export const Hero = () => {
             variant="default"
             size="default"
             onClick={scrollToProducts}
-            className="rounded-full bg-accent px-6 py-5 text-sm font-semibold text-accent-foreground shadow-md transition-all hover:scale-102 hover:bg-accent/90"
+            className="w-full rounded-full bg-accent px-6 py-5 text-sm font-semibold text-accent-foreground shadow-md transition-all hover:scale-102 hover:bg-accent/90 sm:w-auto"
           >
             Shop Collection
             <ArrowRight className="ml-1.5 h-4 w-4" />

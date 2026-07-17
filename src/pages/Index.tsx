@@ -171,7 +171,7 @@ const IndexContent = () => {
 
         <div className="container mx-auto px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:gap-3">
               <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
                 <img src={logoImage} alt="TuppAfrica Logo" className="h-10 w-auto object-contain sm:h-12 md:h-14" />
                 <img
@@ -181,7 +181,7 @@ const IndexContent = () => {
                 />
               </div>
 
-              <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
               <Cart onOrder={handleCartOrder} />
 
               <Button
@@ -386,7 +386,7 @@ const IndexContent = () => {
           </div>
 
           {/* Products Grid — responsive for small screens */}
-          <div className="grid grid-cols-1 gap-3.5 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
