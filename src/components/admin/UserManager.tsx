@@ -52,7 +52,7 @@ export const UserManager = () => {
     try {
       setLoading(true);
       
-      // Fetch profiles
+      // 1. Fetch profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
@@ -61,7 +61,7 @@ export const UserManager = () => {
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
 
-      // Fetch visitor logs
+      // 2. Fetch recent visitor logs (Keep this strictly limited for the UI display)
       const { data: logsData, error: logsError } = await supabase
         .from("visitor_logs")
         .select("*")
@@ -71,18 +71,40 @@ export const UserManager = () => {
       if (logsError) throw logsError;
       setVisitorLogs(logsData || []);
 
-      // Calculate stats
-      const uniqueSessions = new Set(logsData?.map(log => log.session_id) || []);
-      const today = new Date().toDateString();
-      const todayLogs = logsData?.filter(log => 
-        new Date(log.visited_at).toDateString() === today
-      ) || [];
+      // 3. Accurate Stats Queries via Supabase Aggregation
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // Fetch Total Visits Count
+      const { count: totalVisitsCount, error: totalErr } = await supabase
+        .from("visitor_logs")
+        .select("*", { count: "exact", head: true });
+        
+      if (totalErr) throw totalErr;
+
+      // Fetch Today's Visits Count
+      const { count: todayVisitsCount, error: todayErr } = await supabase
+        .from("visitor_logs")
+        .select("*", { count: "exact", head: true })
+        .gte("visited_at", startOfToday.toISOString());
+
+      if (todayErr) throw todayErr;
+
+      // Calculate Unique Visitors via PostgreSQL counting (Fallback to local unique session logic if tracking code guarantees it)
+      // Note: If you want a perfectly scalable 'Unique' count, a Postgres RPC function is ideal, 
+      // but for mid-scale, retrieving just the session_id column prevents payload bloating:
+      const { data: allSessions, error: sessionErr } = await supabase
+        .from("visitor_logs")
+        .select("session_id");
+
+      if (sessionErr) throw sessionErr;
+      const uniqueSessionsCount = new Set(allSessions?.map(s => s.session_id)).size;
 
       setStats({
-        totalVisits: logsData?.length || 0,
-        uniqueVisitors: uniqueSessions.size,
+        totalVisits: totalVisitsCount || 0,
+        uniqueVisitors: uniqueSessionsCount,
         registeredUsers: profilesData?.length || 0,
-        todayVisits: todayLogs.length,
+        todayVisits: todayVisitsCount || 0,
       });
 
     } catch (error: any) {
@@ -115,7 +137,7 @@ export const UserManager = () => {
       body: profiles.map(p => [
         p.email || "N/A",
         p.full_name || "N/A",
-        new Date(p.created_at).toLocaleDateString(),
+        p.created_at ? new Date(p.created_at).toLocaleDateString() : "N/A",
       ]),
       startY: 25,
     });
@@ -127,9 +149,9 @@ export const UserManager = () => {
   const exportToCSV = () => {
     const headers = ["Email", "Full Name", "Joined Date"];
     const rows = profiles.map(p => [
-      p.email || "N/A",
-      p.full_name || "N/A",
-      new Date(p.created_at).toLocaleDateString(),
+      `"${p.email || 'N/A'}"`,
+      `"${p.full_name || 'N/A'}"`,
+      `"${p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A'}"`,
     ]);
     
     const csvContent = [
@@ -137,12 +159,13 @@ export const UserManager = () => {
       ...rows.map(row => row.join(","))
     ].join("\n");
     
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "users.csv";
     a.click();
+    window.URL.revokeObjectURL(url);
     toast.success("Exported to CSV!");
   };
 
@@ -164,7 +187,7 @@ export const UserManager = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalVisits}</div>
+            <div className="text-2xl font-bold">{stats.totalVisits.toLocaleString()}</div>
           </CardContent>
         </Card>
         
@@ -174,7 +197,7 @@ export const UserManager = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.uniqueVisitors}</div>
+            <div className="text-2xl font-bold">{stats.uniqueVisitors.toLocaleString()}</div>
           </CardContent>
         </Card>
         
@@ -184,7 +207,7 @@ export const UserManager = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.registeredUsers}</div>
+            <div className="text-2xl font-bold">{stats.registeredUsers.toLocaleString()}</div>
           </CardContent>
         </Card>
         
@@ -194,7 +217,7 @@ export const UserManager = () => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.todayVisits}</div>
+            <div className="text-2xl font-bold">{stats.todayVisits.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -238,7 +261,9 @@ export const UserManager = () => {
                 <TableRow key={profile.id}>
                   <TableCell>{profile.email || "N/A"}</TableCell>
                   <TableCell>{profile.full_name || "N/A"}</TableCell>
-                  <TableCell>{new Date(profile.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "N/A"}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">Active</Badge>
                   </TableCell>
@@ -272,7 +297,7 @@ export const UserManager = () => {
               {visitorLogs.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-mono text-xs">
-                    {log.session_id.substring(0, 12)}...
+                    {log.session_id ? `${log.session_id.substring(0, 12)}...` : "N/A"}
                   </TableCell>
                   <TableCell>{log.page_path || "/"}</TableCell>
                   <TableCell>
@@ -283,7 +308,7 @@ export const UserManager = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {new Date(log.visited_at).toLocaleString()}
+                    {log.visited_at ? new Date(log.visited_at).toLocaleString() : "N/A"}
                   </TableCell>
                 </TableRow>
               ))}
