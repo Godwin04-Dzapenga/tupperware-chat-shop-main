@@ -170,26 +170,18 @@ const IndexContent = () => {
         </div>
 
         <div className="container mx-auto px-3 py-2 sm:px-4 sm:py-3">
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-              <img src={logoImage} alt="TuppAfrica Logo" className="h-10 w-auto object-contain sm:h-12 md:h-14" />
-              <img
-                src={zimbabweFlag}
-                alt="Zimbabwe Flag"
-                className="h-6 w-auto cursor-pointer object-contain transition-transform duration-200 hover:scale-110 sm:h-7"
-              />
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+                <img src={logoImage} alt="TuppAfrica Logo" className="h-10 w-auto object-contain sm:h-12 md:h-14" />
+                <img
+                  src={zimbabweFlag}
+                  alt="Zimbabwe Flag"
+                  className="h-6 w-auto cursor-pointer object-contain transition-transform duration-200 hover:scale-110 sm:h-7"
+                />
+              </div>
 
-            <div className="min-w-0 flex-1 px-1 text-center sm:px-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary/80 sm:text-xs">
-                TuppAfrica Zimbabwe
-              </p>
-              <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-sm font-bold text-transparent sm:text-lg md:text-xl lg:text-2xl">
-                Premium Kitchen Solutions
-              </h1>
-            </div>
-
-            <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
+              <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
               <Cart onOrder={handleCartOrder} />
 
               <Button
@@ -256,6 +248,16 @@ const IndexContent = () => {
                   Sign In
                 </Button>
               )}
+            </div>
+            </div>
+
+            <div className="min-w-0 flex-1 px-1 text-center sm:px-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary/80 sm:text-xs">
+                TuppAfrica Zimbabwe
+              </p>
+              <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-sm font-bold text-transparent sm:text-lg md:text-xl lg:text-2xl">
+                Premium Kitchen Solutions
+              </h1>
             </div>
           </div>
 
@@ -383,8 +385,8 @@ const IndexContent = () => {
             ))}
           </div>
 
-          {/* Products Grid — 4 columns on large screens */}
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
+          {/* Products Grid — responsive for small screens */}
+          <div className="grid grid-cols-1 gap-3.5 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
