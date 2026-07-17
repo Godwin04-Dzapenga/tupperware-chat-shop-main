@@ -18,6 +18,8 @@ import { CategoryManager } from "@/components/admin/CategoryManager";
 import { InventoryManager } from "@/components/admin/InventoryManager";
 import { AccountingManager } from "@/components/admin/AccountingManager";
 import { UserManager } from "@/components/admin/UserManager";
+import { OrdersManager } from "@/components/admin/OrdersManager";
+import { CouponsManager } from "@/components/admin/CouponsManager";
 import { z } from "zod";
 
 const productSchema = z.object({
@@ -303,10 +305,12 @@ const Admin = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-5">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7">
             <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="coupons">Coupons</TabsTrigger>
             <TabsTrigger value="accounting">Accounting</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
@@ -558,8 +562,16 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="orders">
+            <OrdersManager />
+          </TabsContent>
+
           <TabsContent value="categories">
             <CategoryManager categories={categories} onUpdate={fetchData} />
+          </TabsContent>
+
+          <TabsContent value="coupons">
+            <CouponsManager />
           </TabsContent>
 
           <TabsContent value="inventory">

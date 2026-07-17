@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Hero } from "@/components/Hero";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductQuickView } from "@/components/ProductQuickView";
@@ -6,15 +6,22 @@ import { Cart } from "@/components/Cart";
 import { SocialLinks } from "@/components/SocialLinks";
 import { Chatbot } from "@/components/Chatbot";
 import { LocationMap } from "@/components/LocationMap";
-import { CartProvider, useCart } from "@/hooks/useCart";
+import { RecommendedProducts } from "@/components/RecommendedProducts";
+import { useCart } from "@/hooks/useCart";
+import { useRecommendations } from "@/hooks/useRecommendations";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
-import { LogIn, Shield, Search, ShieldCheck, Sparkles, Truck, Droplets, Package2, GlassWater, UtensilsCrossed, MessageCircle, MapPin, Phone } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  LogIn, Shield, Search, ShieldCheck, Sparkles, Truck,
+  Droplets, Package2, GlassWater, UtensilsCrossed,
+  MessageCircle, MapPin, Phone, ShoppingBag, ChevronDown,
+  Menu, X, Star, Heart, Info
+} from "lucide-react";
 import logoImage from "@/assets/tuppafrica-logo.jpg";
 import oasisSalesLogo from "@/assets/oasis-sales-logo.jpg";
 import zimbabweFlag from "@/assets/zimbabwe-flag.gif";
@@ -27,6 +34,9 @@ interface Product {
   category_id: string | null;
   image_url: string | null;
   video_url: string | null;
+  stock_quantity?: number;
+  avg_rating?: number;
+  review_count?: number;
 }
 
 interface Category {
@@ -37,9 +47,10 @@ interface Category {
 
 const IndexContent = () => {
   const { addToCart } = useCart();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   useVisitorTracking();
+
   const [activeCategory, setActiveCategory] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -47,18 +58,16 @@ const IndexContent = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { trackInteraction } = useRecommendations(products);
+
+  useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const scrollTimer = setTimeout(() => {
-      // Auto scroll to products catalog
-      document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-    }, 5000);
-
-    return () => clearTimeout(scrollTimer);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const fetchData = async () => {
@@ -67,10 +76,8 @@ const IndexContent = () => {
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase.from("categories").select("*").order("name"),
       ]);
-
       if (productsRes.error) throw productsRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
-
       setProducts(productsRes.data || []);
       setCategories(categoriesRes.data || []);
     } catch (error: any) {
@@ -85,308 +92,243 @@ const IndexContent = () => {
     ...categories.map((cat) => ({ id: cat.id, name: cat.name })),
   ];
 
-  const headerCategoryLinks = categories.length
-    ? categories.slice(0, 5).map((category) => ({
-        id: category.id,
-        label: category.name,
-      }))
-    : [
-        { id: "all", label: "Bottles" },
-        { id: "all", label: "Pantry Storage" },
-        { id: "all", label: "Meal Prep" },
-        { id: "all", label: "Free Shipping" },
-      ];
-
   const filteredProducts = products
     .filter((p) => activeCategory === "all" || p.category_id === activeCategory)
-    .filter(
-      (p) =>
-        searchQuery === "" ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+    .filter((p) =>
+      searchQuery === "" ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleOrder = (product: Product) => {
-    const whatsappNumber = "2630784721912";
-    const message = encodeURIComponent(
-      `Hi! I'd like to order:\n\n${product.name}\nPrice: $${product.price.toFixed(2)}\n\nThank you!`,
-    );
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-
-    window.open(whatsappUrl, "_blank");
+    trackInteraction(product, "view");
+    const msg = encodeURIComponent(`Hi! I'd like to order:\n\n${product.name}\nPrice: $${product.price.toFixed(2)}\n\nThank you!`);
+    window.open(`https://wa.me/2630784721912?text=${msg}`, "_blank");
     toast.success("Opening WhatsApp to place your order!");
-  };
-
-  const handleCartOrder = (items: Array<{ name: string; quantity: number; price: number }>) => {
-    const whatsappNumber = "2630784721912";
-    const itemsList = items
-      .map((item) => `${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`)
-      .join("\n");
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const message = encodeURIComponent(
-      `Hi! I'd like to order:\n\n${itemsList}\n\nTotal: $${total.toFixed(2)}\n\nThank you!`,
-    );
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-    window.open(whatsappUrl, "_blank");
-    toast.success("Order sent! Check WhatsApp.");
   };
 
   const handleAddToCart = (product: Product) => {
     addToCart(product);
+    trackInteraction(product, "cart");
     toast.success(`${product.name} added to cart!`);
   };
 
   const handleQuickView = (product: Product) => {
     setSelectedProduct(product);
     setQuickViewOpen(true);
+    trackInteraction(product, "quickview");
+  };
+
+  const scrollToProducts = () => {
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+    setMobileMenuOpen(false);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="border-b border-white/10 bg-slate-950 text-white">
-          <div className="container mx-auto flex items-center justify-between gap-3 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] sm:px-4">
-            <span className="text-white/80">Trusted premium kitchen essentials</span>
-            <div className="hidden items-center gap-3 text-white/65 md:flex">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                Harare, Zimbabwe
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Phone className="h-3 w-3" />
-                +263 784 721 912
-              </span>
+
+      {/* ── HEADER ────────────────────────────────────────────────────────── */}
+      <header className={`sticky top-0 z-50 transition-all duration-200 ${scrolled ? "border-b shadow-sm bg-card/98 backdrop-blur-md" : "border-b border-transparent bg-card/95 backdrop-blur-sm"}`}>
+
+        {/* Top announcement bar */}
+        <div className="bg-slate-950 text-white text-[10px] font-semibold tracking-widest uppercase">
+          <div className="container mx-auto flex items-center justify-between px-4 py-1.5 gap-4">
+            <span className="text-white/70">🇿🇼 Official Tupperware Distributor — Harare, Zimbabwe</span>
+            <div className="hidden sm:flex items-center gap-4 text-white/60">
+              <a href="tel:+2630784721912" className="flex items-center gap-1 hover:text-white transition-colors">
+                <Phone className="h-2.5 w-2.5" /> +263 784 721 912
+              </a>
+              <a href="https://wa.me/2630784721912" target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
+                <MessageCircle className="h-2.5 w-2.5" /> WhatsApp
+              </a>
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-3 py-2 sm:px-4 sm:py-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:gap-3">
-              <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-                <img src={logoImage} alt="TuppAfrica Logo" className="h-10 w-auto object-contain sm:h-12 md:h-14" />
-                <img
-                  src={zimbabweFlag}
-                  alt="Zimbabwe Flag"
-                  className="h-6 w-auto cursor-pointer object-contain transition-transform duration-200 hover:scale-110 sm:h-7"
+        {/* Main nav row */}
+        <div className="container mx-auto px-4 py-2.5">
+          <div className="flex items-center gap-4">
+
+            {/* Logo */}
+            <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-2 shrink-0">
+              <img src={logoImage} alt="TuppAfrica" className="h-10 w-auto" />
+              <img src={zimbabweFlag} alt="Zimbabwe" className="h-5 w-auto" />
+            </button>
+
+            {/* Desktop nav links */}
+            <nav className="hidden lg:flex items-center gap-0.5 ml-4">
+              {[
+                { label: "Shop", action: scrollToProducts },
+                { label: "About", action: () => navigate("/about") },
+                { label: "Contact", action: () => window.open("https://wa.me/2630784721912", "_blank") },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  className="px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/5 transition-all"
+                >
+                  {item.label}
+                </button>
+              ))}
+
+              {/* Collections dropdown */}
+              <div className="relative group">
+                <button className="flex items-center gap-1 px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/5 transition-all">
+                  Collections <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                <div className="absolute top-full left-0 mt-1 w-48 rounded-xl border bg-card shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                  <div className="p-1.5">
+                    <button onClick={() => { setActiveCategory("all"); scrollToProducts(); }} className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors">All Products</button>
+                    {categories.slice(0, 6).map((cat) => (
+                      <button key={cat.id} onClick={() => { setActiveCategory(cat.id); scrollToProducts(); }} className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors">{cat.name}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </nav>
+
+            {/* Search bar */}
+            <div className="flex-1 max-w-sm mx-auto hidden md:block">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 pl-9 rounded-full bg-muted/60 border-0 text-sm focus-visible:ring-1"
                 />
               </div>
+            </div>
 
-              <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
-              <Cart onOrder={handleCartOrder} />
-
-              <Button
-                onClick={() => navigate("/")}
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full px-3 text-xs font-semibold text-muted-foreground hover:text-primary sm:inline-flex"
-              >
-                Shop
-              </Button>
-
-              <Button
-                onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full px-3 text-xs font-semibold text-muted-foreground hover:text-primary sm:inline-flex"
-              >
-                Collections
-              </Button>
-
-              <Button
-                onClick={() => window.open("https://wa.me/2630784721912", "_blank")}
-                variant="outline"
-                size="sm"
-                className="hidden items-center gap-1.5 rounded-full border-primary/30 px-3 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground lg:inline-flex"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                WhatsApp
-              </Button>
-
-              <Button
-                onClick={() => navigate("/admin")}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1.5 rounded-full border-primary/40 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground sm:px-3"
-              >
-                <Shield className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Admin</span>
-              </Button>
+            {/* Right actions */}
+            <div className="ml-auto flex items-center gap-1.5">
+              <Cart />
 
               {user ? (
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:flex flex-col items-end text-[10px]">
-                    <span className="font-bold text-foreground">
+                <div className="hidden sm:flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/orders")} className="gap-1.5 text-xs rounded-full">
+                    <ShoppingBag className="h-3.5 w-3.5" /> Orders
+                  </Button>
+                  <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 bg-card">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center uppercase">
+                      {(user.user_metadata?.full_name || user.email || "?")[0]}
+                    </div>
+                    <span className="text-xs font-medium hidden md:inline max-w-[80px] truncate">
                       {user.user_metadata?.full_name || user.email?.split("@")[0]}
                     </span>
-                    <span className="text-muted-foreground font-medium">Customer</span>
+                    <button onClick={signOut} className="text-[10px] text-muted-foreground hover:text-destructive ml-1">Sign out</button>
                   </div>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs uppercase shadow-sm">
-                    {(user.user_metadata?.full_name || user.email || "?")[0]}
-                  </div>
-                  <Button onClick={signOut} variant="ghost" size="sm" className="h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-50">
-                    Sign Out
-                  </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={() => navigate("/auth")}
-                  variant="default"
-                  size="sm"
-                  className="h-8 rounded-full bg-primary text-white text-xs hover:bg-primary/90"
-                >
-                  <LogIn className="h-3.5 w-3.5 mr-1" />
-                  Sign In
+                <Button onClick={() => navigate("/auth")} size="sm" className="hidden sm:flex rounded-full gap-1.5 h-8 text-xs">
+                  <LogIn className="h-3.5 w-3.5" /> Sign In
                 </Button>
               )}
-            </div>
-            </div>
 
-            <div className="min-w-0 flex-1 px-1 text-center sm:px-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary/80 sm:text-xs">
-                TuppAfrica Zimbabwe
-              </p>
-              <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-sm font-bold text-transparent sm:text-lg md:text-xl lg:text-2xl">
-                Premium Kitchen Solutions
-              </h1>
+              <Button onClick={() => navigate("/admin")} variant="outline" size="sm" className="hidden sm:flex rounded-full gap-1.5 h-8 text-xs border-primary/30 text-primary hover:bg-primary hover:text-white">
+                <Shield className="h-3.5 w-3.5" /> Admin
+              </Button>
+
+              {/* Mobile hamburger */}
+              <button className="lg:hidden ml-1 p-2 rounded-lg hover:bg-muted" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:justify-end">
-            {headerCategoryLinks.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(item.id);
-                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${
-                  activeCategory === item.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:text-primary"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-            <a
-              href="https://wa.me/2630784721912"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background px-3 py-1 text-[11px] font-semibold text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Contact
-            </a>
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-              <Phone className="h-3.5 w-3.5" />
-              +263 784 721 912
-            </span>
+          {/* Mobile search */}
+          <div className="md:hidden mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 pl-9 rounded-full bg-muted/60 border-0 text-sm"
+              />
+            </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t bg-card shadow-lg">
+            <div className="container mx-auto px-4 py-3 space-y-1">
+              <button onClick={scrollToProducts} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted">Shop</button>
+              <button onClick={() => { navigate("/about"); setMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted">About Us</button>
+              {user && <button onClick={() => { navigate("/orders"); setMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted">My Orders</button>}
+              <button onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted text-primary">Admin Dashboard</button>
+              {user
+                ? <button onClick={signOut} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted text-destructive">Sign Out</button>
+                : <button onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted">Sign In</button>
+              }
+              <div className="border-t pt-2 flex items-center gap-3 px-3 text-xs text-muted-foreground">
+                <span><Phone className="h-3 w-3 inline mr-1" />+263 784 721 912</span>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Hero Section */}
         <Hero />
 
-        <section className="mb-8 grid gap-3 md:grid-cols-5">
+        {/* Trust badges */}
+        <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { icon: Droplets, title: "Water Bottles", text: "Insulated hydration for work, gym and travel" },
-            { icon: Package2, title: "Pantry Canisters", text: "Keep staples clean, dry and beautifully organized" },
-            { icon: UtensilsCrossed, title: "Meal Prep", text: "Smart containers for fast, fresh everyday meals" },
-            { icon: GlassWater, title: "Travel Tumblers", text: "Ready for commutes, cafés and on-the-go routines" },
-            { icon: ShieldCheck, title: "BPA-Free Care", text: "Food-safe construction with durable premium finishes" },
+            { icon: ShieldCheck, title: "100% BPA-Free", text: "Food-safe materials" },
+            { icon: Truck, title: "Fast Delivery", text: "Harare same-day" },
+            { icon: Star, title: "Lifetime Warranty", text: "On all products" },
+            { icon: Heart, title: "Locally Trusted", text: "500+ happy customers" },
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div
-                key={item.title}
-                className="rounded-[1.1rem] border border-border/70 bg-card px-3 py-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Icon className="h-4 w-4" />
+              <div key={item.title} className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-4.5 w-4.5" />
                 </div>
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">{item.title}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{item.text}</p>
+                <div>
+                  <p className="text-xs font-bold text-foreground">{item.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.text}</p>
+                </div>
               </div>
             );
           })}
         </section>
 
-        <section className="mb-8 rounded-[1.25rem] border border-border/70 bg-card/80 p-3 shadow-sm sm:p-4">
-          <div className="grid gap-2 text-center text-xs font-semibold sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              "100% BPA-Free & Food-Safe",
-              "24hr Cold / 12hr Hot Insulation",
-              "100% Leakproof Guarantee",
-              "Lifetime Warranty",
-            ].map((item) => (
-              <div key={item} className="rounded-full border border-primary/10 bg-primary/5 px-3 py-2 text-primary">
-                {item}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Products Section */}
-        <section id="products" className="scroll-mt-20">
-          {/* Section heading */}
-          <div className="mb-6 text-center sm:mb-8">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.35em] text-primary">Featured Collection</p>
-            <h2 className="mb-2 px-2 text-2xl font-extrabold text-foreground sm:text-3xl md:text-4xl">
-              Our Products
-            </h2>
-            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-gradient-to-r from-primary to-accent" />
-            <p className="mx-auto max-w-xl px-4 text-sm text-muted-foreground">
-              Premium insulated bottles, lunch boxes, pantry-ready storage, and everyday kitchen essentials — all delivered with a premium shopping experience.
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="mx-auto mb-5 max-w-sm px-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search bottles, lunch boxes…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 rounded-full pl-9 text-sm"
-              />
+        {/* Products */}
+        <section id="products" className="scroll-mt-24">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Featured Collection</p>
+              <h2 className="text-2xl font-extrabold text-foreground">Our Products</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categoryOptions.slice(0, 5).map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition-all ${
+                    activeCategory === cat.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="mb-6 flex flex-wrap justify-center gap-2 px-2">
-            {categoryOptions.map((category) => (
-              <Button
-                key={category.id}
-                variant={activeCategory === category.id ? "default" : "outline"}
-                onClick={() => setActiveCategory(category.id)}
-                size="sm"
-                className={`rounded-full px-4 py-1 text-xs font-semibold transition-all hover:scale-105 ${
-                  activeCategory === category.id
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-background/80 hover:bg-primary/10 hover:border-primary hover:text-primary"
-                }`}
-              >
-                {category.name}
-              </Button>
-            ))}
-          </div>
-
-          {/* Products Grid — responsive for small screens */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -399,64 +341,44 @@ const IndexContent = () => {
           </div>
 
           {filteredProducts.length === 0 && (
-            <div className="py-16 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/60 text-4xl">
-                🔍
-              </div>
+            <div className="py-20 text-center space-y-3">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">🔍</div>
               <p className="text-base font-medium text-muted-foreground">
-                {searchQuery ? "No products match your search." : "No products found in this category."}
+                {searchQuery ? "No products match your search." : "No products in this category."}
               </p>
+              <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(""); setActiveCategory("all"); }}>
+                Clear filters
+              </Button>
             </div>
           )}
         </section>
 
-        {/* Highlights Section — moved below products section for prioritised visibility */}
-        <section className="mt-16 mb-10 grid gap-4 md:grid-cols-3">
+        {/* ML Recommendations */}
+        <RecommendedProducts
+          allProducts={products}
+          onOrder={handleOrder}
+          onQuickView={handleQuickView}
+        />
+
+        {/* USP Cards */}
+        <section className="mt-16 grid gap-4 md:grid-cols-3">
           {[
-            {
-              icon: ShieldCheck,
-              title: "Trusted quality",
-              text: "Premium kitchen essentials chosen for durability and everyday convenience.",
-              image: "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500&fit=crop&q=80",
-            },
-            {
-              icon: Sparkles,
-              title: "Fresh styles",
-              text: "Modern, practical designs that fit beautifully into any home kitchen.",
-              image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&fit=crop&q=80",
-            },
-            {
-              icon: Truck,
-              title: "Fast local support",
-              text: "Quick help and easy ordering for customers across Harare and beyond.",
-              image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&fit=crop&q=80",
-            },
+            { icon: ShieldCheck, title: "Trusted quality", text: "Premium kitchen essentials chosen for durability and everyday convenience.", image: "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500&fit=crop&q=80" },
+            { icon: Sparkles, title: "Fresh styles", text: "Modern, practical designs that fit beautifully into any home kitchen.", image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&fit=crop&q=80" },
+            { icon: Truck, title: "Fast local support", text: "Quick help and easy ordering for customers across Harare and beyond.", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&fit=crop&q=80" },
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div 
-                key={item.title} 
-                className="group overflow-hidden rounded-[1.25rem] border border-border/70 bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-              >
-                {/* Visual USP Card Header */}
-                <div className="relative h-28 w-full overflow-hidden bg-muted">
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                  />
+              <div key={item.title} className="group overflow-hidden rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div className="relative h-28 overflow-hidden bg-muted">
+                  <img src={item.image} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
-                  
-                  {/* Badge positioned over image */}
                   <div className="absolute bottom-2.5 left-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
                     <Icon className="h-4 w-4" />
                   </div>
                 </div>
-
-                {/* Card Content */}
                 <div className="p-4">
-                  <h3 className="mb-1 text-sm font-bold text-foreground">{item.title}</h3>
+                  <h3 className="mb-1 text-sm font-bold">{item.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{item.text}</p>
                 </div>
               </div>
@@ -464,7 +386,6 @@ const IndexContent = () => {
           })}
         </section>
 
-        {/* Quick View Modal */}
         <ProductQuickView
           product={selectedProduct}
           category={categories.find((c) => c.id === selectedProduct?.category_id)}
@@ -475,127 +396,77 @@ const IndexContent = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-16 sm:mt-24 text-card-foreground">
-        <div className="container mx-auto px-4 py-12 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-            
-            {/* Column 1: Company Profile */}
-            <div className="flex flex-col gap-4 text-left">
-              <div className="flex items-center gap-2.5">
-                <span className="text-3xl font-extrabold text-primary">@</span>
-                <img
-                  src={oasisSalesLogo}
-                  alt="Oasis Sales Logo"
-                  className="h-16 w-auto object-contain"
-                />
+      <footer className="bg-card border-t border-border mt-16 text-card-foreground">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <img src={oasisSalesLogo} alt="Oasis Sales" className="h-14 w-auto object-contain" />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Oasis Sales is your trusted local distributor of official TuppAfrica premium kitchen solutions. Bringing lifetime freshness to Harare homes.
               </p>
-              <div className="flex items-center gap-1 bg-primary/5 border border-primary/10 rounded-lg p-2.5 w-fit mt-1">
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg p-2 w-fit">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Verified Distributor</span>
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Verified Distributor</span>
               </div>
             </div>
 
-            {/* Column 2: Quick Links */}
-            <div className="flex flex-col gap-4 text-left">
+            <div className="flex flex-col gap-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Quick Links</h3>
-              <ul className="space-y-2.5 text-xs text-muted-foreground font-medium">
-                <li>
-                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
-                    Shop Bottles
-                  </a>
-                </li>
-                <li>
-                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
-                    Lunch Boxes
-                  </a>
-                </li>
-                <li>
-                  <a href="#products" className="hover:text-primary transition-colors flex items-center gap-1">
-                    Containers &amp; Storage
-                  </a>
-                </li>
-                <li>
-                  <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1 font-semibold text-foreground/80">
-                    Admin Dashboard
-                  </a>
-                </li>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                {[
+                  { label: "Shop All Products", action: scrollToProducts },
+                  { label: "About Us", action: () => navigate("/about") },
+                  { label: "My Orders", action: () => navigate("/orders") },
+                  { label: "Admin Dashboard", action: () => navigate("/admin") },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <button onClick={item.action} className="hover:text-primary transition-colors font-medium text-left">
+                      {item.label}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Column 3: Contact & Hours */}
-            <div className="flex flex-col gap-4 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Contact &amp; Hours</h3>
-              <ul className="space-y-3 text-xs text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <span>944 New Adylin, Westgate, Harare, Zimbabwe</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <span>+263 784 721 912</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground/80">Mon - Fri</p>
-                    <p className="text-[10px]">8:00 AM - 5:00 PM</p>
-                  </div>
-                </li>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Contact & Hours</h3>
+              <ul className="space-y-2.5 text-xs text-muted-foreground">
+                <li className="flex items-start gap-2"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /><span>944 New Adylin, Westgate, Harare, Zimbabwe</span></li>
+                <li className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 shrink-0 text-primary" /><span>+263 784 721 912</span></li>
+                <li className="flex items-start gap-2"><MessageCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /><span>WhatsApp orders 24/7</span></li>
+                <li className="text-[11px]"><span className="font-semibold text-foreground/80">Mon–Fri:</span> 8:00 AM – 5:00 PM</li>
               </ul>
             </div>
 
-            {/* Column 4: Interactive Map */}
-            <div className="flex flex-col gap-4 text-left">
+            <div className="flex flex-col gap-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Find Our Office</h3>
               <LocationMap />
             </div>
-
           </div>
 
-          {/* Footer Bottom copyright */}
-          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[11px] text-muted-foreground font-medium">
-              &copy; {new Date().getFullYear()} TuppAfrica Zimbabwe &amp; Oasis Sales. All rights reserved.
+          <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-[11px] text-muted-foreground">
+              © {new Date().getFullYear()} TuppAfrica Zimbabwe & Oasis Sales. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <span className="text-border">|</span>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+              <button className="hover:text-primary transition-colors">Privacy Policy</button>
+              <span>|</span>
+              <button className="hover:text-primary transition-colors">Terms of Service</button>
+              <span>|</span>
+              <button onClick={() => navigate("/about")} className="hover:text-primary transition-colors">About Us</button>
             </div>
           </div>
-
         </div>
       </footer>
 
-      {/* Social Links & Chatbot */}
       <SocialLinks />
       <Chatbot />
     </div>
   );
 };
 
-const Index = () => {
-  return (
-    <CartProvider>
-      <IndexContent />
-    </CartProvider>
-  );
-};
-
+const Index = () => <IndexContent />;
 export default Index;
