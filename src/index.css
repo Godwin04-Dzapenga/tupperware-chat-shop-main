@@ -127,3 +127,100 @@ All colors MUST be HSL.
   }
 }
 
+
+/* ── 3D GLOBAL STYLES ───────────────────────────────────────────────────── */
+
+/* Ensure 3D context on the page */
+body { transform-style: preserve-3d; }
+
+/* Perspective wrapper for product grid */
+.product-grid-3d {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+}
+
+/* 3D floating animation */
+@keyframes float3d {
+  0%, 100% { transform: perspective(600px) translateZ(0px) translateY(0px) rotateX(0deg); }
+  33%       { transform: perspective(600px) translateZ(8px) translateY(-6px) rotateX(1deg); }
+  66%       { transform: perspective(600px) translateZ(4px) translateY(-3px) rotateX(-0.5deg); }
+}
+
+/* 3D pulse glow */
+@keyframes glow3d {
+  0%, 100% { box-shadow: 0 0 20px hsl(180 65% 45% / 0.2), 0 0 40px hsl(180 65% 45% / 0.1); }
+  50%      { box-shadow: 0 0 30px hsl(180 65% 45% / 0.35), 0 0 60px hsl(180 65% 45% / 0.15); }
+}
+
+/* Trust badge 3D lift */
+@keyframes badge-lift {
+  0%, 100% { transform: perspective(400px) translateZ(0px); }
+  50%      { transform: perspective(400px) translateZ(6px); }
+}
+
+/* Hero badge animate */
+.badge-3d {
+  animation: badge-lift 3s ease-in-out infinite;
+}
+
+/* Frosted glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 3D depth shadow on trust badges */
+.trust-badge {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform: perspective(400px) translateZ(0px);
+}
+.trust-badge:hover {
+  transform: perspective(400px) translateZ(12px) translateY(-2px);
+  box-shadow: 0 12px 32px -6px hsl(180 65% 45% / 0.25), 0 0 0 1px hsl(180 65% 45% / 0.1);
+}
+
+/* 3D footer hover lift */
+.footer-link-3d {
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.footer-link-3d:hover {
+  transform: perspective(200px) translateZ(4px);
+}
+
+/* Glow text effect */
+.glow-text {
+  text-shadow: 0 0 30px hsl(180 65% 45% / 0.5), 0 0 60px hsl(180 65% 45% / 0.2);
+}
+
+/* 3D button press */
+.btn-3d {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transform: perspective(300px) translateZ(0px);
+}
+.btn-3d:hover {
+  transform: perspective(300px) translateZ(8px) translateY(-1px);
+  box-shadow: 0 8px 24px -4px hsl(180 65% 45% / 0.35);
+}
+.btn-3d:active {
+  transform: perspective(300px) translateZ(-2px) translateY(1px);
+  box-shadow: 0 2px 8px -2px hsl(180 65% 45% / 0.2);
+}
+
+/* Floating orb ambient */
+.orb-ambient {
+  position: fixed; pointer-events: none; z-index: 0; border-radius: 50%;
+  filter: blur(80px); opacity: 0.07;
+  animation: float3d 8s ease-in-out infinite;
+}
+
+/* Scrollbar 3D styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--muted)); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
+  border-radius: 999px;
+  box-shadow: 0 0 6px hsl(180 65% 45% / 0.3);
+}

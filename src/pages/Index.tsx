@@ -134,6 +134,10 @@ const IndexContent = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Ambient 3D orbs */}
+      <div className="orb-ambient" style={{ width: 500, height: 500, background: "hsl(180 65% 45%)", top: -100, left: -100 }} />
+      <div className="orb-ambient" style={{ width: 400, height: 400, background: "hsl(15 85% 60%)", bottom: 200, right: -80, animationDelay: "3s" }} />
+      <div className="orb-ambient" style={{ width: 300, height: 300, background: "hsl(190 70% 55%)", top: "40%", right: "20%", animationDelay: "6s" }} />
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <header className={`sticky top-0 z-50 transition-all duration-200 ${scrolled ? "border-b shadow-sm bg-card/98 backdrop-blur-md" : "border-b border-transparent bg-card/95 backdrop-blur-sm"}`}>
@@ -291,7 +295,7 @@ const IndexContent = () => {
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
+              <div key={item.title} className="trust-badge flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="h-4.5 w-4.5" />
                 </div>
