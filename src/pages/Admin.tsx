@@ -20,6 +20,7 @@ import { AccountingManager } from "@/components/admin/AccountingManager";
 import { UserManager } from "@/components/admin/UserManager";
 import { OrdersManager } from "@/components/admin/OrdersManager";
 import { CouponsManager } from "@/components/admin/CouponsManager";
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { z } from "zod";
 
 const productSchema = z.object({
@@ -304,8 +305,9 @@ const Admin = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-7">
+        <Tabs defaultValue="analytics" className="space-y-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-8">
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -314,6 +316,10 @@ const Admin = () => {
             <TabsTrigger value="accounting">Accounting</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
+          </TabsContent>
 
           <TabsContent value="products">
             <Card>

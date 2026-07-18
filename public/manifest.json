@@ -1,0 +1,19 @@
+{
+  "name": "TuppAfrica — Premium Kitchen Storage",
+  "short_name": "TuppAfrica",
+  "description": "Shop genuine Tupperware products in Zimbabwe. Fast Harare delivery.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/favicon.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any maskable" },
+    { "src": "/favicon.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "lang": "en-ZW",
+  "screenshots": [
+    { "src": "/favicon.jpg", "sizes": "540x720", "type": "image/jpeg" }
+  ]
+}

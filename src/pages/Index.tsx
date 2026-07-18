@@ -221,14 +221,14 @@ const IndexContent = () => {
                   <Button variant="ghost" size="sm" onClick={() => navigate("/orders")} className="gap-1.5 text-xs rounded-full">
                     <ShoppingBag className="h-3.5 w-3.5" /> Orders
                   </Button>
-                  <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 bg-card">
+                  <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate("/account")}>
                     <div className="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center uppercase">
                       {(user.user_metadata?.full_name || user.email || "?")[0]}
                     </div>
                     <span className="text-xs font-medium hidden md:inline max-w-[80px] truncate">
                       {user.user_metadata?.full_name || user.email?.split("@")[0]}
                     </span>
-                    <button onClick={signOut} className="text-[10px] text-muted-foreground hover:text-destructive ml-1">Sign out</button>
+                    <button onClick={(e) => { e.stopPropagation(); signOut(); }} className="text-[10px] text-muted-foreground hover:text-destructive ml-1">Sign out</button>
                   </div>
                 </div>
               ) : (
@@ -334,13 +334,14 @@ const IndexContent = () => {
 
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onOrder={handleOrder}
-                onQuickView={handleQuickView}
-                onAddToCart={handleAddToCart}
-              />
+              <div key={product.id} onClick={() => navigate(`/product/${product.id}`)} className="cursor-pointer">
+                <ProductCard
+                  product={product}
+                  onOrder={handleOrder}
+                  onQuickView={handleQuickView}
+                  onAddToCart={handleAddToCart}
+                />
+              </div>
             ))}
           </div>
 
