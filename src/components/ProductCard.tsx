@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Eye, Star, Heart, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -18,9 +19,10 @@ interface Props {
 }
 
 export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Props) => {
+  const navigate = useNavigate();
   const { toggle: toggleWishlist, isWishlisted } = useWishlist();
   const { isInCart } = useCart();
-  const cardRef = useRef<HTMLElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [glowPos, setGlowPos] = useState({ x: 50, y: 50 });
   const [hovered, setHovered] = useState(false);
@@ -33,7 +35,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
   const rating = product.avg_rating ?? 0;
   const reviewCount = product.review_count ?? 0;
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = cardRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -41,9 +43,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
     const y = e.clientY - rect.top;
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const tiltX = ((y - cy) / cy) * -12;
-    const tiltY = ((x - cx) / cx) * 12;
-    setTilt({ x: tiltX, y: tiltY });
+    setTilt({ x: ((y - cy) / cy) * -10, y: ((x - cx) / cx) * 10 });
     setGlowPos({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
   }, []);
 
@@ -52,155 +52,184 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
     setHovered(false);
   }, []);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on action buttons
+    const target = e.target as HTMLElement;
+    if (target.closest("button")) return;
+    navigate(`/product/${product.id}`);
+  };
+
   return (
-    <article
+    <div
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={handleMouseLeave}
-      className="product-card relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-md cursor-default"
+      onClick={handleCardClick}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm cursor-pointer select-none"
       style={{
-        transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) ${hovered ? "translateZ(6px)" : "translateZ(0px)"}`,
+        transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(${hovered ? "6px" : "0px"})`,
         transition: hovered ? "transform 0.08s ease-out, box-shadow 0.15s ease" : "transform 0.4s ease, box-shadow 0.4s ease",
         boxShadow: hovered
-          ? `0 20px 40px -8px hsl(180 65% 45% / 0.3), 0 0 0 1px hsl(180 65% 45% / 0.15), inset 0 1px 0 rgba(255,255,255,0.1)`
-          : `0 4px 16px -4px hsl(180 65% 45% / 0.12)`,
+          ? "0 20px 40px -8px hsl(180 65% 45% / 0.25), 0 0 0 1px hsl(180 65% 45% / 0.1)"
+          : "0 2px 8px -2px hsl(0 0% 0% / 0.08)",
         willChange: "transform",
       }}
     >
-      {/* Holographic glow layer */}
+      {/* Holographic glow */}
       {hovered && (
-        <div
-          className="pointer-events-none absolute inset-0 z-10 rounded-2xl opacity-60"
-          style={{
-            background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, hsl(180 65% 55% / 0.18) 0%, transparent 65%)`,
-            transition: "background 0.05s",
-          }}
-        />
+        <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl" style={{
+          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, hsl(180 65% 55% / 0.15) 0%, transparent 65%)`,
+        }}/>
       )}
 
-      {/* Shine streak */}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-2xl"
-        style={{
-          background: `linear-gradient(105deg, transparent 30%, rgba(255,255,255,${hovered ? 0.06 : 0}) 50%, transparent 70%)`,
-          transition: "background 0.3s",
-        }}
-      />
-
-      {/* Image */}
-      <div className="relative h-36 overflow-hidden bg-muted/30">
-        {/* Category ribbon */}
-        <span className="absolute left-0 top-2 z-20 rounded-r-full bg-primary px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground shadow">
-          Tupperware
-        </span>
+      {/* ── IMAGE ── */}
+      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-muted/60 to-muted/30">
+        {/* Tupperware ribbon */}
+        <div className="absolute left-0 top-2.5 z-20">
+          <span className="rounded-r-full bg-primary px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
+            Tupperware
+          </span>
+        </div>
 
         {/* Out of stock overlay */}
         {outOfStock && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/55">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow">Out of Stock</span>
           </div>
         )}
+
+        {/* Low stock badge */}
         {lowStock && !outOfStock && (
-          <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white shadow">
-            <AlertTriangle className="h-2.5 w-2.5" /> Only {stock} left
+          <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 shadow">
+            <AlertTriangle className="h-2.5 w-2.5 text-white"/>
+            <span className="text-[9px] font-bold text-white">Only {stock} left</span>
           </div>
         )}
 
-        {/* 3D depth badge for new/featured */}
-        {rating >= 4.5 && reviewCount > 0 && (
-          <div className="absolute top-2 right-8 z-20 flex items-center gap-0.5 rounded-full bg-amber-400 px-1.5 py-0.5 text-[8px] font-bold text-amber-900 shadow-lg"
-            style={{ transform: "translateZ(4px)" }}>
-            <Zap className="h-2.5 w-2.5" /> Top Rated
+        {/* Top rated badge */}
+        {rating >= 4.5 && reviewCount >= 3 && !outOfStock && (
+          <div className="absolute top-2.5 right-9 z-20 flex items-center gap-0.5 rounded-full bg-amber-400 px-1.5 py-0.5 shadow">
+            <Zap className="h-2.5 w-2.5 text-amber-900"/>
+            <span className="text-[8px] font-extrabold text-amber-900">Top Rated</span>
           </div>
         )}
 
-        {/* Wishlist */}
+        {/* Wishlist button */}
         <button
           aria-label={wishlisted ? "Remove from wishlist" : "Save to wishlist"}
-          onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id, product.name); }}
-          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full shadow-lg transition-all duration-200 ${wishlisted ? "bg-red-50 text-red-500 scale-110" : "bg-white/90 text-muted-foreground opacity-0 group-hover:opacity-100 hover:scale-110"} ${hovered ? "opacity-100" : ""}`}
+          onClick={e => { e.stopPropagation(); toggleWishlist(product.id, product.name); }}
+          className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
+            wishlisted
+              ? "bg-white text-red-500 scale-110"
+              : "bg-white/90 text-muted-foreground opacity-0 group-hover:opacity-100 hover:scale-110"
+          }`}
         >
-          <Heart className={`h-3.5 w-3.5 transition-all ${wishlisted ? "fill-red-500" : ""}`} />
+          <Heart className={`h-3.5 w-3.5 transition-all ${wishlisted ? "fill-red-500" : ""}`}/>
         </button>
 
         {/* Quick view */}
         {onQuickView && (
           <button
             aria-label="Quick view"
-            onClick={() => onQuickView(product)}
-            className={`absolute right-10 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground shadow-lg transition-all duration-200 hover:bg-primary hover:text-white ${hovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"}`}
+            onClick={e => { e.stopPropagation(); onQuickView(product); }}
+            className={`absolute right-10 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground shadow-md transition-all duration-200 hover:bg-primary hover:text-white ${
+              hovered ? "opacity-100" : "opacity-0"
+            }`}
           >
-            <Eye className="h-3 w-3" />
+            <Eye className="h-3 w-3"/>
           </button>
         )}
 
+        {/* Product image */}
         {product.video_url ? (
-          <video src={product.video_url} poster={product.image_url || undefined}
+          <video
+            src={product.video_url}
+            poster={product.image_url || undefined}
             className="h-full w-full object-cover transition-transform duration-700"
             style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }}
-            controls preload="metadata" />
+            preload="metadata"
+          />
         ) : (
           <img
-            src={product.image_url || "https://images.unsplash.com/photo-1584308972272-9e4e7685e80f?w=400&h=300&fit=crop"}
-            alt={product.name} loading="lazy"
+            src={product.image_url || "https://images.unsplash.com/photo-1584308972272-9e4e7685e80f?w=400&h=300&fit=crop&q=80"}
+            alt={product.name}
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700"
             style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }}
           />
         )}
 
         {/* Bottom gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
-          style={{ opacity: hovered ? 1 : 0, transition: "opacity 0.3s" }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"/>
       </div>
 
-      {/* Card body */}
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        {/* Stars */}
-        <div className="flex items-center gap-1">
+      {/* ── BODY ── */}
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        {/* Star rating */}
+        <div className="flex items-center gap-1 h-4">
           <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} className={`h-2.5 w-2.5 transition-all duration-300 ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-none text-muted-foreground/20"}`}
-                style={{ transform: hovered && s <= Math.round(rating) ? "scale(1.2)" : "scale(1)", transitionDelay: `${s * 20}ms` }} />
+            {[1,2,3,4,5].map(s => (
+              <Star key={s} className={`h-2.5 w-2.5 transition-all duration-200 ${
+                s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-none text-muted-foreground/20"
+              }`}
+                style={{ transform: hovered && s <= Math.round(rating) ? "scale(1.15)" : "scale(1)", transitionDelay: `${s * 20}ms` }}
+              />
             ))}
           </div>
-          {reviewCount > 0 && <span className="text-[9px] text-muted-foreground">({reviewCount})</span>}
+          {reviewCount > 0 && (
+            <span className="text-[9px] text-muted-foreground">({reviewCount})</span>
+          )}
         </div>
 
-        {/* Name */}
-        <h3 className="line-clamp-2 text-xs font-semibold leading-tight text-foreground transition-colors duration-200"
-          style={{ color: hovered ? "hsl(180 65% 40%)" : "" }}>
+        {/* Product name */}
+        <h3 className="line-clamp-2 text-xs font-semibold leading-tight text-foreground transition-colors duration-200 group-hover:text-primary min-h-[2.5rem]">
           {product.name}
         </h3>
 
         {/* Price + actions */}
-        <div className="mt-auto flex items-center justify-between gap-1.5 pt-1.5">
-          <p className="text-sm font-extrabold text-primary transition-all duration-200"
-            style={{ textShadow: hovered ? "0 0 12px hsl(180 65% 45% / 0.4)" : "none" }}>
+        <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
+          <p
+            className="text-sm font-extrabold text-primary transition-all duration-200"
+            style={{ textShadow: hovered ? "0 0 10px hsl(180 65% 45% / 0.35)" : "none" }}
+          >
             ${product.price.toFixed(2)}
           </p>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+            {/* Add to cart */}
             {onAddToCart && !outOfStock && (
               <button
-                onClick={() => onAddToCart(product)}
                 aria-label="Add to cart"
-                className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-200 ${inCart ? "border-emerald-500 bg-emerald-50 text-emerald-600 scale-110" : "border-border/80 bg-background text-muted-foreground hover:border-primary hover:bg-primary/10 hover:text-primary hover:scale-110"}`}
-                style={{ boxShadow: inCart ? "0 0 8px hsl(140 60% 45% / 0.4)" : "" }}
+                onClick={() => onAddToCart(product)}
+                className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-200 ${
+                  inCart
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-600 scale-110 shadow-sm"
+                    : "border-border/70 bg-background text-muted-foreground hover:border-primary hover:bg-primary/10 hover:text-primary hover:scale-110"
+                }`}
+                style={{ boxShadow: inCart ? "0 0 8px hsl(140 60% 45% / 0.35)" : undefined }}
               >
-                {inCart ? <CheckCircle2 className="h-3 w-3" /> : <ShoppingCart className="h-3 w-3" />}
+                {inCart ? <CheckCircle2 className="h-3 w-3"/> : <ShoppingCart className="h-3 w-3"/>}
               </button>
             )}
+
+            {/* Order button */}
             <Button
-              onClick={() => !outOfStock && onOrder(product)}
-              size="sm" disabled={outOfStock}
-              className={`h-6 rounded-full px-2.5 text-[10px] font-bold transition-all duration-200 ${outOfStock ? "opacity-40 cursor-not-allowed" : "bg-accent text-accent-foreground hover:bg-accent/90 hover:scale-105 hover:shadow-md"}`}
-              style={{ boxShadow: hovered && !outOfStock ? "0 4px 12px hsl(15 85% 60% / 0.4)" : "" }}
+              size="sm"
+              disabled={outOfStock}
+              onClick={e => { e.stopPropagation(); if (!outOfStock) onOrder(product); }}
+              className={`h-6 rounded-full px-2.5 text-[10px] font-bold transition-all duration-200 ${
+                outOfStock
+                  ? "opacity-40 cursor-not-allowed"
+                  : "bg-accent text-accent-foreground hover:bg-accent/90 hover:scale-105"
+              }`}
+              style={{ boxShadow: hovered && !outOfStock ? "0 3px 10px hsl(15 85% 60% / 0.35)" : undefined }}
             >
               {outOfStock ? "Sold out" : "Order"}
             </Button>
           </div>
         </div>
       </div>
-    </article>
+    </div>
   );
 };
