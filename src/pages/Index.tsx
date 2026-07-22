@@ -332,16 +332,15 @@ const IndexContent = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredProducts.map((product) => (
-              <div key={product.id} onClick={() => navigate(`/product/${product.id}`)} className="cursor-pointer">
-                <ProductCard
-                  product={product}
-                  onOrder={handleOrder}
-                  onQuickView={handleQuickView}
-                  onAddToCart={handleAddToCart}
-                />
-              </div>
+              <ProductCard
+                key={product.id}
+                product={product}
+                onOrder={handleOrder}
+                onQuickView={handleQuickView}
+                onAddToCart={handleAddToCart}
+              />
             ))}
           </div>
 
