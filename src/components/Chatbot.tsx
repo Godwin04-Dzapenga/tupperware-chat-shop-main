@@ -1,445 +1,351 @@
-import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, Minus, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { MessageCircle, X, Send, Minimize2, Mic, MicOff, Volume2, VolumeX, ShoppingCart, ArrowRight, Bot, User, Loader2 } from "lucide-react";
 
 interface Message {
   id: string;
   text: string;
   isBot: boolean;
-  products?: Product[];
+  products?: SuggestedProduct[];
+  timestamp: Date;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  image_url: string | null;
+interface SuggestedProduct {
+  id: string; name: string; price: number; image_url: string | null;
 }
+
+const WELCOME = "Hi! 👋 I'm Tuppie, your TuppAfrica shopping assistant. I can help you find products, check prices, and answer questions. What are you looking for today?";
+const QUICK_REPLIES = ["Show all products", "What's on sale?", "Delivery info", "Contact us"];
 
 export const Chatbot = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! 👋 Welcome to TuppAfrica. I'm your TuppAfrica Assistant. How can I help you today? You can type or use voice messages!",
-      isBot: true,
-    },
+    { id: "welcome", text: WELCOME, isBot: true, timestamp: new Date() },
   ]);
   const [input, setInput] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(true);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [hasShownNudge, setHasShownNudge] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
+  // Auto-nudge after 30s
   useEffect(() => {
-    // Auto-scroll to bottom when new messages arrive
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    if (hasShownNudge) return;
+    const t = setTimeout(() => {
+      if (!open) {
+        setUnread(1);
+        setHasShownNudge(true);
       }
-    }
+    }, 30000);
+    return () => clearTimeout(t);
+  }, [open, hasShownNudge]);
+
+  // Scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const fetchProducts = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, name, description, price, image_url")
-      .order("created_at", { ascending: false });
-    
-    if (!error && data) {
-      setProducts(data);
+  // Focus input when opened
+  useEffect(() => {
+    if (open && !minimized) {
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
-  };
+  }, [open, minimized]);
 
-  const getProductsByKeyword = (text: string) => {
-    const lowerText = text.toLowerCase();
-    return products.filter(p => 
-      p.name.toLowerCase().includes(lowerText) ||
-      p.description?.toLowerCase().includes(lowerText)
-    );
-  };
+  const addMessage = useCallback((text: string, isBot: boolean, products?: SuggestedProduct[]) => {
+    const msg: Message = { id: Date.now().toString(), text, isBot, products, timestamp: new Date() };
+    setMessages(prev => [...prev, msg]);
+    if (isBot && !open) setUnread(n => n + 1);
+    return msg;
+  }, [open]);
 
-  const sendToAI = async (userMessage: string) => {
-    setIsLoading(true);
-    
+  const sendMessage = async (text?: string) => {
+    const content = (text || input).trim();
+    if (!content || loading) return;
+    setInput("");
+    addMessage(content, false);
+    setLoading(true);
+
     try {
-      const conversationHistory = messages
-        .slice(-6) // Last 6 messages for context
-        .map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
-      
-      conversationHistory.push({ role: "user", content: userMessage });
-
       const { data, error } = await supabase.functions.invoke("chat-assistant", {
-        body: { 
-          messages: conversationHistory,
-          products: products.map(p => ({
-            name: p.name,
-            price: p.price,
-            description: p.description
-          }))
-        }
+        body: { message: content },
       });
-
       if (error) throw error;
 
-      const aiResponse = data.message || data.fallback || "I'm here to help! Ask me about our products.";
-      
-      // Check if AI mentioned specific products
-      const mentionedProducts = getProductsByKeyword(aiResponse);
-      
-      const botMessage: Message = {
-        id: Date.now().toString(),
-        text: aiResponse,
-        isBot: true,
-        products: mentionedProducts.length > 0 && mentionedProducts.length <= 4 ? mentionedProducts : undefined,
-      };
-      
-      setMessages((prev) => [...prev, botMessage]);
+      const botText = data?.response || data?.message || "Sorry, I didn't catch that. Can you rephrase?";
+      const products = data?.products || [];
+      addMessage(botText, true, products.length > 0 ? products : undefined);
 
-      // Play audio response if enabled
-      if (audioEnabled) {
-        await playTextAsAudio(aiResponse);
+      if (ttsEnabled && data?.response) {
+        speakText(data.response);
       }
-    } catch (error: any) {
-      console.error("AI Error:", error);
-      
-      if (error.message?.includes("429") || error.message?.includes("Too many requests")) {
-        toast.error("Too many requests. Please wait a moment.");
-      } else if (error.message?.includes("402")) {
-        toast.error("AI service temporarily unavailable.");
-      }
-      
-      // Fallback response
-      const botMessage: Message = {
-        id: Date.now().toString(),
-        text: "I'm having trouble connecting right now. You can browse our products above or contact us on WhatsApp!",
-        isBot: true,
-      };
-      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      addMessage("Sorry, I'm having trouble connecting right now. Please try WhatsApp for immediate help!", true);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: input,
-      isBot: false,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    const messageText = input;
-    setInput("");
-
-    await sendToAI(messageText);
+  const speakText = async (text: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("text-to-speech", { body: { text } });
+      if (data?.audio) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+        audio.play();
+      }
+    } catch { /* silent */ }
   };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-      
-      mediaRecorderRef.current = mediaRecorder;
+      const recorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+      recorder.ondataavailable = e => audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = (reader.result as string).split(",")[1];
+          try {
+            const { data } = await supabase.functions.invoke("transcribe-audio", { body: { audio: base64 } });
+            if (data?.text) { setInput(data.text); }
+          } catch { toast.error("Couldn't transcribe audio"); }
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
       };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      toast.success("Recording started...");
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      toast.error("Could not access microphone. Please check permissions.");
-    }
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch { toast.error("Microphone access denied"); }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      toast.success("Processing audio...");
-    }
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
   };
 
-  const transcribeAudio = async (audioBlob: Blob) => {
-    try {
-      setIsLoading(true);
-      
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      
-      reader.onloadend = async () => {
-        const base64Audio = (reader.result as string).split(',')[1];
-        
-        const { data, error } = await supabase.functions.invoke("transcribe-audio", {
-          body: { audio: base64Audio }
-        });
-
-        if (error) throw error;
-
-        const transcribedText = data.text;
-        
-        if (transcribedText && transcribedText.trim()) {
-          // Add user message with transcribed text
-          const userMessage: Message = {
-            id: Date.now().toString(),
-            text: transcribedText,
-            isBot: false,
-          };
-          setMessages((prev) => [...prev, userMessage]);
-          
-          // Send to AI
-          await sendToAI(transcribedText);
-        } else {
-          toast.error("Could not understand the audio. Please try again.");
-          setIsLoading(false);
-        }
-      };
-    } catch (error: any) {
-      console.error("Transcription error:", error);
-      toast.error("Failed to transcribe audio. Please try typing instead.");
-      setIsLoading(false);
-    }
+  const handleOpen = () => {
+    setOpen(true);
+    setMinimized(false);
+    setUnread(0);
   };
 
-  const playTextAsAudio = async (text: string) => {
-    try {
-      setIsPlayingAudio(true);
-      
-      const { data, error } = await supabase.functions.invoke("text-to-speech", {
-        body: { text }
-      });
-
-      if (error) throw error;
-
-      if (data.audioContent) {
-        // Create audio element and play
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        audioRef.current = audio;
-        
-        audio.onended = () => {
-          setIsPlayingAudio(false);
-        };
-        
-        await audio.play();
-      }
-    } catch (error: any) {
-      console.error("TTS Error:", error);
-      // Silently fail - audio is optional
-      setIsPlayingAudio(false);
-    }
-  };
-
-  const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      setIsPlayingAudio(false);
-    }
-  };
-
-  const handleProductClick = (product: Product) => {
-    const whatsappNumber = "2630784721912";
-    const message = encodeURIComponent(
-      `Hi! I'd like to order:\n\n${product.name}\nPrice: $${product.price.toFixed(2)}\n\nThank you!`
-    );
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
-  };
-
-  if (isDismissed) return null;
+  const fmtTime = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <>
-      {/* Chat Toggle Button */}
-      {!isOpen && (
-        <Button
-          onClick={() => {
-            setIsOpen(true);
-            setIsMinimized(false);
-          }}
-          className="fixed left-4 bottom-4 w-14 h-14 rounded-full shadow-lg z-40 bg-primary hover:bg-primary/90"
-          aria-label="Open chat"
-        >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
+      {/* ── FLOATING BUTTON ── */}
+      {!open && (
+        <div className="fixed left-4 bottom-6 z-50">
+          <button
+            onClick={handleOpen}
+            className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-xl transition-all hover:scale-110 active:scale-95"
+            style={{ boxShadow: "0 4px 24px hsl(180 65% 45% / 0.45)" }}
+            aria-label="Open chat"
+          >
+            <MessageCircle className="h-6 w-6" />
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
+                {unread}
+              </span>
+            )}
+          </button>
+          {/* Pulse */}
+          <div className="pointer-events-none absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
+
+          {/* Tooltip nudge */}
+          {unread > 0 && (
+            <div className="absolute bottom-16 left-0 w-52 rounded-xl bg-white p-3 shadow-xl border text-xs text-[#1c1c1c] font-medium">
+              <div className="flex items-center gap-2 mb-1">
+                <Bot className="h-4 w-4 text-primary shrink-0"/>
+                <span className="font-bold text-primary">Tuppie</span>
+              </div>
+              Need help finding the right product? I'm here! 👋
+              <div className="absolute -bottom-1.5 left-5 h-3 w-3 rotate-45 bg-white border-r border-b"/>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Chat Window */}
-      {isOpen && (
-        <Card className={`fixed left-4 bottom-4 w-80 sm:w-96 shadow-xl z-40 flex flex-col bg-card border-border transition-all ${
-          isMinimized ? "h-14" : "h-[500px]"
-        }`}>
+      {/* ── CHAT WINDOW ── */}
+      {open && (
+        <div
+          className={`fixed left-4 bottom-6 z-50 flex flex-col rounded-2xl bg-white shadow-2xl border overflow-hidden transition-all duration-300 ${minimized ? "h-14 w-72" : "h-[480px] w-80 sm:w-96"}`}
+          style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border bg-primary text-primary-foreground rounded-t-lg">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              <h3 className="font-semibold">TuppAfrica Assistant</h3>
+          <div className="flex items-center gap-3 bg-primary px-4 py-3 shrink-0">
+            <div className="relative">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white">
+                <Bot className="h-5 w-5" />
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-primary"/>
             </div>
-            <div className="flex gap-1">
-              <Button
-                onClick={() => {
-                  setAudioEnabled(!audioEnabled);
-                  if (isPlayingAudio) stopAudio();
-                }}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary-foreground/20 text-primary-foreground"
-                title={audioEnabled ? "Disable audio" : "Enable audio"}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white leading-none">Tuppie</p>
+              <p className="text-[10px] text-white/70 mt-0.5">TuppAfrica Assistant · Online</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setTtsEnabled(e => !e)}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/20 transition-colors"
+                title={ttsEnabled ? "Mute" : "Enable voice"}
               >
-                {audioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              </Button>
-              <Button
-                onClick={() => setIsMinimized(!isMinimized)}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary-foreground/20 text-primary-foreground"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsDismissed(true);
-                  stopAudio();
-                }}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary-foreground/20 text-primary-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+                {ttsEnabled ? <Volume2 className="h-3.5 w-3.5"/> : <VolumeX className="h-3.5 w-3.5"/>}
+              </button>
+              <button onClick={() => setMinimized(m => !m)} className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/20 transition-colors">
+                <Minimize2 className="h-3.5 w-3.5"/>
+              </button>
+              <button onClick={() => setOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/20 transition-colors">
+                <X className="h-3.5 w-3.5"/>
+              </button>
             </div>
           </div>
 
-          {/* Messages - Hidden when minimized */}
-          {!isMinimized && (
+          {!minimized && (
             <>
-              <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id}>
-                      <div
-                        className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
-                      >
-                        <div
-                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                            message.isBot
-                              ? "bg-muted text-foreground"
-                              : "bg-primary text-primary-foreground"
-                          }`}
-                        >
-                          <p className="text-sm">{message.text}</p>
-                        </div>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#f8f8f8]">
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex gap-2 ${msg.isBot ? "justify-start" : "justify-end"}`}>
+                    {msg.isBot && (
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white mt-auto">
+                        <Bot className="h-3.5 w-3.5"/>
                       </div>
-                      
-                      {/* Product Cards */}
-                      {message.products && message.products.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {message.products.map((product) => (
-                            <div
-                              key={product.id}
-                              onClick={() => handleProductClick(product)}
-                              className="bg-card border border-border rounded-lg p-2 flex gap-2 cursor-pointer hover:bg-accent transition-colors"
-                            >
-                              {product.image_url && (
-                                <img
-                                  src={product.image_url}
-                                  alt={product.name}
-                                  className="w-16 h-16 object-cover rounded"
-                                />
+                    )}
+                    <div className={`max-w-[78%] space-y-2`}>
+                      <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+                        msg.isBot
+                          ? "bg-white text-[#1c1c1c] rounded-tl-sm"
+                          : "bg-primary text-white rounded-tr-sm"
+                      }`}>
+                        {msg.text}
+                        <span className={`block text-[9px] mt-1 ${msg.isBot ? "text-muted-foreground" : "text-white/60"}`}>
+                          {fmtTime(msg.timestamp)}
+                        </span>
+                      </div>
+
+                      {/* Product suggestions */}
+                      {msg.products && msg.products.length > 0 && (
+                        <div className="space-y-2">
+                          {msg.products.slice(0, 3).map(p => (
+                            <div key={p.id} className="flex gap-2.5 rounded-xl bg-white border p-2.5 shadow-sm">
+                              {p.image_url && (
+                                <img src={p.image_url} alt={p.name} className="h-12 w-12 rounded-lg object-cover shrink-0 bg-muted"/>
                               )}
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-foreground">{product.name}</p>
-                                <p className="text-sm text-primary font-bold">${product.price.toFixed(2)}</p>
-                                <p className="text-xs text-muted-foreground">Click to order</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold line-clamp-1">{p.name}</p>
+                                <p className="text-xs font-bold text-primary mt-0.5">${p.price.toFixed(2)}</p>
+                                <div className="flex gap-1.5 mt-1.5">
+                                  <button
+                                    onClick={() => { addToCart(p as any); toast.success(`${p.name} added!`); }}
+                                    className="flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold hover:bg-primary hover:text-white transition-colors"
+                                  >
+                                    <ShoppingCart className="h-2.5 w-2.5"/>Cart
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpen(false); navigate(`/product/${p.id}`); }}
+                                    className="flex items-center gap-1 rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold hover:bg-foreground hover:text-background transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  ))}
-                  
-                  {/* Loading indicator */}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted text-foreground rounded-lg px-4 py-2">
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <div className="w-2 h-2 bg-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <div className="w-2 h-2 bg-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
+                    {!msg.isBot && (
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted mt-auto">
+                        <User className="h-3.5 w-3.5 text-muted-foreground"/>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {loading && (
+                  <div className="flex gap-2 justify-start">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white mt-auto">
+                      <Bot className="h-3.5 w-3.5"/>
+                    </div>
+                    <div className="rounded-2xl rounded-tl-sm bg-white px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-1">
+                        {[0,1,2].map(i => (
+                          <div key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}/>
+                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
+                <div ref={messagesEndRef}/>
+              </div>
+
+              {/* Quick replies */}
+              {messages.length <= 2 && (
+                <div className="flex gap-1.5 overflow-x-auto px-4 py-2 bg-white border-t scrollbar-hide">
+                  {QUICK_REPLIES.map(r => (
+                    <button key={r} onClick={() => sendMessage(r)}
+                      className="shrink-0 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white transition-colors whitespace-nowrap">
+                      {r}
+                    </button>
+                  ))}
                 </div>
-              </ScrollArea>
+              )}
 
               {/* Input */}
-              <div className="p-4 border-t border-border">
-                <div className="flex gap-2">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Type or use voice..."
-                    disabled={isLoading || isRecording}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={isRecording ? stopRecording : startRecording}
-                    size="icon"
-                    variant={isRecording ? "destructive" : "outline"}
-                    disabled={isLoading}
-                  >
-                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  </Button>
-                  <Button 
-                    onClick={handleSend} 
-                    size="icon"
-                    disabled={isLoading || isRecording || !input.trim()}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2 border-t bg-white px-3 py-2.5">
+                <button
+                  onClick={recording ? stopRecording : startRecording}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all ${recording ? "bg-red-500 text-white animate-pulse" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                  title={recording ? "Stop recording" : "Voice input"}
+                >
+                  {recording ? <MicOff className="h-3.5 w-3.5"/> : <Mic className="h-3.5 w-3.5"/>}
+                </button>
+
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                  placeholder={recording ? "Listening…" : "Ask Tuppie anything…"}
+                  disabled={loading || recording}
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+
+                <button
+                  onClick={() => sendMessage()}
+                  disabled={!input.trim() || loading}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : <Send className="h-3.5 w-3.5"/>}
+                </button>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-white px-4 py-1.5 border-t text-center">
+                <p className="text-[9px] text-muted-foreground/60">
+                  Powered by TuppAfrica AI · <a href="https://wa.me/2630784721912" target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Switch to WhatsApp</a>
+                </p>
               </div>
             </>
           )}
-        </Card>
+        </div>
       )}
     </>
   );
