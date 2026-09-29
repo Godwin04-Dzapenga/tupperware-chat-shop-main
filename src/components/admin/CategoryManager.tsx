@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { z } from "zod";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import {
   Plus, Edit, Trash2, Tag, Search, Image, Link,
   Eye, EyeOff, Package, ArrowUp, ArrowDown,
@@ -93,9 +94,14 @@ export const CategoryManager = ({ categories, onUpdate }: CategoryManagerProps) 
         sort_order: Number(form.sort_order) || 0,
       });
 
-      const { error } = editing
-        ? await supabase.from("categories").update(payload).eq("id", editing.id)
-        : await supabase.from("categories").insert([payload]);
+      let error;
+      if (editing) {
+        const updatePayload: TablesUpdate<"categories"> = payload;
+        ({ error } = await supabase.from("categories").update(updatePayload).eq("id", editing.id));
+      } else {
+        const insertPayload: TablesInsert<"categories"> = payload;
+        ({ error } = await supabase.from("categories").insert([insertPayload]));
+      }
 
       if (error) {
         if (error.message.includes("unique")) throw new Error("A category with this slug already exists");
