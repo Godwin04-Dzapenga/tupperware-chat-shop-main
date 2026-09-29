@@ -253,7 +253,7 @@ export const UserManager = () => {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">{p.phone||"—"}</TableCell>
                         <TableCell className="text-center">
-                          <Badge className={`text-xs border-0 ${ord?.total_orders??"0">=1?"bg-primary/10 text-primary":"bg-muted text-muted-foreground"}`}>
+                          <Badge className={`text-xs border-0 ${(ord?.total_orders ?? 0) >= 1 ?"bg-primary/10 text-primary":"bg-muted text-muted-foreground"}`}>
                             {ord?.total_orders||0}
                           </Badge>
                         </TableCell>
