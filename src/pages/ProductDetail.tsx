@@ -17,7 +17,7 @@ import logoImage from "@/assets/tuppafrica-logo.jpg";
 interface Product {
   id: string; name: string; description: string | null; price: number;
   category_id: string | null; image_url: string | null; video_url: string | null;
-  stock_quantity: number; avg_rating: number; review_count: number;
+  stock_quantity: number;
   categories?: { name: string };
 }
 
@@ -31,6 +31,8 @@ export default function ProductDetail() {
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "reviews">("description");
 
   useEffect(() => {
@@ -74,10 +76,10 @@ export default function ProductDetail() {
         availability: product.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         seller: { "@type": "Organization", name: "TuppAfrica Zimbabwe" },
       },
-      aggregateRating: product.review_count > 0 ? {
+      aggregateRating: reviewCount > 0 ? {
         "@type": "AggregateRating",
-        ratingValue: product.avg_rating,
-        reviewCount: product.review_count,
+        ratingValue: avgRating,
+        reviewCount: reviewCount,
       } : undefined,
     };
 
@@ -97,6 +99,14 @@ export default function ProductDetail() {
 
     if (error || !data) { toast.error("Product not found"); navigate("/"); return; }
     setProduct(data as Product);
+
+    const { data: reviews } = await supabase
+      .from("reviews")
+      .select("rating")
+      .eq("product_id", productId);
+    const ratings = (reviews || []).map(r => r.rating);
+    setReviewCount(ratings.length);
+    setAvgRating(ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0);
 
     // Fetch related products in same category
     if (data.category_id) {
@@ -227,11 +237,11 @@ export default function ProductDetail() {
               <div className="mt-2 flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   {[1,2,3,4,5].map(s => (
-                    <Star key={s} className={`h-4 w-4 ${s <= Math.round(product.avg_rating) ? "fill-amber-400 text-amber-400" : "fill-none text-muted-foreground/20"}`} />
+                    <Star key={s} className={`h-4 w-4 ${s <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "fill-none text-muted-foreground/20"}`} />
                   ))}
                 </div>
-                {product.review_count > 0
-                  ? <button onClick={() => setActiveTab("reviews")} className="text-sm text-primary hover:underline">{product.avg_rating.toFixed(1)} ({product.review_count} review{product.review_count !== 1 ? "s" : ""})</button>
+                {reviewCount > 0
+                  ? <button onClick={() => setActiveTab("reviews")} className="text-sm text-primary hover:underline">{avgRating.toFixed(1)} ({reviewCount} review{reviewCount !== 1 ? "s" : ""})</button>
                   : <span className="text-sm text-muted-foreground">No reviews yet</span>
                 }
               </div>
@@ -315,7 +325,7 @@ export default function ProductDetail() {
                 onClick={() => setActiveTab(tab)}
                 className={`px-6 py-3 text-sm font-semibold capitalize border-b-2 transition-colors ${activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                {tab}{tab === "reviews" && product.review_count > 0 && ` (${product.review_count})`}
+                {tab}{tab === "reviews" && reviewCount > 0 && ` (${reviewCount})`}
               </button>
             ))}
           </div>
@@ -346,8 +356,8 @@ export default function ProductDetail() {
             <div className="max-w-2xl">
               <ProductReviews
                 productId={product.id}
-                avgRating={product.avg_rating}
-                reviewCount={product.review_count}
+                avgRating={avgRating}
+                reviewCount={reviewCount}
               />
             </div>
           )}
