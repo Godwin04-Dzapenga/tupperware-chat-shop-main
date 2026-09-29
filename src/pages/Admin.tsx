@@ -29,6 +29,7 @@ import { OrdersManager } from "@/components/admin/OrdersManager";
 import { CouponsManager } from "@/components/admin/CouponsManager";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { z } from "zod";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 const productSchema = z.object({
@@ -131,9 +132,14 @@ const Admin = () => {
         is_active: formData.is_active,
       });
 
-      const { error } = editingProduct
-        ? await supabase.from("products").update(payload).eq("id",editingProduct.id)
-        : await supabase.from("products").insert([payload]);
+      let error;
+      if (editingProduct) {
+        const updatePayload: TablesUpdate<"products"> = payload;
+        ({ error } = await supabase.from("products").update(updatePayload).eq("id", editingProduct.id));
+      } else {
+        const insertPayload: TablesInsert<"products"> = payload;
+        ({ error } = await supabase.from("products").insert([insertPayload]));
+      }
       if (error) throw error;
 
       toast.success(editingProduct?"Product updated!":"Product added!");
