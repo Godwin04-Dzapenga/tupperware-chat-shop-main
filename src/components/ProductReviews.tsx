@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Star, ShieldCheck, Loader2 } from "lucide-react";
 
-interface Review {
+type ReviewRow = Tables<"reviews">;
+
+interface Review extends ReviewRow {
   id: string;
   rating: number;
   comment: string | null;
@@ -65,18 +68,28 @@ export function ProductReviews({ productId, avgRating = 0, reviewCount = 0 }: Pr
   const fetchReviews = async () => {
     const { data } = await supabase
       .from("reviews")
-      .select("*, profiles(full_name, email)")
+      .select("*")
       .eq("product_id", productId)
       .order("created_at", { ascending: false });
 
-    setReviews((data as Review[]) || []);
-    if (user && data) {
-      const mine = data.find((r: any) => r.user_id === user.id);
-      if (mine) {
-        setUserReview(mine as Review);
-        setNewRating(mine.rating);
-        setNewComment(mine.comment ?? "");
+    if (data) {
+      const userIds = [...new Set(data.map((review) => review.user_id))];
+      const { data: profiles } = userIds.length
+        ? await supabase.from("profiles").select("id, full_name, email").in("id", userIds)
+        : { data: [] as Array<{ id: string; full_name: string | null; email: string | null }> };
+      const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+      const mappedReviews: Review[] = data.map((review) => ({ ...review, profiles: profileById.get(review.user_id) ?? null }));
+      setReviews(mappedReviews);
+      if (user) {
+        const mine = mappedReviews.find((review) => review.user_id === user.id);
+        if (mine) {
+          setUserReview(mine);
+          setNewRating(mine.rating);
+          setNewComment(mine.comment ?? "");
+        }
       }
+    } else {
+      setReviews([]);
     }
     setLoading(false);
   };
@@ -99,8 +112,9 @@ export function ProductReviews({ productId, avgRating = 0, reviewCount = 0 }: Pr
       if (error) throw error;
       toast.success(userReview ? "Review updated!" : "Review submitted!");
       fetchReviews();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit review");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to submit review";
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
