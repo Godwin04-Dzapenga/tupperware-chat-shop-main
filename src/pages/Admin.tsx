@@ -137,7 +137,11 @@ const Admin = () => {
         const updatePayload: TablesUpdate<"products"> = payload;
         ({ error } = await supabase.from("products").update(updatePayload).eq("id", editingProduct.id));
       } else {
-        const insertPayload: TablesInsert<"products"> = payload;
+        const insertPayload: TablesInsert<"products"> = {
+          ...payload,
+          name: payload.name ?? "",
+          price: payload.price ?? 0,
+        };
         ({ error } = await supabase.from("products").insert([insertPayload]));
       }
       if (error) throw error;
