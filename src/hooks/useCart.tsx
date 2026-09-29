@@ -35,6 +35,30 @@ function writeLocalCart(items: CartItem[]) {
   localStorage.setItem(LS_KEY, JSON.stringify(items));
 }
 
+function parseCartItem(value: Json): CartItem | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const item = value as unknown as Record<string, unknown>;
+
+  if (
+    typeof item.id !== "string" ||
+    typeof item.name !== "string" ||
+    typeof item.price !== "number" ||
+    typeof item.quantity !== "number"
+  ) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    ...(typeof item.image_url === "string" ? { image_url: item.image_url } : {}),
+    ...(typeof item.stock_quantity === "number" ? { stock_quantity: item.stock_quantity } : {}),
+  };
+}
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [items, setItemsRaw] = useState<CartItem[]>(readLocalCart);
@@ -60,24 +84,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       const { data } = await supabase.from("carts").select("items").eq("user_id", user.id).maybeSingle();
       if (data?.items && Array.isArray(data.items)) {
-        const cloudItems: CartItem[] = data.items.flatMap((item): CartItem[] => {
-          if (!item || typeof item !== "object" || Array.isArray(item)) return [];
-          const value = item as Record<string, unknown>;
-          if (
-            typeof value.id !== "string" ||
-            typeof value.name !== "string" ||
-            typeof value.price !== "number" ||
-            typeof value.quantity !== "number"
-          ) return [];
-          return [{
-            id: value.id,
-            name: value.name,
-            price: value.price,
-            quantity: value.quantity,
-            ...(typeof value.image_url === "string" ? { image_url: value.image_url } : {}),
-            ...(typeof value.stock_quantity === "number" ? { stock_quantity: value.stock_quantity } : {}),
-          }];
-        });
+        const cloudItems: CartItem[] = data.items
+          .map(parseCartItem)
+          .filter((item): item is CartItem => item !== null);
         setItems((local) => {
           const merged = [...cloudItems];
           for (const localItem of local) {
