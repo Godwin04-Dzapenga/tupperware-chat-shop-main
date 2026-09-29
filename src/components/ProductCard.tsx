@@ -48,10 +48,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
       onMouseLeave={() => setHovered(false)}
       onClick={handleCardClick}
     >
-      {/* ── IMAGE BLOCK ── */}
       <div className="relative overflow-hidden bg-[#f6f6f6] aspect-square w-full">
-
-        {/* Product image */}
         {product.video_url && !imgError ? (
           <video
             src={product.video_url}
@@ -68,32 +65,12 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-[1.04]"
           />
         )}
-
-        {/* Out of stock wash */}
-        {outOfStock && (
-          <div className="absolute inset-0 bg-white/60" />
-        )}
-
-        {/* ── BADGES (top-left) ── */}
+        {outOfStock && <div className="absolute inset-0 bg-white/60" />}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-          {outOfStock && (
-            <span className="inline-block rounded-sm bg-[#1c1c1c] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-              Sold out
-            </span>
-          )}
-          {lowStock && !outOfStock && (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-amber-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-              <AlertTriangle className="h-2.5 w-2.5" /> {stock} left
-            </span>
-          )}
-          {rating >= 4.5 && reviewCount >= 3 && !outOfStock && (
-            <span className="inline-block rounded-sm bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-              Best seller
-            </span>
-          )}
+          {outOfStock && <span className="inline-block rounded-sm bg-[#1c1c1c] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">Sold out</span>}
+          {lowStock && !outOfStock && <span className="inline-flex items-center gap-1 rounded-sm bg-amber-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"><AlertTriangle className="h-2.5 w-2.5" /> {stock} left</span>}
+          {rating >= 4.5 && reviewCount >= 3 && !outOfStock && <span className="inline-block rounded-sm bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">Best seller</span>}
         </div>
-
-        {/* ── WISHLIST (top-right) ── */}
         <button
           aria-label={wishlisted ? "Remove from wishlist" : "Save"}
           onClick={e => { e.stopPropagation(); toggleWishlist(product.id, product.name); }}
@@ -102,90 +79,53 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
         >
           <Heart className={`h-4 w-4 transition-colors ${wishlisted ? "fill-red-500 text-red-500" : "text-[#1c1c1c]"}`} />
         </button>
-
-        {/* ── QUICK-ADD BUTTON (bottom, slides up on hover) ── */}
         {!outOfStock && (
-          <div
-            className={`absolute inset-x-0 bottom-0 z-10 px-3 pb-3 transition-all duration-300 ease-in-out
-              ${hovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
-          >
+          <div className={`absolute inset-x-0 bottom-0 z-10 px-3 pb-3 transition-all duration-300 ease-in-out
+              ${hovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
             <button
-              onClick={e => { e.stopPropagation(); onAddToCart ? onAddToCart(product) : onOrder(product); }}
+              onClick={e => {
+                e.stopPropagation();
+                if (onAddToCart) {
+                  onAddToCart(product);
+                } else {
+                  onOrder(product);
+                }
+              }}
               className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all duration-150 rounded-sm shadow
-                ${inCart
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white"
-                }`}
+                ${inCart ? "bg-emerald-600 text-white" : "bg-white text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white"}`}
             >
-              {inCart
-                ? <><CheckCircle2 className="h-3.5 w-3.5" /> Added</>
-                : <><ShoppingCart className="h-3.5 w-3.5" /> Add to cart</>
-              }
+              {inCart ? <><CheckCircle2 className="h-3.5 w-3.5" /> Added</> : <><ShoppingCart className="h-3.5 w-3.5" /> Add to cart</>}
             </button>
           </div>
         )}
-
-        {/* ── QUICK VIEW (center, appears on hover) ── */}
         {onQuickView && (
           <div className={`absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-200 ${hovered && !outOfStock ? "opacity-100" : "opacity-0"}`}>
             <button
               onClick={e => { e.stopPropagation(); onQuickView(product); }}
               className="flex items-center gap-1.5 rounded-sm bg-white/95 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-widest text-[#1c1c1c] shadow-lg hover:bg-[#1c1c1c] hover:text-white transition-colors duration-150"
-              style={{ marginBottom: 48 }} // sit above the quick-add button
+              style={{ marginBottom: 48 }}
             >
               <Eye className="h-3.5 w-3.5" /> Quick view
             </button>
           </div>
         )}
       </div>
-
-      {/* ── INFO BLOCK ── */}
       <div className="mt-3 flex flex-col gap-1 px-0.5">
-
-        {/* Vendor line */}
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Tupperware
-        </p>
-
-        {/* Product name */}
-        <h3 className="text-sm font-medium leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">
-          {product.name}
-        </h3>
-
-        {/* Star rating */}
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tupperware</p>
+        <h3 className="text-sm font-medium leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">{product.name}</h3>
         {reviewCount > 0 && (
           <div className="flex items-center gap-1">
             <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map(s => (
-                <Star
-                  key={s}
-                  className={`h-3 w-3 ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-none text-gray-200"}`}
-                />
-              ))}
+              {[1, 2, 3, 4, 5].map(s => <Star key={s} className={`h-3 w-3 ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-none text-gray-200"}`} />)}
             </div>
             <span className="text-[10px] text-muted-foreground">({reviewCount})</span>
           </div>
         )}
-
-        {/* Price row */}
         <div className="flex items-baseline gap-2 mt-0.5">
-          <span className={`text-sm font-semibold ${outOfStock ? "text-muted-foreground" : "text-[#1c1c1c]"}`}>
-            ${product.price.toFixed(2)}
-          </span>
-          {outOfStock && (
-            <span className="text-xs text-muted-foreground">Sold out</span>
-          )}
+          <span className={`text-sm font-semibold ${outOfStock ? "text-muted-foreground" : "text-[#1c1c1c]"}`}>${product.price.toFixed(2)}</span>
+          {outOfStock && <span className="text-xs text-muted-foreground">Sold out</span>}
         </div>
-
-        {/* WhatsApp order fallback */}
-        {!outOfStock && (
-          <button
-            onClick={e => { e.stopPropagation(); onOrder(product); }}
-            className="mt-1 self-start text-[10px] font-semibold text-primary underline underline-offset-2 hover:text-primary/70 transition-colors"
-          >
-            Order via WhatsApp →
-          </button>
-        )}
+        {!outOfStock && <button onClick={e => { e.stopPropagation(); onOrder(product); }} className="mt-1 self-start text-[10px] font-semibold text-primary underline underline-offset-2 hover:text-primary/70 transition-colors">Order via WhatsApp →</button>}
       </div>
     </div>
   );
