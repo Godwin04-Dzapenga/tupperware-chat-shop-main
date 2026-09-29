@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { z } from "zod";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import {
   Plus, Download, Edit, Trash2, TrendingUp, TrendingDown,
   DollarSign, FileText, Filter, Search, ArrowUpRight,
@@ -128,7 +129,7 @@ export const AccountingManager = () => {
       .lte("transaction_date", dateTo + "T23:59:59")
       .order("transaction_date", { ascending: false });
     if (error) toast.error("Failed to load transactions");
-    else setTransactions(data || []);
+    else setTransactions((data || []).map(t => ({ ...t, transaction_type: t.transaction_type as "income" | "expense" })));
     setLoading(false);
   };
 
@@ -197,9 +198,14 @@ export const AccountingManager = () => {
         payment_method: form.payment_method || null,
         status: form.status || "completed",
       });
-      const { error } = editing
-        ? await supabase.from("transactions").update(payload).eq("id", editing.id)
-        : await supabase.from("transactions").insert([payload]);
+      let error;
+      if (editing) {
+        const updatePayload: TablesUpdate<"transactions"> = payload;
+        ({ error } = await supabase.from("transactions").update(updatePayload).eq("id", editing.id));
+      } else {
+        const insertPayload: TablesInsert<"transactions"> = payload;
+        ({ error } = await supabase.from("transactions").insert([insertPayload]));
+      }
       if (error) throw error;
       toast.success(editing ? "Transaction updated!" : "Transaction recorded!");
       setDialogOpen(false); resetForm(); fetchTransactions();
