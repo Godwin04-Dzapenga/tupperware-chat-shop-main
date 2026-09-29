@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface CartItem {
   id: string;
@@ -49,7 +50,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const syncToCloud = useCallback(async (cartItems: CartItem[]) => {
     if (!user) return;
     await supabase.from("carts").upsert(
-      { user_id: user.id, items: cartItems as any, updated_at: new Date().toISOString() },
+      { user_id: user.id, items: cartItems as unknown as Json, updated_at: new Date().toISOString() },
       { onConflict: "user_id" }
     );
   }, [user]);
@@ -59,7 +60,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       const { data } = await supabase.from("carts").select("items").eq("user_id", user.id).maybeSingle();
       if (data?.items && Array.isArray(data.items)) {
-        const cloudItems = data.items as CartItem[];
+        const cloudItems = data.items.filter((item): item is CartItem => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+          const value = item as Record<string, unknown>;
+          return typeof value.id === "string" &&
+            typeof value.name === "string" &&
+            typeof value.price === "number" &&
+            typeof value.quantity === "number";
+        }).map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image_url: typeof item.image_url === "string" ? item.image_url : null,
+          stock_quantity: typeof item.stock_quantity === "number" ? item.stock_quantity : undefined,
+        }));
         setItems((local) => {
           const merged = [...cloudItems];
           for (const localItem of local) {
