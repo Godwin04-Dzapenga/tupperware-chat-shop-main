@@ -203,7 +203,12 @@ export const AccountingManager = () => {
         const updatePayload: TablesUpdate<"transactions"> = payload;
         ({ error } = await supabase.from("transactions").update(updatePayload).eq("id", editing.id));
       } else {
-        const insertPayload: TablesInsert<"transactions"> = payload;
+        const insertPayload: TablesInsert<"transactions"> = {
+          ...payload,
+          amount: payload.amount ?? 0,
+          category: payload.category ?? "",
+          transaction_type: payload.transaction_type ?? "income",
+        };
         ({ error } = await supabase.from("transactions").insert([insertPayload]));
       }
       if (error) throw error;
