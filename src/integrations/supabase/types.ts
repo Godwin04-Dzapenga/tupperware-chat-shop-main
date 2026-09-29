@@ -118,6 +118,47 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          id: string
+          product_id: string
+          user_id: string
+          order_id: string | null
+          rating: number
+          comment: string | null
+          verified: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          user_id: string
+          order_id?: string | null
+          rating: number
+          comment?: string | null
+          verified?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          user_id?: string
+          order_id?: string | null
+          rating?: number
+          comment?: string | null
+          verified?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           created_at: string
