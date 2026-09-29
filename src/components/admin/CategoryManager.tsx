@@ -99,7 +99,11 @@ export const CategoryManager = ({ categories, onUpdate }: CategoryManagerProps) 
         const updatePayload: TablesUpdate<"categories"> = payload;
         ({ error } = await supabase.from("categories").update(updatePayload).eq("id", editing.id));
       } else {
-        const insertPayload: TablesInsert<"categories"> = payload;
+        const insertPayload: TablesInsert<"categories"> = {
+          ...payload,
+          name: payload.name ?? "",
+          slug: payload.slug ?? "",
+        };
         ({ error } = await supabase.from("categories").insert([insertPayload]));
       }
 
