@@ -96,7 +96,7 @@ export default function Checkout() {
     try {
       const res = await supabase.functions.invoke("checkout", {
         body: {
-          items: items.map(i => ({ product_id: i.id, quantity: i.quantity })),
+          items: items.map(i => ({ product_id: i.product_id || i.id, variant_id: i.variant_id || undefined, quantity: i.quantity })),
           shipping: { name: shipping.name, phone: shipping.phone, line1: shipping.line1, city: shipping.city, country: shipping.country },
           payment_method: paymentMethod,
           coupon_code: couponApplied ? couponCode.toUpperCase() : undefined,
@@ -285,7 +285,7 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm leading-snug text-[#1c1c1c]">{item.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">Unit price: <span className="font-semibold">${item.price.toFixed(2)}</span></p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.variant_name ? "Variant: " + item.variant_name + " • " : ""}Unit price: <span className="font-semibold">${item.price.toFixed(2)}</span></p>
                         {/* Qty stepper — Amazon style */}
                         <div className="flex items-center gap-3 mt-2.5">
                           <div className="flex items-center border rounded-sm overflow-hidden bg-[#f6f6f6]">
