@@ -111,7 +111,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
         )}
       </div>
       <div className="mt-3 flex flex-col gap-1 px-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tupperware</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Solar & Electronics</p>
         <h3 className="text-sm font-medium leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">{product.name}</h3>
         {reviewCount > 0 && (
           <div className="flex items-center gap-1">
