@@ -123,11 +123,9 @@ const Auth = () => {
           {/* Header branding */}
           <div className="flex flex-col items-center text-center mb-4">
             <div className="relative mb-2 p-1.5 rounded-xl bg-white border border-slate-200/50 shadow-sm">
-              {logoImage ? (
-                <img src={logoImage} alt="Tech Innovation" className="h-8 w-auto rounded object-contain" />
-              ) : (
-                <Shield className="h-5 w-5 text-primary" />
-              )}
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                <Sun className="h-5 w-5 text-amber-500" />
+              </div>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Tech Innovation
