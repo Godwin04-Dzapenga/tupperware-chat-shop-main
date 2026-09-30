@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import logoImage from "@/assets/tuppafrica-logo.jpg";
+
 import {
   ArrowLeft, ShoppingBag, MapPin, CreditCard, CheckCircle2,
   Truck, Tag, MessageCircle, Banknote, Loader2, Shield,
@@ -124,7 +124,7 @@ export default function Checkout() {
       `*Total: $${finalTotal.toFixed(2)}*\n\n` +
       `Please confirm availability and delivery details. Thank you!`
     );
-    window.open(`https://wa.me/2630784721912?text=${msg}`, "_blank");
+    window.open(`https://wa.me/263778158984?text=${msg}`, "_blank");
   };
 
   // ── Empty cart ────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-[#f6f6f6] flex flex-col">
         <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-          <img src={logoImage} alt="TuppAfrica" className="h-8 w-auto" />
+          <div className="flex items-center gap-2 font-black text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 text-slate-950">☀</span> TECH INNOVATION</div>
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border overflow-hidden">
@@ -154,7 +154,7 @@ export default function Checkout() {
                 <CheckCircle2 className="h-8 w-8 shrink-0" />
                 <div>
                   <h1 className="text-xl font-extrabold">Order placed successfully!</h1>
-                  <p className="text-emerald-100 text-sm mt-0.5">Thank you for shopping with TuppAfrica 🎉</p>
+                  <p className="text-emerald-100 text-sm mt-0.5">Thank you for shopping with Tech Innovation 🎉</p>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function Checkout() {
             <ArrowLeft className="h-4 w-4" /> Shop
           </button>
           <div className="h-5 w-px bg-border" />
-          <img src={logoImage} alt="TuppAfrica" className="h-8 w-auto" />
+          <div className="flex items-center gap-2 font-black text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 text-slate-950">☀</span> TECH INNOVATION</div>
 
           {/* Step breadcrumb — Amazon style */}
           <div className="ml-auto hidden sm:flex items-center gap-1">
@@ -621,7 +621,7 @@ export default function Checkout() {
                 {/* Security note */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Lock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span>Prices verified server-side. Your payment details are never stored by TuppAfrica.</span>
+                  <span>Prices verified server-side. Your payment details are never stored by Tech Innovation.</span>
                 </div>
 
                 {/* CTA */}
@@ -634,7 +634,7 @@ export default function Checkout() {
                     }
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    By placing your order you agree to TuppAfrica's terms of service.
+                    By placing your order you agree to Tech Innovation's terms of service.
                   </p>
 
                   {/* WhatsApp escape hatch */}
