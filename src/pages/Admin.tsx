@@ -406,7 +406,7 @@ const Admin = () => {
                 <Shield className="h-4 w-4"/>
               </div>
               <div>
-                <p className="text-sm font-extrabold leading-none">TuppAfrica</p>
+                <p className="text-sm font-extrabold leading-none">Tech Innovation</p>
                 <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Admin Dashboard</p>
               </div>
             </div>
