@@ -8,6 +8,9 @@ interface Product {
   id: string; name: string; description: string | null; price: number;
   category_id: string | null; image_url: string | null; video_url?: string | null;
   stock_quantity?: number; avg_rating?: number; review_count?: number;
+  brand?: string | null; model_number?: string | null; product_type?: string;
+  variant_count?: number;
+  variant_names?: string[];
 }
 
 interface Props {
@@ -111,7 +114,12 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
         )}
       </div>
       <div className="mt-3 flex flex-col gap-1 px-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Solar & Electronics</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700">{product.brand || "Tech Innovation"}</p>
+          {product.variant_count && product.variant_count > 0 && (
+            <span className="text-[10px] font-semibold text-muted-foreground">{product.variant_count} options</span>
+          )}
+        </div>
         <h3 className="text-sm font-medium leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">{product.name}</h3>
         {reviewCount > 0 && (
           <div className="flex items-center gap-1">
@@ -121,10 +129,19 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
             <span className="text-[10px] text-muted-foreground">({reviewCount})</span>
           </div>
         )}
-        <div className="flex items-baseline gap-2 mt-0.5">
-          <span className={`text-sm font-semibold ${outOfStock ? "text-muted-foreground" : "text-[#1c1c1c]"}`}>${product.price.toFixed(2)}</span>
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className={`text-lg font-extrabold ${outOfStock ? "text-muted-foreground" : "text-[#111]"}`}>${product.price.toFixed(2){'}'}</span>
+          {product.variant_count && product.variant_count > 0 && <span className="text-[10px] text-muted-foreground">starting price</span>}
           {outOfStock && <span className="text-xs text-muted-foreground">Sold out</span>}
         </div>
+        {product.variant_count && product.variant_count > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {(product.variant_names || []).slice(0, 3).map(name => (
+              <span key={name} className="rounded border bg-slate-50 px-1.5 py-0.5 text-[9px] text-slate-600">{name}</span>
+            ))}
+            {product.variant_count > 3 && <span className="text-[9px] text-blue-700">+ more</span>}
+          </div>
+        )}
         {!outOfStock && <button onClick={e => { e.stopPropagation(); onOrder(product); }} className="mt-1 self-start text-[10px] font-semibold text-primary underline underline-offset-2 hover:text-primary/70 transition-colors">Order via WhatsApp →</button>}
       </div>
     </div>
