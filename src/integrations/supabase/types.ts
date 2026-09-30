@@ -139,6 +139,59 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          id: string
+          product_id: string
+          name: string
+          sku: string | null
+          price: number
+          stock_quantity: number
+          image_url: string | null
+          attributes: Json
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          name: string
+          sku?: string | null
+          price: number
+          stock_quantity?: number
+          image_url?: string | null
+          attributes?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          name?: string
+          sku?: string | null
+          price?: number
+          stock_quantity?: number
+          image_url?: string | null
+          attributes?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -320,6 +373,8 @@ export type Database = {
           id: string
           order_id: string
           product_id: string | null
+          variant_id: string | null
+          variant_name: string | null
           product_name: string
           quantity: number
           unit_price: number
@@ -329,6 +384,8 @@ export type Database = {
           id?: string
           order_id: string
           product_id?: string | null
+          variant_id?: string | null
+          variant_name?: string | null
           product_name: string
           quantity: number
           unit_price: number
@@ -338,6 +395,8 @@ export type Database = {
           id?: string
           order_id?: string
           product_id?: string | null
+          variant_id?: string | null
+          variant_name?: string | null
           product_name?: string
           quantity?: number
           unit_price?: number
