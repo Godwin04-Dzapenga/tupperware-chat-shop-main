@@ -301,7 +301,7 @@ const SolarHome = () => {
 
             <div>
               {loading ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="animate-pulse"><div className="aspect-square rounded bg-slate-200" /><div className="mt-3 h-3 w-1/3 rounded bg-slate-200" /><div className="mt-2 h-4 w-4/5 rounded bg-slate-200" /><div className="mt-2 h-5 w-1/3 rounded bg-slate-200" /></div>)}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="animate-pulse"><div className="aspect-square rounded bg-slate-200" /><div className="mt-3 h-3 w-1/3 rounded bg-slate-200" /><div className="mt-2 h-4 w-4/5 rounded bg-slate-200" /><div className="mt-2 h-5 w-1/3 rounded bg-slate-200" /></div>)}</div>
               ) : filteredProducts.length === 0 ? (
                 <div className="rounded-lg border bg-white px-6 py-20 text-center">
                   <Search className="mx-auto h-10 w-10 text-slate-300" />
