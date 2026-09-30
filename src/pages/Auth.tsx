@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock, Mail, User, Sparkles, Shield } from "lucide-react";
-import logoImage from "@/assets/tuppafrica-logo.jpg";
-import heroImage from "@/assets/hero-tupperware.jpg";
+import { ArrowLeft, Lock, Mail, User, Sparkles, Shield, Sun } from "lucide-react";
+
+
 
 const emailSchema = z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" }).max(100, { message: "Password must be less than 100 characters" });
@@ -100,7 +100,7 @@ const Auth = () => {
       }}
     >
       {/* Blue tinted overlay matching the website's brand tone */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 via-sky-900/60 to-teal-900/50 backdrop-blur-[4px] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-amber-950/50 backdrop-blur-[4px] pointer-events-none" />
 
       {/* Main Glassmorphic Wrapper */}
       <div className="relative w-full max-w-[390px] z-10 transition-all duration-300">
@@ -124,16 +124,16 @@ const Auth = () => {
           <div className="flex flex-col items-center text-center mb-4">
             <div className="relative mb-2 p-1.5 rounded-xl bg-white border border-slate-200/50 shadow-sm">
               {logoImage ? (
-                <img src={logoImage} alt="TuppAfrica Logo" className="h-8 w-auto rounded object-contain" />
+                <img src={logoImage} alt="Tech Innovation" className="h-8 w-auto rounded object-contain" />
               ) : (
                 <Shield className="h-5 w-5 text-primary" />
               )}
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
-              TuppAfrica
+              Tech Innovation
             </h2>
             <p className="text-[11px] text-slate-500 font-medium">
-              Premium bottle and container collections.
+              Solar, backup power & electronics for Zimbabwe.
             </p>
           </div>
 
