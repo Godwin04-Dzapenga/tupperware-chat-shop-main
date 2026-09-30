@@ -48,6 +48,7 @@ export const Cart = ({ onOrder }: CartProps) => {
                 )}
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                  {item.variant_name && <p className="text-[10px] font-semibold text-[#0046be]">{item.variant_name}</p>}
                   <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} each</p>
                   <div className="flex items-center gap-1.5 mt-2">
                     <button
