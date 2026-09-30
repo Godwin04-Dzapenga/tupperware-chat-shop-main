@@ -96,7 +96,7 @@ const Auth = () => {
     <div 
       className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 select-none font-sans bg-cover bg-center"
       style={{ 
-        backgroundImage: `url(${heroImage})` 
+        backgroundImage: "radial-gradient(circle at 75% 20%, rgba(245,158,11,.28), transparent 30%), linear-gradient(135deg,#020617 0%,#0f172a 55%,#451a03 100%)" 
       }}
     >
       {/* Blue tinted overlay matching the website's brand tone */}
