@@ -15,6 +15,7 @@ import Orders from "./pages/Orders";
 import About from "./pages/About";
 import Account from "./pages/Account";
 import ProductDetail from "./pages/ProductDetail";
+import ProductVariantsAdmin from "./pages/ProductVariantsAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
                 <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+                <Route path="/admin/products/:id/variants" element={<ProtectedRoute requireAdmin><ProductVariantsAdmin /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </WishlistProvider>
