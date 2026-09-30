@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -119,7 +119,7 @@ All colors MUST be HSL.
   h4,
   h5,
   h6 {
-    font-family: "Playfair Display", serif;
+    font-family: "Inter", sans-serif;
   }
 
   ::selection {
@@ -224,3 +224,12 @@ body { transform-style: preserve-3d; }
   border-radius: 999px;
   box-shadow: 0 0 6px hsl(180 65% 45% / 0.3);
 }
+
+
+/* Tech Innovation storefront utilities */
+.store-shell { width: min(100% - 32px, 1440px); margin-inline: auto; }
+@media (max-width: 640px) { .store-shell { width: min(100% - 24px, 1440px); } }
+
+.store-section { scroll-margin-top: 150px; }
+.product-card-pro { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.product-card-pro:hover { transform: translateY(-3px); box-shadow: 0 14px 35px -18px rgba(15,23,42,.35); }
