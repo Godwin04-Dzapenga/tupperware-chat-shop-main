@@ -7,7 +7,7 @@ import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/hooks/useCart";
 import { WishlistProvider } from "@/hooks/useWishlist";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
+import SolarHome from "./pages/SolarHome";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
@@ -29,7 +29,7 @@ const App = () => (
           <CartProvider>
             <WishlistProvider>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<SolarHome />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
