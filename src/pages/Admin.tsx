@@ -45,6 +45,14 @@ const productSchema = z.object({
   video_url: z.string().url().optional().nullable().or(z.literal("")),
   is_featured: z.boolean().optional(),
   is_active: z.boolean().optional(),
+  product_type: z.string().max(50).optional(),
+  brand: z.string().max(100).optional().nullable(),
+  model_number: z.string().max(100).optional().nullable(),
+  power_watts: z.number().min(0).optional().nullable(),
+  voltage: z.string().max(50).optional().nullable(),
+  capacity: z.string().max(100).optional().nullable(),
+  warranty_months: z.number().int().min(0).optional().nullable(),
+  installation_required: z.boolean().optional(),
 });
 
 interface Product {
@@ -54,6 +62,9 @@ interface Product {
   stock_quantity: number; reorder_level: number;
   sku: string | null; is_featured?: boolean; is_active?: boolean;
   avg_rating?: number; review_count?: number;
+  product_type?: string; brand?: string | null; model_number?: string | null;
+  power_watts?: number | null; voltage?: string | null; capacity?: string | null;
+  warranty_months?: number | null; installation_required?: boolean;
 }
 interface Category { id: string; name: string; slug: string; }
 
@@ -62,6 +73,8 @@ const EMPTY_FORM = {
   category_id:"", image_url:"", video_url:"",
   stock_quantity:"0", reorder_level:"10", sku:"",
   is_featured: false, is_active: true,
+  product_type: "general", brand: "", model_number: "", power_watts: "",
+  voltage: "", capacity: "", warranty_months: "", installation_required: false,
 };
 
 const fmt = (n: number) => `$${n.toLocaleString("en-US",{minimumFractionDigits:2})}`;
@@ -130,6 +143,14 @@ const Admin = () => {
         sku: formData.sku.trim()||null,
         is_featured: formData.is_featured,
         is_active: formData.is_active,
+        product_type: formData.product_type.trim() || "general",
+        brand: formData.brand.trim() || null,
+        model_number: formData.model_number.trim() || null,
+        power_watts: formData.power_watts === "" ? null : parseFloat(formData.power_watts),
+        voltage: formData.voltage.trim() || null,
+        capacity: formData.capacity.trim() || null,
+        warranty_months: formData.warranty_months === "" ? null : parseInt(formData.warranty_months),
+        installation_required: formData.installation_required,
       });
 
       let error;
@@ -162,6 +183,9 @@ const Admin = () => {
       video_url:p.video_url||"", stock_quantity:p.stock_quantity.toString(),
       reorder_level:p.reorder_level.toString(), sku:p.sku||"",
       is_featured:p.is_featured??false, is_active:p.is_active??true,
+      product_type:p.product_type||"general", brand:p.brand||"", model_number:p.model_number||"",
+      power_watts:p.power_watts?.toString()||"", voltage:p.voltage||"", capacity:p.capacity||"",
+      warranty_months:p.warranty_months?.toString()||"", installation_required:p.installation_required??false,
     });
     setImageFile(null); setVideoFile(null);
     setDialogOpen(true);
@@ -237,6 +261,39 @@ const Admin = () => {
           <div className="space-y-1.5">
             <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Description</Label>
             <Textarea rows={3} placeholder="Describe the product…" value={formData.description} onChange={e=>setFormData(f=>({...f,description:e.target.value}))} className="rounded-xl resize-none text-sm"/>
+          </div>
+
+          {/* Solar / electronics technical details */}
+          <div className="rounded-2xl border bg-muted/20 p-4 space-y-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-primary">Technical details</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Use these fields for solar panels, batteries, inverters and electronics.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Product type</Label>
+                <Select value={formData.product_type} onValueChange={v=>setFormData(f=>({...f,product_type:v}))}>
+                  <SelectTrigger className="rounded-xl h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="solar_panel">Solar panel</SelectItem>
+                    <SelectItem value="inverter">Inverter</SelectItem>
+                    <SelectItem value="battery">Battery</SelectItem>
+                    <SelectItem value="solar_kit">Solar kit</SelectItem>
+                    <SelectItem value="electronics">Electronics</SelectItem>
+                    <SelectItem value="electrical">Electrical</SelectItem>
+                    <SelectItem value="accessory">Accessory</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Brand</Label><Input value={formData.brand} onChange={e=>setFormData(f=>({...f,brand:e.target.value}))} className="rounded-xl h-9" placeholder="e.g. Deye, Felicity, Jinko"/></div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Model</Label><Input value={formData.model_number} onChange={e=>setFormData(f=>({...f,model_number:e.target.value}))} className="rounded-xl h-9"/></div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Power (W)</Label><Input type="number" min="0" step="0.01" value={formData.power_watts} onChange={e=>setFormData(f=>({...f,power_watts:e.target.value}))} className="rounded-xl h-9" placeholder="550"/></div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Voltage</Label><Input value={formData.voltage} onChange={e=>setFormData(f=>({...f,voltage:e.target.value}))} className="rounded-xl h-9" placeholder="48V / 230V"/></div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Capacity</Label><Input value={formData.capacity} onChange={e=>setFormData(f=>({...f,capacity:e.target.value}))} className="rounded-xl h-9" placeholder="5kWh / 200Ah"/></div>
+              <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Warranty (months)</Label><Input type="number" min="0" value={formData.warranty_months} onChange={e=>setFormData(f=>({...f,warranty_months:e.target.value}))} className="rounded-xl h-9"/></div>
+              <div className="flex items-center gap-3 rounded-xl border bg-white px-3"><Switch checked={formData.installation_required} onCheckedChange={v=>setFormData(f=>({...f,installation_required:v}))}/><span className="text-xs font-semibold">Installation required</span></div>
+            </div>
           </div>
 
           {/* Pricing */}
