@@ -67,6 +67,15 @@ export type Database = {
           video_url: string | null
           is_active: boolean
           is_featured: boolean
+          product_type: string
+          brand: string | null
+          model_number: string | null
+          power_watts: number | null
+          voltage: string | null
+          capacity: string | null
+          warranty_months: number | null
+          installation_required: boolean
+          specifications: Json
         }
         Insert: {
           category_id?: string | null
@@ -84,6 +93,24 @@ export type Database = {
           video_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          product_type?: string
+          brand?: string | null
+          model_number?: string | null
+          power_watts?: number | null
+          voltage?: string | null
+          capacity?: string | null
+          warranty_months?: number | null
+          installation_required?: boolean
+          specifications?: Json
+          product_type?: string
+          brand?: string | null
+          model_number?: string | null
+          power_watts?: number | null
+          voltage?: string | null
+          capacity?: string | null
+          warranty_months?: number | null
+          installation_required?: boolean
+          specifications?: Json
         }
         Update: {
           category_id?: string | null
