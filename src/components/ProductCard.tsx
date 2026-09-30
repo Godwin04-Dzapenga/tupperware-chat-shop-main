@@ -46,12 +46,12 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
 
   return (
     <div
-      className="group relative flex flex-col bg-white cursor-pointer"
+      className="product-card-pro group relative flex min-w-0 flex-col rounded-lg border border-slate-200 bg-white p-2.5 cursor-pointer sm:p-3"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleCardClick}
     >
-      <div className="relative overflow-hidden bg-[#f6f6f6] aspect-square w-full">
+      <div className="relative overflow-hidden rounded-md bg-[#f6f6f6] aspect-square w-full">
         {product.video_url && !imgError ? (
           <video
             src={product.video_url}
@@ -113,14 +113,14 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
           </div>
         )}
       </div>
-      <div className="mt-3 flex flex-col gap-1 px-0.5">
+      <div className="mt-3 flex min-w-0 flex-col gap-1 px-0.5 pb-1">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700">{product.brand || "Tech Innovation"}</p>
           {product.variant_count && product.variant_count > 0 && (
             <span className="text-[10px] font-semibold text-muted-foreground">{product.variant_count} options</span>
           )}
         </div>
-        <h3 className="text-sm font-medium leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">{product.name}</h3>
+        <h3 className="text-sm font-semibold leading-snug text-[#1c1c1c] line-clamp-2 group-hover:underline underline-offset-2 decoration-[1px]">{product.name}</h3>
         {reviewCount > 0 && (
           <div className="flex items-center gap-1">
             <div className="flex items-center gap-0.5">
@@ -130,7 +130,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
           </div>
         )}
         <div className="flex items-baseline gap-2 mt-1">
-          <span className={`text-lg font-extrabold ${outOfStock ? "text-muted-foreground" : "text-[#111]"}`}>${product.price.toFixed(2)}</span>
+          <span className={`text-base font-extrabold sm:text-lg ${outOfStock ? "text-muted-foreground" : "text-[#111]"}`}>${product.price.toFixed(2)}</span>
           {product.variant_count && product.variant_count > 0 && <span className="text-[10px] text-muted-foreground">starting price</span>}
           {outOfStock && <span className="text-xs text-muted-foreground">Sold out</span>}
         </div>
