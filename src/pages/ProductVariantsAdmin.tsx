@@ -170,7 +170,7 @@ export default function ProductVariantsAdmin() {
                 <div className="md:col-span-4 space-y-1.5">
                   <Label>Technical attributes (JSON)</Label>
                   <Textarea rows={3} value={JSON.stringify(variant.attributes || {}, null, 2)} onChange={e => editAttributes(index, e.target.value)} className="font-mono text-xs" />
-                  <p className="text-[10px] text-slate-500">Example: {"power":"5kVA","voltage":"48V","phase":"Single Phase"}</p>
+                  <p className="text-[10px] text-slate-500">Example: {"{\"power\":\"5kVA\",\"voltage\":\"48V\"}"}</p>
                 </div>
               </div>
             </div>
