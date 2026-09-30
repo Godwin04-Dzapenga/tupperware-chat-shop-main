@@ -130,7 +130,7 @@ export const ProductCard = ({ product, onOrder, onQuickView, onAddToCart }: Prop
           </div>
         )}
         <div className="flex items-baseline gap-2 mt-1">
-          <span className={`text-lg font-extrabold ${outOfStock ? "text-muted-foreground" : "text-[#111]"}`}>${product.price.toFixed(2){'}'}</span>
+          <span className={`text-lg font-extrabold ${outOfStock ? "text-muted-foreground" : "text-[#111]"}`}>${product.price.toFixed(2)}</span>
           {product.variant_count && product.variant_count > 0 && <span className="text-[10px] text-muted-foreground">starting price</span>}
           {outOfStock && <span className="text-xs text-muted-foreground">Sold out</span>}
         </div>
