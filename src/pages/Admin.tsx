@@ -248,7 +248,16 @@ const Admin = () => {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{editingProduct?"Edit Product":"Add New Product"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle>{editingProduct?"Edit Product":"Add New Product"}</DialogTitle>
+            {editingProduct && (
+              <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => { setDialogOpen(false); navigate("/admin/products/" + editingProduct.id + "/variants"); }}>
+                Manage variants
+              </Button>
+            )}
+          </div>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
 
           {/* Name */}

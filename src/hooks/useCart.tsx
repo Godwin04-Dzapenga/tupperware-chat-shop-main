@@ -5,6 +5,9 @@ import type { Json } from "@/integrations/supabase/types";
 
 export interface CartItem {
   id: string;
+  product_id?: string;
+  variant_id?: string | null;
+  variant_name?: string | null;
   name: string;
   price: number;
   quantity: number;
@@ -14,7 +17,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: { id: string; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => void;
+  addToCart: (product: { id: string; product_id?: string; variant_id?: string | null; variant_name?: string | null; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -51,6 +54,9 @@ function parseCartItem(value: Json): CartItem | null {
 
   return {
     id: item.id,
+    ...(typeof item.product_id === "string" ? { product_id: item.product_id } : {}),
+    ...(typeof item.variant_id === "string" ? { variant_id: item.variant_id } : {}),
+    ...(typeof item.variant_name === "string" ? { variant_name: item.variant_name } : {}),
     name: item.name,
     price: item.price,
     quantity: item.quantity,
@@ -106,7 +112,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return () => clearTimeout(t);
   }, [items, user, syncToCloud]);
 
-  const addToCart = useCallback((product: { id: string; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => {
+  const addToCart = useCallback((product: { id: string; product_id?: string; variant_id?: string | null; variant_name?: string | null; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       const maxQty = product.stock_quantity ?? 999;

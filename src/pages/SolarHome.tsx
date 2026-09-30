@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, BatteryCharging, Bolt, CheckCircle2, ChevronDown, Menu, MessageCircle, Phone, Search, ShieldCheck, Sun, Wrench, X } from "lucide-react";
+import {
+  ArrowRight, BatteryCharging, Bolt, CheckCircle2, ChevronDown, Menu,
+  MessageCircle, Phone, Search, ShieldCheck, Sun, Wrench, X, SlidersHorizontal,
+  MapPin, UserRound, Heart, PackageCheck
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +25,11 @@ interface Product {
   stock_quantity?: number;
   avg_rating?: number;
   review_count?: number;
+  brand?: string | null;
+  model_number?: string | null;
+  product_type?: string;
+  variant_count?: number;
+  variant_names?: string[];
 }
 
 interface Category {
@@ -30,7 +39,6 @@ interface Category {
 }
 
 const WHATSAPP = "263778158984";
-const PHONE_2 = "0784721912";
 
 const SolarHome = () => {
   const navigate = useNavigate();
@@ -40,134 +48,284 @@ const SolarHome = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sort, setSort] = useState("featured");
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const [p, c] = await Promise.all([
-        supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false }),
+      setLoading(true);
+      const [p, c, v] = await Promise.all([
+        supabase.from("products").select("*").eq("is_active", true).order("is_featured", { ascending: false }).order("created_at", { ascending: false }),
         supabase.from("categories").select("*").eq("is_active", true).order("sort_order").order("name"),
+        supabase.from("product_variants").select("id,product_id,name,price,stock_quantity").eq("is_active", true).order("sort_order"),
       ]);
+
       if (p.error) toast.error("Unable to load products");
-      else setProducts(p.data || []);
+      else {
+        const variants = v.error ? [] : (v.data || []);
+        const enriched = (p.data || []).map(product => {
+          const productVariants = variants.filter(variant => variant.product_id === product.id);
+          return {
+            ...product,
+            variant_count: productVariants.length,
+            variant_names: productVariants.map(variant => variant.name),
+            price: productVariants.length ? Math.min(...productVariants.map(variant => Number(variant.price))) : product.price,
+          } as Product;
+        });
+        setProducts(enriched);
+      }
       if (!c.error) setCategories(c.data || []);
       setLoading(false);
     };
     load();
   }, []);
 
-  const filteredProducts = useMemo(() => products.filter((p) => {
-    const categoryMatch = activeCategory === "all" || p.category_id === activeCategory;
+  const brands = useMemo(
+    () => Array.from(new Set(products.map(p => p.brand).filter((b): b is string => Boolean(b)))).sort(),
+    [products]
+  );
+
+  const types = useMemo(
+    () => Array.from(new Set(products.map(p => p.product_type).filter((t): t is string => Boolean(t)))).sort(),
+    [products]
+  );
+
+  const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return categoryMatch && (!q || p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
-  }), [products, activeCategory, search]);
+    const result = products.filter((p) => {
+      const categoryMatch = activeCategory === "all" || p.category_id === activeCategory;
+      const brandMatch = brandFilter === "all" || p.brand === brandFilter;
+      const typeMatch = typeFilter === "all" || p.product_type === typeFilter;
+      const searchMatch = !q || [p.name, p.description, p.brand, p.model_number, p.product_type]
+        .filter(Boolean).join(" ").toLowerCase().includes(q);
+      return categoryMatch && brandMatch && typeMatch && searchMatch;
+    });
+
+    return [...result].sort((a, b) => {
+      if (sort === "price-low") return a.price - b.price;
+      if (sort === "price-high") return b.price - a.price;
+      if (sort === "name") return a.name.localeCompare(b.name);
+      return Number(Boolean(b.variant_count)) - Number(Boolean(a.variant_count));
+    });
+  }, [products, activeCategory, brandFilter, typeFilter, search, sort]);
 
   const orderViaWhatsApp = (product: Product) => {
     const text = encodeURIComponent(
-      `Hello Tech Innovation, I am interested in:\n\n${product.name}\nPrice: $${product.price.toFixed(2)}\n\nPlease confirm availability and installation/delivery options.`
+      `Hello Tech Innovation, I am interested in:\n\n${product.name}\nStarting price: $${product.price.toFixed(2)}\n${product.variant_count ? "Please show me the available variants.\n" : ""}\nPlease confirm availability and installation/delivery options.`
     );
     window.open(`https://wa.me/${WHATSAPP}?text=${text}`, "_blank");
   };
 
   const addProduct = (product: Product) => {
+    if (product.variant_count) {
+      navigate(`/product/${product.id}`);
+      return;
+    }
     addToCart(product);
-    toast.success(`${product.name} added to quote cart`);
+    toast.success(`${product.name} added to cart`);
   };
 
   const scrollToProducts = () => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-900">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/95 text-white backdrop-blur-xl">
-        <div className="bg-amber-400 px-4 py-1.5 text-center text-[11px] font-bold tracking-wide text-slate-950">
-          Solar • Backup Power • Batteries • Inverters • Electronics • Installation
+    <div className="min-h-screen bg-[#f4f6f8] text-[#111820]">
+      {/* Best Buy-inspired utility bar */}
+      <div className="bg-[#003b95] text-white">
+        <div className="container mx-auto flex min-h-9 items-center justify-between gap-4 px-4 text-xs">
+          <p className="hidden sm:block">Solar systems • Backup power • Electronics • Installation</p>
+          <div className="ml-auto flex items-center gap-4">
+            <span className="hidden md:inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Harare & Zimbabwe delivery</span>
+            <button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} className="font-bold hover:underline">WhatsApp sales</button>
+          </div>
         </div>
-        <div className="container mx-auto flex h-16 items-center gap-4 px-4">
-          <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-2 font-black tracking-tight">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 to-orange-500 text-slate-950 shadow-lg">
-              <Sun className="h-5 w-5" />
-            </span>
-            <span className="hidden sm:block">TECH <span className="text-amber-300">INNOVATION</span></span>
-          </button>
+      </div>
 
-          <nav className="ml-4 hidden items-center gap-1 md:flex">
-            <button onClick={scrollToProducts} className="rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white">Shop</button>
-            <Link to="/about" className="rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white">About</Link>
-            <button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} className="rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white">Get a Quote</button>
+      <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex h-[72px] items-center gap-4">
+            <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex shrink-0 items-center gap-2.5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#ffe000] text-[#111820] shadow-sm">
+                <Sun className="h-6 w-6" />
+              </span>
+              <span className="hidden text-left sm:block">
+                <span className="block text-base font-black leading-none tracking-tight">TECH INNOVATION</span>
+                <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[.2em] text-[#003b95]">Solar & Electronics</span>
+              </span>
+            </button>
+
+            <button onClick={scrollToProducts} className="hidden h-11 shrink-0 items-center gap-2 rounded-md bg-[#0046be] px-4 text-sm font-bold text-white hover:bg-[#003b95] lg:flex">
+              <Menu className="h-4 w-4" /> Departments
+            </button>
+
+            <div className="relative hidden flex-1 md:block">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="What can we help you find?"
+                className="h-11 rounded-md border-2 border-[#0046be] bg-white pl-11 pr-12 text-sm shadow-none focus-visible:ring-0"
+              />
+              {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><X className="h-4 w-4" /></button>}
+            </div>
+
+            <div className="ml-auto flex items-center gap-1">
+              <button className="hidden rounded-md p-2.5 hover:bg-slate-100 sm:block" title="Saved products"><Heart className="h-5 w-5" /></button>
+              <button onClick={() => navigate(user ? "/account" : "/auth")} className="hidden rounded-md p-2.5 hover:bg-slate-100 sm:block" title="Account"><UserRound className="h-5 w-5" /></button>
+              <Cart />
+              <button className="rounded-md p-2.5 hover:bg-slate-100 lg:hidden" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>
+            </div>
+          </div>
+
+          <nav className="hidden border-t py-2 lg:flex lg:items-center lg:gap-5">
+            {categories.slice(0, 9).map(category => (
+              <button
+                key={category.id}
+                onClick={() => { setActiveCategory(category.id); scrollToProducts(); }}
+                className="text-xs font-semibold text-slate-700 hover:text-[#0046be]"
+              >
+                {category.name}
+              </button>
+            ))}
+            <button onClick={() => { setActiveCategory("all"); scrollToProducts(); }} className="ml-auto text-xs font-bold text-[#0046be]">View all</button>
           </nav>
 
-          <div className="ml-auto hidden max-w-sm flex-1 md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search solar & electronics..." className="h-9 rounded-full border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/40" />
+          {mobileOpen && (
+            <div className="border-t py-4 lg:hidden">
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search solar & electronics" className="mb-3 h-10" />
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map(category => (
+                  <button key={category.id} onClick={() => { setActiveCategory(category.id); setMobileOpen(false); scrollToProducts(); }} className="rounded-md border bg-slate-50 px-3 py-2 text-left text-xs font-semibold">{category.name}</button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div className="ml-auto flex items-center gap-2 md:ml-2">
-            <Cart />
-            {user ? (
-              <Button variant="ghost" size="sm" onClick={() => navigate("/account")} className="hidden text-white sm:flex">Account</Button>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="hidden text-white sm:flex">Sign in</Button>
-            )}
-            <button className="rounded-lg p-2 hover:bg-white/5 md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>
-          </div>
+          )}
         </div>
-
-        {mobileOpen && (
-          <div className="border-t border-white/10 px-4 py-4 md:hidden">
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products..." className="h-10 rounded-full border-white/10 bg-white/5 pl-9 text-white" />
-            </div>
-            <div className="grid gap-1">
-              <button onClick={() => { scrollToProducts(); setMobileOpen(false); }} className="rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5">Shop</button>
-              <Link to="/about" className="rounded-lg px-3 py-2 text-sm hover:bg-white/5">About</Link>
-              <button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} className="rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5">WhatsApp / Quote</button>
-            </div>
-          </div>
-        )}
       </header>
 
       <main>
-        <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40">
-          <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 75% 30%, rgba(251,191,36,.35), transparent 28%), radial-gradient(circle at 20% 80%, rgba(14,165,233,.2), transparent 30%)" }} />
-          <div className="container relative mx-auto grid min-h-[600px] items-center gap-12 px-4 py-20 lg:grid-cols-2">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-200">
-                <Sun className="h-4 w-4" /> Power your home. Power your business.
+        {/* Promotional hero */}
+        <section className="bg-[#071c38] text-white">
+          <div className="container mx-auto grid min-h-[430px] items-center gap-8 px-4 py-12 lg:grid-cols-[1.1fr_.9fr]">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center rounded-sm bg-[#ffe000] px-3 py-1 text-xs font-black uppercase tracking-wide text-[#111820]">Power Week</span>
+              <h1 className="mt-5 text-4xl font-black leading-[1.02] sm:text-5xl lg:text-6xl">Build your power system with the right equipment.</h1>
+              <p className="mt-5 max-w-xl text-base leading-7 text-white/70">Shop panels, hybrid inverters, batteries, complete kits and electronics. Compare real variants, technical specifications, stock and prices before you buy.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button onClick={scrollToProducts} className="h-11 rounded-md bg-[#ffe000] px-6 font-black text-[#111820] hover:bg-yellow-300">Shop solar <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                <Button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} variant="outline" className="h-11 rounded-md border-white/30 bg-white/5 px-6 font-bold text-white hover:bg-white/10"><MessageCircle className="mr-2 h-4 w-4" /> Talk to an expert</Button>
               </div>
-              <h1 className="max-w-3xl text-5xl font-black leading-[.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Reliable power for a <span className="text-amber-300">brighter</span> Zimbabwe.
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-white/65 sm:text-lg">
-                Shop solar panels, inverters, batteries, backup systems and quality electronics. Get professional advice, supply, installation and after-sales support from one team.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button onClick={scrollToProducts} size="lg" className="rounded-full bg-amber-400 px-7 font-bold text-slate-950 hover:bg-amber-300">Shop products <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                <Button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} size="lg" variant="outline" className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10"><MessageCircle className="mr-2 h-4 w-4" /> Get a solar quote</Button>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-5 text-xs font-semibold text-white/60">
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-300" /> Quality equipment</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-300" /> Installation support</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-300" /> Harare delivery</span>
+              <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/70">
+                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#ffe000]" /> Genuine equipment</span>
+                <span className="inline-flex items-center gap-2"><Wrench className="h-4 w-4 text-[#ffe000]" /> Installation available</span>
+                <span className="inline-flex items-center gap-2"><PackageCheck className="h-4 w-4 text-[#ffe000]" /> Local support</span>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: Sun, title: "Solar panels", text: "450W • 550W • 600W+" },
+                { icon: Bolt, title: "Inverters", text: "3.2kVA • 5kVA • 8kVA" },
+                { icon: BatteryCharging, title: "Batteries", text: "100Ah • 200Ah • 5kWh+" },
+                { icon: ShieldCheck, title: "Complete kits", text: "Designed & supported" },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="rounded-lg border border-white/10 bg-white/[.06] p-5 backdrop-blur">
+                  <Icon className="h-7 w-7 text-[#ffe000]" />
+                  <p className="mt-8 text-sm font-black">{title}</p>
+                  <p className="mt-1 text-xs text-white/50">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute inset-8 rounded-full bg-amber-400/20 blur-3xl" />
-              <div className="relative grid grid-cols-2 gap-3">
+        {/* Category rail */}
+        <section className="border-b bg-white">
+          <div className="container mx-auto overflow-x-auto px-4">
+            <div className="flex min-w-max gap-1 py-4">
+              <button onClick={() => setActiveCategory("all")} className={`rounded-full px-4 py-2 text-xs font-bold ${activeCategory === "all" ? "bg-[#0046be] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>All products</button>
+              {categories.map(c => (
+                <button key={c.id} onClick={() => setActiveCategory(c.id)} className={`rounded-full px-4 py-2 text-xs font-bold ${activeCategory === c.id ? "bg-[#0046be] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{c.name}</button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Store */}
+        <section id="products" className="container mx-auto px-4 py-8">
+          <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.18em] text-[#0046be]">Shop Tech Innovation</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">Solar, backup power & electronics</h2>
+              <p className="mt-1 text-sm text-slate-500">{filteredProducts.length} products available</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="h-10 gap-2 rounded-md md:hidden" onClick={() => setShowFilters(!showFilters)}><SlidersHorizontal className="h-4 w-4" /> Filters</Button>
+              <div className="relative">
+                <select value={sort} onChange={e => setSort(e.target.value)} className="h-10 appearance-none rounded-md border bg-white pl-3 pr-9 text-xs font-semibold outline-none">
+                  <option value="featured">Featured</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="name">Name</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[210px_1fr]">
+            <aside className={`${showFilters ? "block" : "hidden"} rounded-lg border bg-white p-4 lg:block lg:h-fit`}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-black">Filter by</h3>
+                {(brandFilter !== "all" || typeFilter !== "all") && <button onClick={() => { setBrandFilter("all"); setTypeFilter("all"); }} className="text-[10px] font-bold text-[#0046be]">Clear</button>}
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Brand</p>
+                  <div className="space-y-2">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs"><input type="radio" checked={brandFilter === "all"} onChange={() => setBrandFilter("all")} /> All brands</label>
+                    {brands.map(brand => <label key={brand} className="flex cursor-pointer items-center gap-2 text-xs"><input type="radio" checked={brandFilter === brand} onChange={() => setBrandFilter(brand)} /> {brand}</label>)}
+                  </div>
+                </div>
+                <div className="border-t pt-4">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Product type</p>
+                  <div className="space-y-2">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs"><input type="radio" checked={typeFilter === "all"} onChange={() => setTypeFilter("all")} /> All types</label>
+                    {types.map(type => <label key={type} className="flex cursor-pointer items-center gap-2 text-xs"><input type="radio" checked={typeFilter === type} onChange={() => setTypeFilter(type)} /> {type.replaceAll("_", " ")}</label>)}
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <div>
+              {loading ? (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="animate-pulse"><div className="aspect-square rounded bg-slate-200" /><div className="mt-3 h-3 w-1/3 rounded bg-slate-200" /><div className="mt-2 h-4 w-4/5 rounded bg-slate-200" /><div className="mt-2 h-5 w-1/3 rounded bg-slate-200" /></div>)}</div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="rounded-lg border bg-white px-6 py-20 text-center">
+                  <Search className="mx-auto h-10 w-10 text-slate-300" />
+                  <h3 className="mt-4 text-lg font-black">No matching products</h3>
+                  <p className="mt-1 text-sm text-slate-500">Try another search or clear your filters.</p>
+                  <Button onClick={() => { setSearch(""); setActiveCategory("all"); setBrandFilter("all"); setTypeFilter("all"); }} className="mt-5 rounded-md bg-[#0046be]">Clear filters</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-12 sm:grid-cols-3 xl:grid-cols-4">
+                  {filteredProducts.map(product => (
+                    <ProductCard key={product.id} product={product} onOrder={orderViaWhatsApp} onAddToCart={addProduct} />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-12 grid gap-3 border-t pt-8 sm:grid-cols-3">
                 {[
-                  { icon: Sun, title: "Solar", text: "Panels & complete systems" },
-                  { icon: BatteryCharging, title: "Batteries", text: "Reliable energy storage" },
-                  { icon: Bolt, title: "Inverters", text: "Stable backup power" },
-                  { icon: Wrench, title: "Installation", text: "Professional setup" },
+                  { icon: ShieldCheck, title: "Quality checked", text: "Product information and stock are managed from our catalogue." },
+                  { icon: Wrench, title: "Installation support", text: "Ask about system design and professional installation." },
+                  { icon: MessageCircle, title: "Zimbabwe support", text: "Talk to our team on WhatsApp before you buy." },
                 ].map(({ icon: Icon, title, text }) => (
-                  <div key={title} className="rounded-3xl border border-white/10 bg-white/[.06] p-6 backdrop-blur-xl">
-                    <Icon className="mb-8 h-8 w-8 text-amber-300" />
-                    <p className="font-bold text-white">{title}</p>
-                    <p className="mt-1 text-xs leading-5 text-white/50">{text}</p>
+                  <div key={title} className="flex gap-3 rounded-lg border bg-white p-4">
+                    <Icon className="h-5 w-5 shrink-0 text-[#0046be]" />
+                    <div><p className="text-sm font-bold">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></div>
                   </div>
                 ))}
               </div>
@@ -175,98 +333,22 @@ const SolarHome = () => {
           </div>
         </section>
 
-        <section className="bg-white py-8">
-          <div className="container mx-auto grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: ShieldCheck, title: "Quality equipment", text: "Products selected for dependable everyday use" },
-              { icon: Wrench, title: "Installation support", text: "From advice to professional setup" },
-              { icon: BatteryCharging, title: "Backup power", text: "Keep essential loads running" },
-              { icon: MessageCircle, title: "Local support", text: "Fast help through WhatsApp and phone" },
-            ].map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-2xl border bg-slate-50 p-5">
-                <Icon className="mb-4 h-6 w-6 text-amber-500" />
-                <h3 className="font-bold">{title}</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="products" className="bg-slate-50 py-16">
-          <div className="container mx-auto px-4">
-            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[.25em] text-amber-600">Online shop</p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight">Solar & electronics</h2>
-                <p className="mt-2 max-w-xl text-sm text-slate-500">Browse available equipment, compare products and build your backup-power setup.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => setActiveCategory("all")} className={`rounded-full border px-4 py-2 text-xs font-bold ${activeCategory === "all" ? "border-slate-950 bg-slate-950 text-white" : "bg-white"}`}>All</button>
-                {categories.slice(0, 6).map((c) => (
-                  <button key={c.id} onClick={() => setActiveCategory(c.id)} className={`rounded-full border px-4 py-2 text-xs font-bold ${activeCategory === c.id ? "border-slate-950 bg-slate-950 text-white" : "bg-white"}`}>{c.name}</button>
-                ))}
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-2 gap-5 md:grid-cols-4"><div className="col-span-full py-20 text-center text-sm text-slate-500">Loading products...</div></div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="rounded-3xl border bg-white px-6 py-20 text-center">
-                <Sun className="mx-auto h-10 w-10 text-amber-400" />
-                <h3 className="mt-4 text-xl font-bold">No products yet</h3>
-                <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">Add your solar and electronics catalogue from the admin dashboard. Your storefront will update automatically.</p>
-                <Button onClick={() => navigate("/admin")} className="mt-5 rounded-full">Open admin</Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} onOrder={orderViaWhatsApp} onAddToCart={addProduct} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-white py-20">
-          <div className="container mx-auto px-4">
-            <div className="grid gap-6 lg:grid-cols-3">
-              {[
-                { title: "Solar system design", text: "Tell us your appliances, power requirements and budget. We can help you plan the right system.", action: "Request a quote" },
-                { title: "Backup power", text: "Keep lights, Wi-Fi, security, refrigeration and other essential equipment running during outages.", action: "Build my backup system" },
-                { title: "Electronics", text: "Shop practical electrical and electronic equipment alongside your energy system.", action: "Browse electronics" },
-              ].map((card) => (
-                <div key={card.title} className="rounded-3xl border bg-slate-950 p-7 text-white">
-                  <h3 className="text-xl font-black">{card.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/60">{card.text}</p>
-                  <button onClick={() => window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(card.action)}`, "_blank")} className="mt-6 text-sm font-bold text-amber-300">{card.action} <ArrowRight className="ml-1 inline h-4 w-4" /></button>
-                </div>
-              ))}
-            </div>
+        <section className="bg-white border-y">
+          <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
+            <div><p className="text-xs font-black uppercase tracking-widest text-[#0046be]">Need help choosing?</p><h3 className="mt-2 text-xl font-black">Build the right solar system.</h3><p className="mt-2 text-sm leading-6 text-slate-500">Send us your appliances and usage requirements and we can help you size your system.</p><button onClick={() => window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("I need help sizing a solar system.")}`, "_blank")} className="mt-4 text-sm font-bold text-[#0046be]">Request a system quote →</button></div>
+            <div><p className="text-xs font-black uppercase tracking-widest text-[#0046be]">Compare variants</p><h3 className="mt-2 text-xl font-black">One product. Multiple configurations.</h3><p className="mt-2 text-sm leading-6 text-slate-500">Choose panel wattage, inverter capacity, battery capacity or other technical options from the product page.</p><button onClick={scrollToProducts} className="mt-4 text-sm font-bold text-[#0046be]">Browse products →</button></div>
+            <div><p className="text-xs font-black uppercase tracking-widest text-[#0046be]">Contact</p><h3 className="mt-2 text-xl font-black">Tech Innovation Zimbabwe</h3><p className="mt-2 text-sm leading-6 text-slate-500">0778158984 • 0784721912<br />infotitechinnovations@gmail.com</p><button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} className="mt-4 text-sm font-bold text-[#0046be]">Chat on WhatsApp →</button></div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-slate-950 py-12 text-white">
-        <div className="container mx-auto grid gap-8 px-4 md:grid-cols-3">
-          <div>
-            <div className="flex items-center gap-2 font-black"><Sun className="h-5 w-5 text-amber-300" /> TECH INNOVATION</div>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-white/50">Solar power, backup systems and electronics for homes and businesses in Zimbabwe.</p>
-          </div>
-          <div>
-            <h4 className="font-bold">Contact</h4>
-            <div className="mt-3 space-y-2 text-sm text-white/60">
-              <a href="tel:0778158984" className="block hover:text-white"><Phone className="mr-2 inline h-4 w-4" />0778158984</a>
-              <a href="tel:0784721912" className="block hover:text-white"><Phone className="mr-2 inline h-4 w-4" />0784721912</a>
-              <a href="mailto:infotitechinnovations@gmail.com" className="block hover:text-white">infotitechinnovations@gmail.com</a>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-bold">Need help?</h4>
-            <p className="mt-3 text-sm text-white/50">Ask about system sizing, product compatibility, installation or availability.</p>
-            <Button onClick={() => window.open(`https://wa.me/${WHATSAPP}`, "_blank")} className="mt-4 rounded-full bg-amber-400 font-bold text-slate-950 hover:bg-amber-300"><MessageCircle className="mr-2 h-4 w-4" /> WhatsApp us</Button>
-          </div>
+      <footer className="bg-[#071c38] py-10 text-white">
+        <div className="container mx-auto grid gap-8 px-4 md:grid-cols-4">
+          <div className="md:col-span-2"><div className="flex items-center gap-2 font-black"><span className="flex h-8 w-8 items-center justify-center rounded bg-[#ffe000] text-[#111820]"><Sun className="h-4 w-4" /></span> TECH INNOVATION</div><p className="mt-3 max-w-md text-sm leading-6 text-white/55">Solar power, backup systems, batteries, inverters and electronics for homes and businesses in Zimbabwe.</p></div>
+          <div><p className="font-bold">Shop</p><div className="mt-3 space-y-2 text-xs text-white/55"><button onClick={() => setActiveCategory("solar-panels")} className="block hover:text-white">Solar panels</button><button onClick={() => setActiveCategory("inverters")} className="block hover:text-white">Inverters</button><button onClick={() => setActiveCategory("batteries")} className="block hover:text-white">Batteries</button><button onClick={() => setActiveCategory("solar-kits")} className="block hover:text-white">Solar kits</button></div></div>
+          <div><p className="font-bold">Support</p><div className="mt-3 space-y-2 text-xs text-white/55"><Link to="/about" className="block hover:text-white">About Tech Innovation</Link><a href="tel:0778158984" className="block hover:text-white"><Phone className="mr-1 inline h-3 w-3" />0778158984</a><a href="mailto:infotitechinnovations@gmail.com" className="block hover:text-white">infotitechinnovations@gmail.com</a></div></div>
         </div>
-        <div className="container mx-auto mt-10 border-t border-white/10 px-4 pt-5 text-xs text-white/30">© {new Date().getFullYear()} Tech Innovation. Solar & Electronics.</div>
+        <div className="container mx-auto mt-8 border-t border-white/10 px-4 pt-5 text-xs text-white/30">© {new Date().getFullYear()} Tech Innovation. Solar & Electronics.</div>
       </footer>
     </div>
   );
