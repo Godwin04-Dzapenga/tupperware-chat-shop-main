@@ -310,7 +310,7 @@ const SolarHome = () => {
                   <Button onClick={() => { setSearch(""); setActiveCategory("all"); setBrandFilter("all"); setTypeFilter("all"); }} className="mt-5 rounded-md bg-[#0046be]">Clear filters</Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-12 sm:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {filteredProducts.map(product => (
                     <ProductCard key={product.id} product={product} onOrder={orderViaWhatsApp} onAddToCart={addProduct} />
                   ))}
