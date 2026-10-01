@@ -303,7 +303,7 @@ export default function Checkout() {
                             className="text-xs text-red-500 hover:underline font-medium">
                             Remove
                           </button>
-                          <button onClick={() => navigate(`/product/${item.id}`)}
+                          <button onClick={() => navigate(`/product/${item.product_id || item.id.split("::")[0]}`)}
                             className="text-xs text-primary hover:underline font-medium">
                             View details
                           </button>
@@ -478,8 +478,8 @@ export default function Checkout() {
                   <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700">
                     <Truck className="h-4 w-4 shrink-0 mt-0.5 text-blue-500" />
                     <div>
-                      <p className="font-semibold">Same-day delivery in Harare</p>
-                      <p className="text-blue-600 mt-0.5">Orders placed before 2PM Mon–Fri. Next-day for other cities.</p>
+                      <p className="font-semibold">Delivery options available in Harare</p>
+                      <p className="text-blue-600 mt-0.5">Delivery timing is confirmed with you after your order is placed.</p>
                     </div>
                   </div>
                 </div>
@@ -727,10 +727,10 @@ export default function Checkout() {
                 <Separator />
                 <div className="space-y-2.5">
                   {[
-                    { icon: ShieldCheck, text: "100% genuine Tupperware" },
-                    { icon: Truck,       text: "Same-day delivery in Harare" },
-                    { icon: Clock,       text: "Order by 2PM for same-day" },
-                    { icon: Star,        text: "Lifetime product warranty" },
+                    { icon: ShieldCheck, text: "Quality solar & electronics" },
+                    { icon: Truck,       text: "Zimbabwe delivery options" },
+                    { icon: Clock,       text: "Delivery timing confirmed with you" },
+                    { icon: Star,        text: "Warranty varies by product" },
                   ].map(({ icon: Icon, text }) => (
                     <div key={text} className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
