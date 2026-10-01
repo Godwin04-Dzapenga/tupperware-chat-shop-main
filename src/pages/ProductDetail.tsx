@@ -208,7 +208,25 @@ export default function ProductDetail() {
           </div>
         </section>
 
-        {related.length > 0 && <section className="mt-12"><p className="text-xs font-black uppercase tracking-widest text-[#0046be]">More from this category</p><h2 className="mt-1 text-2xl font-black">You may also like</h2><div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">{related.map(item => <ProductCard key={item.id} product={item} onOrder={() => {}} />)}</div></section>}
+        {related.length > 0 && <section className="mt-12"><p className="text-xs font-black uppercase tracking-widest text-[#0046be]">More from this category</p><h2 className="mt-1 text-2xl font-black">You may also like</h2><div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">{related.map(item => (
+              <ProductCard
+                key={item.id}
+                product={item}
+                onOrder={() => {
+                  addToCart({
+                    id: item.id,
+                    product_id: item.id,
+                    variant_id: null,
+                    variant_name: null,
+                    name: item.name,
+                    price: item.price,
+                    image_url: item.image_url,
+                    stock_quantity: item.stock_quantity,
+                  });
+                  toast.success(`${item.name} added to cart`);
+                }}
+              />
+            ))}</div></section>}
       </main>
     </div>
   );
