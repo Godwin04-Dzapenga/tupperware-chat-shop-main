@@ -13,7 +13,7 @@ const SearchPage = () => {
 
   const results = useMemo<StoreProduct[]>(() => {
     if (dealsMode) return products.filter((p) => p.savings > 0);
-    if (!q) return [];
+    if (!q) return products;
 
     const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
     const matchingCategoryIds = new Set(
@@ -24,30 +24,25 @@ const SearchPage = () => {
 
     return products.filter((p) => {
       if (matchingCategoryIds.has(p.category_id || "")) return true;
-      const haystack = `${p.name} ${p.brand} ${p.model_number} ${p.product_type} ${
-        p.description || ""
-      }`.toLowerCase();
+      const haystack = `${p.name} ${p.brand} ${p.model_number} ${p.product_type} ${p.description || ""} ${p.variant_names.join(" ")}`.toLowerCase();
       return terms.every((t) => haystack.includes(t));
     });
   }, [products, categories, q, dealsMode]);
 
-  const title = dealsMode
-    ? "Top Deals"
-    : q
-      ? `Results for "${q}"`
-      : "Search";
+  const title = dealsMode ? "Top Deals" : q ? `Results for "${q}"` : "All Products";
 
   return (
     <ProductListing
       title={title}
+      subtitle={dealsMode ? "Current promotions across the Tech Innovation catalogue." : "Browse solar, backup power, electrical and smart technology products."}
       products={results}
       loading={isLoading}
       defaultSort={dealsMode ? "savings" : "featured"}
-      crumbs={[{ label: "Home", to: "/" }, { label: dealsMode ? "Top Deals" : "Search" }]}
+      crumbs={[{ label: "Home", to: "/" }, { label: dealsMode ? "Top Deals" : q ? "Search" : "All Products" }]}
       emptyHint={
         q
-          ? `We couldn't find anything matching "${q}". Try a different term like "inverter", "battery" or "panel".`
-          : "Enter a search term in the search bar above to find products."
+          ? `We couldn't find anything matching "${q}". Try "inverter", "battery", "panel" or a model number.`
+          : "There are no active products in the catalogue yet."
       }
     />
   );
