@@ -57,6 +57,11 @@ export const ProductListing = ({
   const [priceRange, setPriceRange] = useState<string | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [topRatedOnly, setTopRatedOnly] = useState(false);
+  const [selectedPower, setSelectedPower] = useState<string[]>([]);
+  const [selectedVoltage, setSelectedVoltage] = useState<string[]>([]);
+  const [selectedCapacity, setSelectedCapacity] = useState<string[]>([]);
+  const [selectedWarranty, setSelectedWarranty] = useState<string[]>([]);
+  const [installationOnly, setInstallationOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>(defaultSort);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -78,12 +83,24 @@ export const ProductListing = ({
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
   }, [products]);
 
+  const technicalOptions = useMemo(() => ({
+    power: [...new Set(products.flatMap((p) => p.power_watts ? [String(p.power_watts)] : []))].sort((a, b) => Number(a) - Number(b)),
+    voltage: [...new Set(products.flatMap((p) => p.voltage ? [p.voltage] : []))].sort(),
+    capacity: [...new Set(products.flatMap((p) => p.capacity ? [p.capacity] : []))].sort(),
+    warranty: [...new Set(products.flatMap((p) => p.warranty_months ? [String(p.warranty_months)] : []))].sort((a, b) => Number(a) - Number(b)),
+  }), [products]);
+
   const activeFilterCount =
     selectedBrands.length +
     selectedTypes.length +
+    selectedPower.length +
+    selectedVoltage.length +
+    selectedCapacity.length +
+    selectedWarranty.length +
     (priceRange ? 1 : 0) +
     (inStockOnly ? 1 : 0) +
-    (topRatedOnly ? 1 : 0);
+    (topRatedOnly ? 1 : 0) +
+    (installationOnly ? 1 : 0);
 
   const clearAll = () => {
     setSelectedBrands([]);
@@ -91,6 +108,11 @@ export const ProductListing = ({
     setPriceRange(null);
     setInStockOnly(false);
     setTopRatedOnly(false);
+    setSelectedPower([]);
+    setSelectedVoltage([]);
+    setSelectedCapacity([]);
+    setSelectedWarranty([]);
+    setInstallationOnly(false);
   };
 
   const visible = useMemo(() => {
@@ -103,6 +125,12 @@ export const ProductListing = ({
     if (selectedTypes.length) {
       list = list.filter((p) => selectedTypes.includes(p.product_type || ""));
     }
+
+    if (selectedPower.length) list = list.filter((p) => p.power_watts != null && selectedPower.includes(String(p.power_watts)));
+    if (selectedVoltage.length) list = list.filter((p) => p.voltage != null && selectedVoltage.includes(p.voltage));
+    if (selectedCapacity.length) list = list.filter((p) => p.capacity != null && selectedCapacity.includes(p.capacity));
+    if (selectedWarranty.length) list = list.filter((p) => p.warranty_months != null && selectedWarranty.includes(String(p.warranty_months)));
+    if (installationOnly) list = list.filter((p) => p.installation_required);
 
     if (priceRange) {
       const range = PRICE_RANGES.find((r) => r.key === priceRange);
@@ -139,7 +167,7 @@ export const ProductListing = ({
     }
 
     return sorted;
-  }, [products, selectedBrands, selectedTypes, priceRange, inStockOnly, topRatedOnly, sort]);
+  }, [products, selectedBrands, selectedTypes, selectedPower, selectedVoltage, selectedCapacity, selectedWarranty, priceRange, inStockOnly, topRatedOnly, installationOnly, sort]);
 
   const toggleValue = (
     value: string,
@@ -221,6 +249,15 @@ export const ProductListing = ({
         })}
       </FilterSection>
 
+      {(technicalOptions.power.length > 0 || technicalOptions.voltage.length > 0 || technicalOptions.capacity.length > 0 || technicalOptions.warranty.length > 0) && (
+        <FilterSection title="Technical Specifications">
+          {technicalOptions.power.length > 0 && <TechnicalFilter title="Power" values={technicalOptions.power} selected={selectedPower} onToggle={(v) => toggleValue(v, setSelectedPower)} suffix=" W" />}
+          {technicalOptions.voltage.length > 0 && <TechnicalFilter title="Voltage" values={technicalOptions.voltage} selected={selectedVoltage} onToggle={(v) => toggleValue(v, setSelectedVoltage)} />}
+          {technicalOptions.capacity.length > 0 && <TechnicalFilter title="Capacity" values={technicalOptions.capacity} selected={selectedCapacity} onToggle={(v) => toggleValue(v, setSelectedCapacity)} />}
+          {technicalOptions.warranty.length > 0 && <TechnicalFilter title="Warranty" values={technicalOptions.warranty} selected={selectedWarranty} onToggle={(v) => toggleValue(v, setSelectedWarranty)} suffix=" months" />}
+        </FilterSection>
+      )}
+
       <FilterSection title="Availability & Rating">
         <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 hover:text-bb-ink">
           <input
@@ -230,6 +267,15 @@ export const ProductListing = ({
             className="h-4 w-4 rounded border-slate-300 accent-bb-blue"
           />
           <span className="flex-1">In stock only</span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 hover:text-bb-ink">
+          <input
+            type="checkbox"
+            checked={installationOnly}
+            onChange={(e) => setInstallationOnly(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 accent-bb-blue"
+          />
+          <span className="flex-1">Installation required</span>
         </label>
         <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 hover:text-bb-ink">
           <input
@@ -328,6 +374,11 @@ export const ProductListing = ({
               {selectedTypes.map((type) => (
                 <FilterPill key={`type-${type}`} label={type} onRemove={() => setSelectedTypes((prev) => prev.filter((t) => t !== type))} />
               ))}
+              {selectedPower.map((value) => <FilterPill key={`power-${value}`} label={value + " W"} onRemove={() => setSelectedPower((prev) => prev.filter((v) => v !== value))} />)}
+              {selectedVoltage.map((value) => <FilterPill key={`voltage-${value}`} label={value} onRemove={() => setSelectedVoltage((prev) => prev.filter((v) => v !== value))} />)}
+              {selectedCapacity.map((value) => <FilterPill key={`capacity-${value}`} label={value} onRemove={() => setSelectedCapacity((prev) => prev.filter((v) => v !== value))} />)}
+              {selectedWarranty.map((value) => <FilterPill key={`warranty-${value}`} label={value + " months warranty"} onRemove={() => setSelectedWarranty((prev) => prev.filter((v) => v !== value))} />)}
+              {installationOnly && <FilterPill label="Installation required" onRemove={() => setInstallationOnly(false)} />}
               {priceRange && (
                 <FilterPill label={PRICE_RANGES.find((r) => r.key === priceRange)?.label || ""} onRemove={() => setPriceRange(null)} />
               )}
@@ -395,4 +446,35 @@ const FilterPill = ({ label, onRemove }: { label: string; onRemove: () => void }
       <X className="h-3 w-3" />
     </button>
   </span>
+);
+
+
+const TechnicalFilter = ({
+  title,
+  values,
+  selected,
+  onToggle,
+  suffix = "",
+}: {
+  title: string;
+  values: string[];
+  selected: string[];
+  onToggle: (value: string) => void;
+  suffix?: string;
+}) => (
+  <div className="mb-3 last:mb-0">
+    <div className="mb-1 text-[11px] font-bold text-slate-500">{title}</div>
+    <div className="flex flex-wrap gap-1.5">
+      {values.map((value) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onToggle(value)}
+          className={`rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors ${selected.includes(value) ? "border-bb-blue bg-blue-50 text-bb-blue" : "border-slate-200 bg-white text-slate-600 hover:border-bb-blue"}`}
+        >
+          {value}{suffix}
+        </button>
+      ))}
+    </div>
+  </div>
 );
