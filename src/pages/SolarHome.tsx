@@ -38,7 +38,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 const ProductQuickView = lazy(() => import("@/components/ProductQuickView").then((m) => ({ default: m.ProductQuickView })));
-const ProductCompareModule = lazy(() => import("@/components/ProductCompareModal"));
+const ProductCompareModal = lazy(() => import("@/components/ProductCompareModal").then((m) => ({ default: m.ProductCompareModal })));
+const CompareDock = lazy(() => import("@/components/ProductCompareModal").then((m) => ({ default: m.CompareDock })));
 const DealOfTheDay = lazy(() => import("@/components/DealOfTheDay").then((m) => ({ default: m.DealOfTheDay })));
 const SystemSizer = lazy(() => import("@/components/SystemSizer").then((m) => ({ default: m.SystemSizer })));
 const StoreModal = lazy(() => import("@/components/StoreModal").then((m) => ({ default: m.StoreModal })));
@@ -972,7 +973,7 @@ const SolarHome = () => {
       <Suspense fallback={null}>
       <StoreModal open={storeModalOpen} onClose={() => setStoreModalOpen(false)} />
 
-      <ProductCompareModule
+      <ProductCompareModal
         open={compareModalOpen}
         onClose={() => setCompareModalOpen(false)}
         products={compareProducts}
