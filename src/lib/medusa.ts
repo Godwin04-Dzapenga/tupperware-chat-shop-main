@@ -173,7 +173,7 @@ export const medusa = {
       );
     },
     async deleteLineItem(id: string, lineItemId: string) {
-      return medusaRequest<{ parent: MedusaCart }>(
+      return medusaRequest<{ parent?: MedusaCart; cart?: MedusaCart }>(
         `/store/carts/${encodeURIComponent(id)}/line-items/${encodeURIComponent(lineItemId)}`,
         { method: "DELETE" },
       );
