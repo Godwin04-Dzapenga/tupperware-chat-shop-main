@@ -1,19 +1,16 @@
 {
-  "name": "TuppAfrica — Premium Kitchen Storage",
-  "short_name": "TuppAfrica",
-  "description": "Shop genuine Tupperware products in Zimbabwe. Fast Harare delivery.",
+  "name": "Tech Innovation — Best Buy Solar & Electronics Zimbabwe",
+  "short_name": "Tech Innovation",
+  "description": "Shop Tier-1 solar panels, hybrid inverters, lithium batteries and backup electronics in Zimbabwe with Harare showroom pickup and nationwide freight.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0d9488",
+  "background_color": "#001e73",
+  "theme_color": "#0046be",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/favicon.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any maskable" },
     { "src": "/favicon.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
   ],
-  "categories": ["shopping", "lifestyle"],
-  "lang": "en-ZW",
-  "screenshots": [
-    { "src": "/favicon.jpg", "sizes": "540x720", "type": "image/jpeg" }
-  ]
+  "categories": ["shopping", "business", "utilities"],
+  "lang": "en-ZW"
 }

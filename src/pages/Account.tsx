@@ -13,6 +13,7 @@ import {
   ArrowLeft, User, MapPin, Package, Heart, Settings,
   Edit2, Check, X, Plus, Trash2, LogOut, ShoppingBag, Star, Sun
 } from "lucide-react";
+import { getProductMedia } from "@/data/solarProducts";
 
 interface Profile { full_name: string | null; phone: string | null; email: string | null; }
 interface Address { id: string; label: string | null; recipient_name: string; phone: string; line1: string; city: string; country: string; is_default: boolean; }
@@ -287,8 +288,16 @@ export default function Account() {
                     : <div className="grid gap-3 sm:grid-cols-2">
                         {wishlist.map((item: any) => (
                           <div key={item.id} className="flex gap-3 rounded-xl border p-3 bg-card">
-                            <div className="h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-muted">
-                              {item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-2xl">📦</div>}
+                            <div className="h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-muted border">
+                              <img
+                                src={
+                                  item.image_url && !item.image_url.includes("0.2930892299948875")
+                                    ? item.image_url
+                                    : getProductMedia(item).imageUrl
+                                }
+                                alt={item.name}
+                                className="h-full w-full object-cover"
+                              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold line-clamp-2 cursor-pointer hover:text-primary" onClick={() => navigate(`/product/${item.id}`)}>{item.name}</p>

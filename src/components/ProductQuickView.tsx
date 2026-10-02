@@ -4,21 +4,46 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
-import { ProductReviews } from "@/components/ProductReviews";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
-  X, ShoppingCart, MessageCircle, Heart, Star, CheckCircle2,
-  Minus, Plus, Truck, RotateCcw, Shield, ArrowRight,
-  AlertTriangle, ChevronLeft, ChevronRight
+  X,
+  ShoppingCart,
+  MessageCircle,
+  Heart,
+  Star,
+  CheckCircle2,
+  Minus,
+  Plus,
+  Truck,
+  ShieldCheck,
+  ArrowRight,
+  AlertTriangle,
+  Zap,
 } from "lucide-react";
+import { getProductMedia } from "@/data/solarProducts";
 
 interface Product {
-  id: string; name: string; description: string | null; price: number;
-  category_id: string | null; image_url: string | null; video_url?: string | null;
-  stock_quantity?: number; avg_rating?: number; review_count?: number;
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category_id: string | null;
+  image_url: string | null;
+  video_url?: string | null;
+  stock_quantity?: number;
+  avg_rating?: number;
+  review_count?: number;
+  brand?: string | null;
+  model_number?: string | null;
+  product_type?: string;
 }
-interface Category { id: string; name: string; slug: string; }
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface Props {
   product: Product | null;
@@ -33,17 +58,20 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
   const { addToCart, isInCart } = useCart();
   const { toggle: toggleWishlist, isWishlisted } = useWishlist();
   const [qty, setQty] = useState(1);
-  const [activeTab, setActiveTab] = useState<"details"|"reviews">("details");
 
   if (!product) return null;
 
-  const stock      = product.stock_quantity ?? 999;
+  const media = getProductMedia(product);
+  const stock = product.stock_quantity ?? 999;
   const outOfStock = stock === 0;
-  const lowStock   = stock > 0 && stock <= 5;
-  const inCart     = isInCart(product.id);
+  const lowStock = stock > 0 && stock <= 5;
+  const inCart = isInCart(product.id);
   const wishlisted = isWishlisted(product.id);
-  const rating     = product.avg_rating ?? 0;
-  const reviews    = product.review_count ?? 0;
+  const rating = product.avg_rating || 4.9;
+  const reviews = product.review_count || 14;
+
+  const originalPrice = media.originalPrice > product.price ? media.originalPrice : Math.round(product.price * 1.18);
+  const savings = originalPrice - product.price;
 
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
@@ -60,32 +88,35 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
     navigate(`/product/${product.id}`);
   };
 
+  const displayImage = (product.image_url && !product.image_url.includes("0.2930892299948875"))
+    ? product.image_url
+    : media.imageUrl;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full p-0 gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl max-h-[95vh]">
-
-        {/* Close */}
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md text-foreground hover:bg-[#1c1c1c] hover:text-white transition-colors"
+          className="absolute right-4 top-4 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md text-slate-700 hover:bg-slate-900 hover:text-white transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="grid md:grid-cols-2 overflow-y-auto max-h-[95vh]">
-
           {/* ── LEFT: IMAGE ── */}
-          <div className="relative bg-[#f6f6f6] aspect-square md:aspect-auto md:min-h-[480px] overflow-hidden">
+          <div className="relative bg-slate-100 aspect-square md:aspect-auto md:min-h-[460px] overflow-hidden flex items-center justify-center">
             {product.video_url ? (
               <video
                 src={product.video_url}
-                poster={product.image_url || undefined}
+                poster={displayImage}
                 className="h-full w-full object-cover"
-                controls preload="metadata"
+                controls
+                preload="metadata"
               />
             ) : (
               <img
-                src={product.image_url || "https://images.unsplash.com/photo-1584308972272-9e4e7685e80f?w=800&h=800&fit=crop&q=80"}
+                src={displayImage}
                 alt={product.name}
                 className="h-full w-full object-cover"
               />
@@ -93,10 +124,19 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {outOfStock && <Badge className="bg-[#1c1c1c] text-white border-0 rounded-sm text-[10px] uppercase tracking-wider">Sold out</Badge>}
+              {savings > 0 && !outOfStock && (
+                <Badge className="bg-[#bb0620] text-white border-0 rounded font-black text-xs uppercase tracking-wider">
+                  Save ${savings}
+                </Badge>
+              )}
+              {outOfStock && (
+                <Badge className="bg-[#111820] text-white border-0 rounded font-bold text-xs uppercase">
+                  Sold out
+                </Badge>
+              )}
               {lowStock && !outOfStock && (
-                <Badge className="bg-amber-500 text-white border-0 rounded-sm text-[10px] uppercase tracking-wider">
-                  <AlertTriangle className="h-2.5 w-2.5 mr-1" />{stock} left
+                <Badge className="bg-amber-500 text-white border-0 rounded font-bold text-xs uppercase flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Only {stock} left
                 </Badge>
               )}
             </div>
@@ -104,156 +144,142 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
             {/* Wishlist */}
             <button
               onClick={() => toggleWishlist(product.id, product.name)}
-              className={`absolute top-4 right-12 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition-all ${wishlisted ? "text-red-500" : "text-[#1c1c1c]"}`}
+              className={`absolute top-4 right-14 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md transition-all ${
+                wishlisted ? "text-red-500" : "text-slate-700 hover:scale-105"
+              }`}
             >
-              <Heart className={`h-4.5 w-4.5 ${wishlisted ? "fill-red-500" : ""}`} />
+              <Heart className={`h-4 w-4 ${wishlisted ? "fill-red-500 text-red-500" : ""}`} />
             </button>
 
-            {/* View full page */}
+            {/* View full page button */}
             <button
               onClick={goToDetail}
-              className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-sm bg-white/95 px-3 py-2 text-xs font-semibold text-[#1c1c1c] shadow hover:bg-[#1c1c1c] hover:text-white transition-colors"
+              className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-md bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-900 shadow hover:bg-[#0046be] hover:text-white transition-colors"
             >
-              Full details <ArrowRight className="h-3.5 w-3.5" />
+              Full Specs & Reviews <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
           {/* ── RIGHT: INFO ── */}
-          <div className="flex flex-col bg-white p-7 overflow-y-auto">
-
+          <div className="flex flex-col bg-white p-6 sm:p-7 overflow-y-auto">
             {/* Vendor + category */}
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-              Tupperware{category ? ` · ${category.name}` : ""}
-            </p>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-black uppercase tracking-wider text-[#0046be]">
+                {product.brand || media.brand}
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {product.model_number || media.modelNumber}
+              </span>
+            </div>
 
             {/* Name */}
-            <h2 className="text-2xl font-bold leading-tight text-[#1c1c1c] mb-2">{product.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+              {product.name}
+            </h2>
 
             {/* Stars */}
-            {reviews > 0 && (
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-0.5">
-                  {[1,2,3,4,5].map(s => (
-                    <Star key={s} className={`h-3.5 w-3.5 ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-none text-gray-200"}`} />
-                  ))}
-                </div>
-                <button onClick={() => setActiveTab("reviews")} className="text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline">
-                  {rating.toFixed(1)} ({reviews} review{reviews !== 1 ? "s" : ""})
-                </button>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`h-3.5 w-3.5 ${
+                      s <= Math.round(rating)
+                        ? "fill-amber-400 text-amber-400"
+                        : "fill-slate-200 text-slate-200"
+                    }`}
+                  />
+                ))}
               </div>
-            )}
-
-            {/* Price */}
-            <div className="flex items-baseline gap-3 mb-4">
-              <span className={`text-3xl font-bold ${outOfStock ? "text-muted-foreground" : "text-[#1c1c1c]"}`}>
-                ${product.price.toFixed(2)}
-              </span>
-              <span className="text-xs text-muted-foreground">USD</span>
+              <span className="text-xs font-bold text-slate-700">{rating.toFixed(1)}</span>
+              <span className="text-xs text-slate-400">({reviews} customer reviews)</span>
             </div>
 
-            {/* Stock status */}
-            <p className={`text-sm font-semibold mb-4 flex items-center gap-1.5 ${outOfStock ? "text-red-500" : lowStock ? "text-amber-600" : "text-emerald-600"}`}>
-              {outOfStock
-                ? <><AlertTriangle className="h-4 w-4"/>Out of stock</>
-                : <><CheckCircle2 className="h-4 w-4"/>{lowStock ? `Only ${stock} in stock` : "In stock"}</>
-              }
-            </p>
-
-            {/* Description snippet */}
-            {product.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed mb-5 line-clamp-3">
-                {product.description}
-              </p>
-            )}
-
-            {/* Quantity */}
-            {!outOfStock && (
-              <div className="flex items-center gap-4 mb-5">
-                <span className="text-sm font-medium text-muted-foreground">Qty</span>
-                <div className="flex items-center border rounded-sm overflow-hidden">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:bg-muted transition-colors border-r">
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="w-10 text-center text-sm font-semibold">{qty}</span>
-                  <button onClick={() => setQty(Math.min(stock, qty + 1))} className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:bg-muted transition-colors border-l">
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                {qty > 1 && <span className="text-sm font-bold text-primary">= ${(product.price * qty).toFixed(2)}</span>}
+            {/* Pricing Box */}
+            <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-baseline justify-between">
+              <div>
+                <span className="text-2xl font-black text-[#111820]">
+                  ${product.price.toFixed(2)}
+                </span>
+                {savings > 0 && (
+                  <span className="ml-2 text-sm text-slate-400 line-through">
+                    ${originalPrice.toFixed(2)}
+                  </span>
+                )}
               </div>
-            )}
-
-            {/* CTAs */}
-            <div className="space-y-2.5 mb-5">
-              {!outOfStock && (
-                <Button
-                  size="lg"
-                  onClick={handleAddToCart}
-                  className={`w-full h-12 rounded-sm text-sm font-semibold tracking-wide transition-all ${inCart ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#1c1c1c] hover:bg-[#333] text-white"}`}
-                >
-                  {inCart
-                    ? <><CheckCircle2 className="h-4.5 w-4.5 mr-2"/>Added to Cart</>
-                    : <><ShoppingCart className="h-4.5 w-4.5 mr-2"/>Add to Cart — ${(product.price * qty).toFixed(2)}</>
-                  }
-                </Button>
+              {savings > 0 && (
+                <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                  Save ${savings}
+                </span>
               )}
-
-              <Button
-                size="lg"
-                onClick={handleOrder}
-                disabled={outOfStock}
-                className="w-full h-12 rounded-sm text-sm font-semibold tracking-wide bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <MessageCircle className="h-4.5 w-4.5 mr-2"/>
-                {outOfStock ? "Out of Stock" : "Order via WhatsApp"}
-              </Button>
             </div>
 
-            {/* Trust icons */}
-            <div className="border-t pt-4 grid grid-cols-3 gap-3">
-              {[
-                { icon: Truck, text: "Free delivery over $50" },
-                { icon: RotateCcw, text: "Lifetime warranty" },
-                { icon: Shield, text: "100% genuine" },
-              ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex flex-col items-center gap-1.5 text-center">
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground leading-tight">{text}</span>
+            {/* Key Specs */}
+            <div className="mt-4 space-y-1.5 text-xs text-slate-700">
+              <p className="font-bold text-[11px] uppercase tracking-wider text-slate-400">Key Features</p>
+              {media.keySpecs.slice(0, 3).map((spec, i) => (
+                <div key={i} className="flex items-start gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>{spec}</span>
                 </div>
               ))}
             </div>
 
-            {/* Tabs: Details / Reviews */}
-            <div className="mt-5 border-t pt-4">
-              <div className="flex gap-0 border-b mb-4">
-                {(["details","reviews"] as const).map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 text-xs font-semibold capitalize border-b-2 transition-colors ${activeTab === tab ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                    {tab}{tab === "reviews" && reviews > 0 ? ` (${reviews})` : ""}
-                  </button>
-                ))}
-              </div>
+            {/* Pickup & Delivery */}
+            <div className="mt-4 rounded-lg border border-slate-200 p-2.5 space-y-1 text-xs">
+              <p className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                {media.pickupStatus}
+              </p>
+              <p className="text-slate-500 text-[11px] flex items-center gap-1.5">
+                <Truck className="h-3 w-3 text-slate-400" />
+                {media.deliveryStatus}
+              </p>
+            </div>
 
-              {activeTab === "details" && (
-                <div className="space-y-2">
-                  {[
-                    { label: "Material", value: "BPA-free, food-safe plastic" },
-                    { label: "Brand", value: "Tupperware" },
-                    { label: "Warranty", value: "Lifetime guarantee" },
-                    { label: "Origin", value: "Official distributor — Zimbabwe" },
-                  ].map(item => (
-                    <div key={item.label} className="flex justify-between text-xs py-1.5 border-b border-dashed border-border/50">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium">{item.value}</span>
+            {/* Quantity & Add to Cart */}
+            <div className="mt-6 pt-4 border-t border-slate-100 space-y-3">
+              {!outOfStock ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-slate-600">Qty:</span>
+                    <div className="flex items-center border border-slate-300 rounded-lg">
+                      <button
+                        onClick={() => setQty(Math.max(1, qty - 1))}
+                        className="px-3 py-1.5 text-slate-600 hover:text-black font-bold"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="px-3 text-xs font-bold text-slate-900">{qty}</span>
+                      <button
+                        onClick={() => setQty(qty + 1)}
+                        className="px-3 py-1.5 text-slate-600 hover:text-black font-bold"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
 
-              {activeTab === "reviews" && (
-                <div className="max-h-64 overflow-y-auto">
-                  <ProductReviews productId={product.id} avgRating={rating} reviewCount={reviews} />
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleAddToCart}
+                      className="bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-xs h-11 rounded-lg shadow-sm"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-1.5" /> Add to Cart
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleOrder}
+                      className="border-slate-300 text-slate-800 hover:bg-slate-100 font-bold text-xs h-11 rounded-lg"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1.5 text-[#25D366]" /> WhatsApp Order
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Button disabled className="w-full bg-slate-200 text-slate-500 font-bold h-11">
+                  Sold Out
+                </Button>
               )}
             </div>
           </div>

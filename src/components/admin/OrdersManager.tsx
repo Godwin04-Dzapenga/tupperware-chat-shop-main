@@ -19,7 +19,7 @@ import {
   Filter, RefreshCw, Eye, Printer, AlertCircle, MapPin, Phone, User
 } from "lucide-react";
 
-interface OrderItem { id: string; product_name: string; quantity: number; unit_price: number; line_total: number; }
+interface OrderItem { id: string; product_id: string | null; variant_id: string | null; variant_name: string | null; product_name: string; quantity: number; unit_price: number; line_total: number; }
 interface Payment { provider: string; status: string; amount: number; }
 interface Order {
   id: string; order_number: string; status: string; total: number;
@@ -188,7 +188,7 @@ export function OrdersManager() {
       <p>Address: ${order.shipping_line1||"—"}, ${order.shipping_city||"—"}, ${order.shipping_country||"Zimbabwe"}</p>
       ${order.notes?`<p>Notes: ${order.notes}</p>`:""}
       <table><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-      ${order.order_items?.map(i=>`<tr><td>${i.product_name}</td><td>${i.quantity}</td><td>$${i.unit_price.toFixed(2)}</td><td>$${i.line_total.toFixed(2)}</td></tr>`).join("")}
+      ${order.order_items?.map(i=>`<tr><td>${i.product_name}${i.variant_name?`<br><small>${i.variant_name}</small>`:""}</td><td>${i.quantity}</td><td>$${i.unit_price.toFixed(2)}</td><td>$${i.line_total.toFixed(2)}</td></tr>`).join("")}
       </table>
       <p>Subtotal: $${order.subtotal.toFixed(2)}</p>
       ${order.discount_total>0?`<p>Discount: -$${order.discount_total.toFixed(2)}</p>`:""}
