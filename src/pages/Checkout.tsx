@@ -147,7 +147,10 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-bb-surface flex flex-col">
         <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-          <div className="flex items-center gap-2 font-black text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink"><Sun className="h-5 w-5 fill-bb-ink text-bb-ink" /></span> TECH INNOVATION</div>
+          <div className="flex items-center gap-2 font-black text-sm">
+            <img src="/Screenshot%202026-09-21%20102302.png" alt="Tech Innovation logo" className="h-8 w-8 rounded-lg object-cover border border-slate-200 bg-white" />
+            <span>TECH INNOVATION</span>
+          </div>
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border overflow-hidden">
@@ -237,7 +240,10 @@ export default function Checkout() {
             <ArrowLeft className="h-4 w-4" /> Shop
           </button>
           <div className="h-5 w-px bg-border" />
-          <div className="flex items-center gap-2 font-black text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink"><Sun className="h-5 w-5 fill-bb-ink text-bb-ink" /></span> TECH INNOVATION</div>
+          <div className="flex items-center gap-2 font-black text-sm">
+            <img src="/Screenshot%202026-09-21%20102302.png" alt="Tech Innovation logo" className="h-8 w-8 rounded-lg object-cover border border-slate-200 bg-white" />
+            <span>TECH INNOVATION</span>
+          </div>
 
           {/* Step breadcrumb — Amazon style */}
           <div className="ml-auto hidden sm:flex items-center gap-1">

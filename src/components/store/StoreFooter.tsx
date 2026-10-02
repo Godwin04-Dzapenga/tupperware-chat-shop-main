@@ -12,9 +12,11 @@ export const StoreFooter = () => {
         {/* Brand & Contact */}
         <div className="md:col-span-2 space-y-3">
           <div className="flex items-center gap-2 font-black text-base">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink">
-              <Sun className="h-5 w-5 fill-bb-ink text-bb-ink" />
-            </span>
+            <img
+              src="/Screenshot%202026-09-21%20102302.png"
+              alt="Tech Innovation logo"
+              className="h-8 w-8 rounded-lg object-cover border border-white/10 bg-white"
+            />
             <span>TECH INNOVATION</span>
           </div>
           <p className="text-white/60 leading-relaxed max-w-sm">

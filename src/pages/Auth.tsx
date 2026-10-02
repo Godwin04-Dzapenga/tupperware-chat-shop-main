@@ -107,10 +107,12 @@ const Auth = () => {
           
           {/* Header branding */}
           <div className="flex flex-col items-center text-center mb-4">
-            <div className="relative mb-2 p-1.5 rounded-xl bg-white border border-slate-200/50 shadow-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow">
-                <Sun className="h-5 w-5 text-bb-ink" />
-              </div>
+            <div className="relative mb-2 rounded-xl border border-slate-200/50 bg-white p-1.5 shadow-sm">
+              <img
+                src="/Screenshot%202026-09-21%20102302.png"
+                alt="Tech Innovation logo"
+                className="h-8 w-8 rounded-lg object-cover bg-white"
+              />
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Tech Innovation

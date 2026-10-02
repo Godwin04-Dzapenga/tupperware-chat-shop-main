@@ -143,10 +143,11 @@ export const StoreHeader = () => {
           <div className="flex h-16 sm:h-[72px] items-center gap-3 sm:gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 shrink-0 select-none group">
-              <span className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink shadow-md font-black transition-transform group-hover:scale-105">
-                <Sun className="h-6 w-6 fill-bb-ink text-bb-ink" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-bb-yellow rotate-45" />
-              </span>
+              <img
+                src="/Screenshot%202026-09-21%20102302.png"
+                alt="Tech Innovation logo"
+                className="h-10 w-10 rounded-lg object-cover border border-white/10 bg-white shadow-md transition-transform group-hover:scale-105 sm:h-11 sm:w-11"
+              />
               <div className="text-left">
                 <span className="block text-base sm:text-lg font-black tracking-tight leading-none text-white">
                   TECH INNOVATION
