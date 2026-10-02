@@ -28,6 +28,7 @@ import { UserManager } from "@/components/admin/UserManager";
 import { OrdersManager } from "@/components/admin/OrdersManager";
 import { CouponsManager } from "@/components/admin/CouponsManager";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { AdminOverview } from "@/components/admin/AdminOverview";
 import { z } from "zod";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -95,7 +96,7 @@ const Admin = () => {
   const [imageFile, setImageFile] = useState<File|null>(null);
   const [videoFile, setVideoFile] = useState<File|null>(null);
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => { fetchData(); }, []);
 
@@ -135,7 +136,7 @@ const Admin = () => {
         description: formData.description.trim()||null,
         price: parseFloat(formData.price),
         cost_price: parseFloat(formData.cost_price)||0,
-        category_id: formData.category_id||null,
+        category_id: formData.category_id && formData.category_id !== "none" ? formData.category_id : null,
         image_url: imageUrl||null,
         video_url: videoUrl||null,
         stock_quantity: parseInt(formData.stock_quantity)||0,
@@ -425,6 +426,7 @@ const Admin = () => {
             {/* Quick nav */}
             <nav className="hidden md:flex items-center gap-0.5">
               {[
+                {id:"overview",label:"Overview",icon:Shield},
                 {id:"analytics",label:"Analytics",icon:BarChart2},
                 {id:"products",label:"Products",icon:Package},
                 {id:"orders",label:"Orders",icon:ShoppingBag},
@@ -520,7 +522,7 @@ const Admin = () => {
             <Select value={activeTab} onValueChange={setActiveTab}>
               <SelectTrigger className="rounded-xl"><SelectValue/></SelectTrigger>
               <SelectContent>
-                {["analytics","products","orders","categories","inventory","coupons","accounting","users"].map(t=>(
+                {["overview","analytics","products","orders","categories","inventory","coupons","accounting","users"].map(t=>(
                   <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -528,7 +530,8 @@ const Admin = () => {
           </div>
 
           {/* Desktop tabs */}
-          <TabsList className="hidden md:grid w-full grid-cols-8 rounded-xl mb-0">
+          <TabsList className="hidden md:grid w-full grid-cols-9 rounded-xl mb-0">
+            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
             <TabsTrigger value="analytics"  className="text-xs">Analytics</TabsTrigger>
             <TabsTrigger value="products"   className="text-xs">Products</TabsTrigger>
             <TabsTrigger value="orders"     className="text-xs">Orders</TabsTrigger>
@@ -538,6 +541,9 @@ const Admin = () => {
             <TabsTrigger value="accounting" className="text-xs">Accounting</TabsTrigger>
             <TabsTrigger value="users"      className="text-xs">Users</TabsTrigger>
           </TabsList>
+
+          {/* ── OVERVIEW ── */}
+          <TabsContent value="overview" className="mt-4"><AdminOverview onNavigate={setActiveTab}/></TabsContent>
 
           {/* ── ANALYTICS ── */}
           <TabsContent value="analytics" className="mt-4"><AnalyticsDashboard/></TabsContent>
