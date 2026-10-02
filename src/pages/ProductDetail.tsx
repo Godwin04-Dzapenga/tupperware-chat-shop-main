@@ -266,7 +266,7 @@ export default function ProductDetail() {
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         {/* ── Left Column: Image Gallery & Badges ── */}
         <div>
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-center">
+          <div className="relative aspect-[4/3] sm:aspect-[5/4] lg:aspect-[5/4] overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-center sm:p-5">
             {savings > 0 && (
               <span className="absolute left-4 top-4 z-10 rounded bg-bb-red px-3 py-1 text-xs font-black text-white shadow-sm uppercase tracking-wider">
                 Save ${savings}
@@ -308,23 +308,23 @@ export default function ProductDetail() {
           )}
 
           {/* Value Guarantees Below Gallery */}
-          <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
             {[
               { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "12–60 Months" },
               { icon: Truck, title: "Nationwide Freight", desc: "Harare & All Provinces" },
               { icon: Wrench, title: "Tech Support", desc: "Expert Sizing & Setup" },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-xl border border-slate-200 bg-white p-3.5 text-center shadow-xs">
-                <Icon className="h-5 w-5 text-bb-blue mx-auto mb-1" />
-                <p className="text-xs font-black text-slate-900">{title}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{desc}</p>
+              <div key={title} className="rounded-xl border border-slate-200 bg-white p-2.5 text-center shadow-xs sm:p-3">
+                <Icon className="h-4 w-4 text-bb-blue mx-auto mb-1 sm:h-5 sm:w-5" />
+                <p className="text-[10px] font-black text-slate-900 sm:text-xs">{title}</p>
+                <p className="mt-0.5 text-[9px] text-slate-500 sm:text-[10px]">{desc}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Right Column: Pricing, Specs & Buy Box ── */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
           <div>
             {/* Brand and Model Header */}
             <div className="flex items-center justify-between gap-2">
@@ -353,7 +353,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <h1 className="mt-2 text-2xl sm:text-3xl font-black text-bb-ink leading-tight">
+            <h1 className="mt-2 text-xl font-black text-bb-ink leading-tight sm:text-2xl lg:text-3xl">
               {product.name}
             </h1>
             <p className="mt-1 text-xs text-slate-400 font-mono">Model: {product.model_number || media?.modelNumber}</p>
@@ -380,9 +380,9 @@ export default function ProductDetail() {
             </div>
 
             {/* ── Pricing Box ── */}
-            <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl sm:text-4xl font-black text-bb-ink">
+                <span className="text-2xl font-black text-bb-ink sm:text-3xl">
                   ${price.toFixed(2)} USD
                 </span>
                 {savings > 0 && (
