@@ -113,7 +113,7 @@ export default function Account() {
             <ArrowLeft className="h-4 w-4" /> Shop
           </Button>
           <div className="h-4 w-px bg-border" />
-          <img src={logoImage} alt="TuppAfrica" className="h-8 w-auto" />
+          <img src={logoImage} alt="Tech Innovation" className="h-8 w-auto" />
           <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">/ My Account</span>
           <Button variant="ghost" size="sm" onClick={signOut} className="ml-auto gap-1.5 text-muted-foreground hover:text-destructive">
             <LogOut className="h-4 w-4" /> Sign Out
