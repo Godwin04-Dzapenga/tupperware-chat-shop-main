@@ -11,7 +11,7 @@ export interface Crumb {
   to?: string;
 }
 
-export type SortKey = "featured" | "price-asc" | "price-desc" | "rating" | "savings";
+export type SortKey = "featured" | "price-asc" | "price-desc" | "rating" | "savings" | "name";
 
 const PRICE_RANGES = [
   { key: "0-100", label: "Under $100", min: 0, max: 100 },
@@ -22,11 +22,12 @@ const PRICE_RANGES = [
 ];
 
 const SORT_LABELS: Record<SortKey, string> = {
-  featured: "Best Match",
+  featured: "Featured",
   "price-asc": "Price: Low to High",
   "price-desc": "Price: High to Low",
   rating: "Top Rated",
   savings: "Biggest Savings",
+  name: "Name: A–Z",
 };
 
 interface ProductListingProps {
@@ -52,6 +53,7 @@ export const ProductListing = ({
   const { addProduct, orderViaWhatsApp } = useStoreActions();
 
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [topRatedOnly, setTopRatedOnly] = useState(false);
@@ -60,15 +62,32 @@ export const ProductListing = ({
 
   const brands = useMemo(() => {
     const counts = new Map<string, number>();
-    products.forEach((p) => counts.set(p.brand, (counts.get(p.brand) || 0) + 1));
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    products.forEach((p) => {
+      const brand = p.brand?.trim() || "Other";
+      counts.set(brand, (counts.get(brand) || 0) + 1);
+    });
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  }, [products]);
+
+  const productTypes = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach((p) => {
+      const type = p.product_type?.trim();
+      if (type) counts.set(type, (counts.get(type) || 0) + 1);
+    });
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
   }, [products]);
 
   const activeFilterCount =
-    selectedBrands.length + (priceRange ? 1 : 0) + (inStockOnly ? 1 : 0) + (topRatedOnly ? 1 : 0);
+    selectedBrands.length +
+    selectedTypes.length +
+    (priceRange ? 1 : 0) +
+    (inStockOnly ? 1 : 0) +
+    (topRatedOnly ? 1 : 0);
 
   const clearAll = () => {
     setSelectedBrands([]);
+    setSelectedTypes([]);
     setPriceRange(null);
     setInStockOnly(false);
     setTopRatedOnly(false);
@@ -76,15 +95,25 @@ export const ProductListing = ({
 
   const visible = useMemo(() => {
     let list = products;
-    if (selectedBrands.length) list = list.filter((p) => selectedBrands.includes(p.brand));
+
+    if (selectedBrands.length) {
+      list = list.filter((p) => selectedBrands.includes(p.brand || "Other"));
+    }
+
+    if (selectedTypes.length) {
+      list = list.filter((p) => selectedTypes.includes(p.product_type || ""));
+    }
+
     if (priceRange) {
       const range = PRICE_RANGES.find((r) => r.key === priceRange);
       if (range) list = list.filter((p) => p.price >= range.min && p.price < range.max);
     }
+
     if (inStockOnly) list = list.filter((p) => p.stock_quantity > 0);
     if (topRatedOnly) list = list.filter((p) => p.avg_rating >= 4);
 
     const sorted = [...list];
+
     switch (sort) {
       case "price-asc":
         sorted.sort((a, b) => a.price - b.price);
@@ -98,11 +127,30 @@ export const ProductListing = ({
       case "savings":
         sorted.sort((a, b) => b.savings - a.savings);
         break;
+      case "name":
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
       default:
-        sorted.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+        sorted.sort(
+          (a, b) =>
+            Number(b.is_featured) - Number(a.is_featured) ||
+            b.avg_rating - a.avg_rating
+        );
     }
+
     return sorted;
-  }, [products, selectedBrands, priceRange, inStockOnly, topRatedOnly, sort]);
+  }, [products, selectedBrands, selectedTypes, priceRange, inStockOnly, topRatedOnly, sort]);
+
+  const toggleValue = (
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setter((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value]
+    );
+  };
 
   const filterRail = (
     <div className="space-y-1">
@@ -122,14 +170,27 @@ export const ProductListing = ({
               <input
                 type="checkbox"
                 checked={selectedBrands.includes(brand)}
-                onChange={() =>
-                  setSelectedBrands((prev) =>
-                    prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
-                  )
-                }
+                onChange={() => toggleValue(brand, setSelectedBrands)}
                 className="h-4 w-4 rounded border-slate-300 accent-bb-blue"
               />
               <span className="flex-1 truncate">{brand}</span>
+              <span className="text-xs text-slate-400">{count}</span>
+            </label>
+          ))}
+        </FilterSection>
+      )}
+
+      {productTypes.length > 0 && (
+        <FilterSection title="Product Type">
+          {productTypes.map(([type, count]) => (
+            <label key={type} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 hover:text-bb-ink">
+              <input
+                type="checkbox"
+                checked={selectedTypes.includes(type)}
+                onChange={() => toggleValue(type, setSelectedTypes)}
+                className="h-4 w-4 rounded border-slate-300 accent-bb-blue"
+              />
+              <span className="flex-1 truncate capitalize">{type}</span>
               <span className="text-xs text-slate-400">{count}</span>
             </label>
           ))}
@@ -140,6 +201,7 @@ export const ProductListing = ({
         {PRICE_RANGES.map((range) => {
           const count = products.filter((p) => p.price >= range.min && p.price < range.max).length;
           const disabled = count === 0 && priceRange !== range.key;
+
           return (
             <label
               key={range.key}
@@ -159,7 +221,7 @@ export const ProductListing = ({
         })}
       </FilterSection>
 
-      <FilterSection title="Availability">
+      <FilterSection title="Availability & Rating">
         <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700 hover:text-bb-ink">
           <input
             type="checkbox"
@@ -176,7 +238,7 @@ export const ProductListing = ({
             onChange={(e) => setTopRatedOnly(e.target.checked)}
             className="h-4 w-4 rounded border-slate-300 accent-bb-blue"
           />
-          <span className="flex-1">Customer rating 4 &amp; up</span>
+          <span className="flex-1">Customer rating 4+</span>
         </label>
       </FilterSection>
     </div>
@@ -184,16 +246,13 @@ export const ProductListing = ({
 
   return (
     <div className="store-shell py-6">
-      {/* Breadcrumbs */}
       {crumbs.length > 0 && (
-        <nav className="mb-3 flex flex-wrap items-center gap-1 text-xs text-slate-500">
+        <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs text-slate-500">
           {crumbs.map((crumb, i) => (
             <span key={`${crumb.label}-${i}`} className="flex items-center gap-1">
               {i > 0 && <ChevronRight className="h-3 w-3 text-slate-400" />}
               {crumb.to ? (
-                <Link to={crumb.to} className="hover:text-bb-blue hover:underline">
-                  {crumb.label}
-                </Link>
+                <Link to={crumb.to} className="hover:text-bb-blue hover:underline">{crumb.label}</Link>
               ) : (
                 <span className="font-semibold text-slate-700">{crumb.label}</span>
               )}
@@ -202,21 +261,22 @@ export const ProductListing = ({
         </nav>
       )}
 
-      {/* Page title */}
       <div className="mb-4">
-        <h1 className="text-2xl font-black tracking-tight text-bb-ink sm:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-2xl text-sm text-slate-600">{subtitle}</p>}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-bb-ink sm:text-3xl">{title}</h1>
+            {subtitle && <p className="mt-1 max-w-2xl text-sm text-slate-600">{subtitle}</p>}
+          </div>
+          {!loading && <span className="text-xs font-semibold text-slate-500">{products.length} products</span>}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
-        {/* Desktop filter rail */}
         <aside className="hidden self-start rounded-lg border border-slate-200 bg-white p-3 lg:sticky lg:top-36 lg:block">
           {filterRail}
         </aside>
 
-        {/* Results */}
         <div>
-          {/* Toolbar */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5">
             <div className="flex items-center gap-3">
               <button
@@ -226,14 +286,11 @@ export const ProductListing = ({
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-bb-red px-1.5 text-[10px] font-black text-white">
-                    {activeFilterCount}
-                  </span>
+                  <span className="rounded-full bg-bb-red px-1.5 text-[10px] font-black text-white">{activeFilterCount}</span>
                 )}
               </button>
               <span className="text-sm text-slate-600">
-                {loading ? "Loading…" : <span className="font-bold text-bb-ink">{visible.length}</span>}
-                {" "}items
+                {loading ? "Loading…" : <span className="font-bold text-bb-ink">{visible.length}</span>} items
               </span>
             </div>
 
@@ -245,20 +302,17 @@ export const ProductListing = ({
                 className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-semibold text-bb-ink focus:border-bb-blue focus:outline-none"
               >
                 {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                  <option key={key} value={key}>
-                    {SORT_LABELS[key]}
-                  </option>
+                  <option key={key} value={key}>{SORT_LABELS[key]}</option>
                 ))}
               </select>
             </label>
           </div>
 
-          {/* Mobile filter panel */}
           {mobileFiltersOpen && (
             <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 lg:hidden">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-bold text-bb-ink">Filters</span>
-                <button onClick={() => setMobileFiltersOpen(false)} className="text-slate-400 hover:text-bb-ink">
+                <button onClick={() => setMobileFiltersOpen(false)} className="text-slate-400 hover:text-bb-ink" aria-label="Close filters">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -266,29 +320,25 @@ export const ProductListing = ({
             </div>
           )}
 
-          {/* Active filter pills */}
           {activeFilterCount > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {selectedBrands.map((brand) => (
-                <FilterPill key={brand} label={brand} onRemove={() => setSelectedBrands((prev) => prev.filter((b) => b !== brand))} />
+                <FilterPill key={`brand-${brand}`} label={brand} onRemove={() => setSelectedBrands((prev) => prev.filter((b) => b !== brand))} />
+              ))}
+              {selectedTypes.map((type) => (
+                <FilterPill key={`type-${type}`} label={type} onRemove={() => setSelectedTypes((prev) => prev.filter((t) => t !== type))} />
               ))}
               {priceRange && (
-                <FilterPill
-                  label={PRICE_RANGES.find((r) => r.key === priceRange)?.label || ""}
-                  onRemove={() => setPriceRange(null)}
-                />
+                <FilterPill label={PRICE_RANGES.find((r) => r.key === priceRange)?.label || ""} onRemove={() => setPriceRange(null)} />
               )}
               {inStockOnly && <FilterPill label="In stock" onRemove={() => setInStockOnly(false)} />}
               {topRatedOnly && <FilterPill label="4+ stars" onRemove={() => setTopRatedOnly(false)} />}
-              <button onClick={clearAll} className="text-xs font-semibold text-bb-blue hover:underline">
-                Clear all
-              </button>
+              <button onClick={clearAll} className="text-xs font-semibold text-bb-blue hover:underline">Clear all</button>
             </div>
           )}
 
-          {/* Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-3.5">
                   <div className="aspect-square rounded-lg bg-slate-100" />
@@ -303,20 +353,15 @@ export const ProductListing = ({
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white py-16 text-center">
               <SearchX className="mb-3 h-10 w-10 text-slate-300" />
               <p className="text-lg font-bold text-bb-ink">No products match those filters</p>
-              <p className="mt-1 max-w-sm text-sm text-slate-500">
-                {emptyHint || "Try removing a filter or browsing another department."}
-              </p>
+              <p className="mt-1 max-w-sm text-sm text-slate-500">{emptyHint || "Try removing a filter or browsing another department."}</p>
               {activeFilterCount > 0 && (
-                <button
-                  onClick={clearAll}
-                  className="mt-4 rounded-md bg-bb-yellow px-5 py-2 text-xs font-black uppercase tracking-wide text-black hover:bg-bb-yellow-dark"
-                >
+                <button onClick={clearAll} className="mt-4 rounded-md bg-bb-yellow px-5 py-2 text-xs font-black uppercase tracking-wide text-black hover:bg-bb-yellow-dark">
                   Clear all filters
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
               {visible.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -346,7 +391,7 @@ const FilterSection = ({ title, children }: { title: string; children: React.Rea
 const FilterPill = ({ label, onRemove }: { label: string; onRemove: () => void }) => (
   <span className="flex items-center gap-1.5 rounded-full border border-slate-300 bg-white py-1 pl-3 pr-1.5 text-xs font-semibold text-bb-ink">
     {label}
-    <button onClick={onRemove} className="rounded-full p-0.5 text-slate-400 hover:bg-slate-100 hover:text-bb-ink">
+    <button onClick={onRemove} className="rounded-full p-0.5 text-slate-400 hover:bg-slate-100 hover:text-bb-ink" aria-label={`Remove ${label} filter`}>
       <X className="h-3 w-3" />
     </button>
   </span>

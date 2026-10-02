@@ -21,6 +21,7 @@ import ProductVariantsAdmin from "./pages/ProductVariantsAdmin";
 import CategoryPage from "./pages/CategoryPage";
 import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
+import DealsPage from "./pages/DealsPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
                     <Route path="/" element={<SolarHome />} />
                     <Route path="/c/:slug" element={<CategoryPage />} />
                     <Route path="/search" element={<SearchPage />} />
+                    <Route path="/deals" element={<DealsPage />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/auth" element={<Auth />} />
