@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     }
 
     await supabase.from("payments").insert({
-      order_id: order.id, provider: payment_method, amount: total, currency: "USD",
+      order_id: order.id, provider: payment_method, amount: total,
       status: payment_method === "cash_on_delivery" ? "pending" : "initiated",
     });
 
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     })));
 
     await supabase.from("audit_log").insert({
-      actor_id: userId, action: "create", entity: "orders", entity_id: order.id,
+      user_id: userId, action: "create", entity: "orders", entity_id: order.id,
       diff: { order_number: orderNumber, total, item_count: items.length },
     });
 

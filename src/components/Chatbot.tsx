@@ -17,8 +17,8 @@ interface SuggestedProduct {
   id: string; name: string; price: number; image_url: string | null;
 }
 
-const WELCOME = "Hi! 👋 I'm Tuppie, your TuppAfrica shopping assistant. I can help you find products, check prices, and answer questions. What are you looking for today?";
-const QUICK_REPLIES = ["Show all products", "What's on sale?", "Delivery info", "Contact us"];
+const WELCOME = "Hi! 👋 I'm InnoBot, your Tech Innovation shopping assistant. I can help you find solar panels, inverters, batteries, and electronics. What are you looking for today?";
+const QUICK_REPLIES = ["Show solar panels", "Hybrid inverters", "Delivery info", "Contact us"];
 
 export const Chatbot = () => {
   const [open, setOpen] = useState(false);
@@ -80,8 +80,12 @@ export const Chatbot = () => {
     setLoading(true);
 
     try {
+      const messageHistory = [...messages, { id: Date.now().toString(), text: content, isBot: false, timestamp: new Date() }]
+        .filter(m => m.id !== "welcome")
+        .map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
+
       const { data, error } = await supabase.functions.invoke("chat-assistant", {
-        body: { message: content },
+        body: { messages: messageHistory, products: [] },
       });
       if (error) throw error;
 
@@ -155,7 +159,7 @@ export const Chatbot = () => {
           <button
             onClick={handleOpen}
             className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-xl transition-all hover:scale-110 active:scale-95"
-            style={{ boxShadow: "0 4px 24px hsl(180 65% 45% / 0.45)" }}
+            style={{ boxShadow: "0 4px 24px rgba(0, 70, 190, 0.45)" }}
             aria-label="Open chat"
           >
             <MessageCircle className="h-6 w-6" />
@@ -173,7 +177,7 @@ export const Chatbot = () => {
             <div className="absolute bottom-16 left-0 w-52 rounded-xl bg-white p-3 shadow-xl border text-xs text-[#1c1c1c] font-medium">
               <div className="flex items-center gap-2 mb-1">
                 <Bot className="h-4 w-4 text-primary shrink-0"/>
-                <span className="font-bold text-primary">Tuppie</span>
+                <span className="font-bold text-primary">InnoBot</span>
               </div>
               Need help finding the right product? I'm here! 👋
               <div className="absolute -bottom-1.5 left-5 h-3 w-3 rotate-45 bg-white border-r border-b"/>
@@ -197,8 +201,8 @@ export const Chatbot = () => {
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-primary"/>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white leading-none">Tuppie</p>
-              <p className="text-[10px] text-white/70 mt-0.5">TuppAfrica Assistant · Online</p>
+              <p className="text-sm font-bold text-white leading-none">InnoBot</p>
+              <p className="text-[10px] text-white/70 mt-0.5">Tech Innovation Assistant · Online</p>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -323,7 +327,7 @@ export const Chatbot = () => {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder={recording ? "Listening…" : "Ask Tuppie anything…"}
+                  placeholder={recording ? "Listening…" : "Ask InnoBot anything…"}
                   disabled={loading || recording}
                   className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
@@ -340,7 +344,7 @@ export const Chatbot = () => {
               {/* Footer */}
               <div className="bg-white px-4 py-1.5 border-t text-center">
                 <p className="text-[9px] text-muted-foreground/60">
-                  Powered by TuppAfrica AI · <a href="https://wa.me/2630784721912" target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Switch to WhatsApp</a>
+                  Powered by Tech Innovation AI · <a href="https://wa.me/263778158984" target="_blank" rel="noreferrer" className="text-[#0046be] font-semibold hover:underline">Switch to WhatsApp</a>
                 </p>
               </div>
             </>

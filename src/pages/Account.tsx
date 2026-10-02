@@ -9,10 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import logoImage from "@/assets/tuppafrica-logo.jpg";
 import {
   ArrowLeft, User, MapPin, Package, Heart, Settings,
-  Edit2, Check, X, Plus, Trash2, LogOut, ShoppingBag, Star
+  Edit2, Check, X, Plus, Trash2, LogOut, ShoppingBag, Star, Sun
 } from "lucide-react";
 
 interface Profile { full_name: string | null; phone: string | null; email: string | null; }
@@ -113,7 +112,12 @@ export default function Account() {
             <ArrowLeft className="h-4 w-4" /> Shop
           </Button>
           <div className="h-4 w-px bg-border" />
-          <img src={logoImage} alt="TuppAfrica" className="h-8 w-auto" />
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ffe000] text-[#111820]">
+              <Sun className="h-5 w-5" />
+            </span>
+            <span className="hidden text-sm font-black sm:block">TECH INNOVATION</span>
+          </div>
           <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">/ My Account</span>
           <Button variant="ghost" size="sm" onClick={signOut} className="ml-auto gap-1.5 text-muted-foreground hover:text-destructive">
             <LogOut className="h-4 w-4" /> Sign Out

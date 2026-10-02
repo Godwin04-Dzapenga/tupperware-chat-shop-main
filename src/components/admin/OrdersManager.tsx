@@ -150,7 +150,7 @@ export function OrdersManager() {
 
   const exportPDF = () => {
     const doc=new jsPDF("l","mm","a4");
-    doc.setFontSize(14); doc.text("TuppAfrica — Orders Report",14,14);
+    doc.setFontSize(14); doc.text("Tech Innovation — Orders Report",14,14);
     doc.setFontSize(9); doc.setTextColor(100);
     doc.text(`Period: ${fmtDate(dateFrom)} – ${fmtDate(dateTo)}   Revenue: ${fmt(kpi.revenue)}   Orders: ${kpi.total}   Pending: ${kpi.pending}`,14,20);
     autoTable(doc,{
@@ -182,7 +182,7 @@ export function OrdersManager() {
     const w=window.open("","_blank");
     if (!w) return;
     w.document.write(`<html><head><title>${order.order_number}</title><style>body{font-family:Arial,sans-serif;padding:24px;max-width:600px;margin:0 auto}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{padding:8px;text-align:left;border-bottom:1px solid #eee}th{font-size:11px;text-transform:uppercase;color:#666}.total{font-weight:bold;font-size:16px}</style></head><body>
-      <h1>TuppAfrica — ${order.order_number}</h1>
+      <h1>Tech Innovation — ${order.order_number}</h1>
       <p>Date: ${fmtDateTime(order.created_at)} | Status: ${order.status}</p>
       <p>Customer: ${order.shipping_name||"—"} | ${order.shipping_phone||"—"}</p>
       <p>Address: ${order.shipping_line1||"—"}, ${order.shipping_city||"—"}, ${order.shipping_country||"Zimbabwe"}</p>
@@ -201,7 +201,7 @@ export function OrdersManager() {
 
   const whatsappCustomer = (order: Order) => {
     const phone=(order.shipping_phone||"").replace(/\D/g,"");
-    const msg=encodeURIComponent(`Hi ${order.shipping_name?.split(" ")[0]||""}! 👋\n\nYour TuppAfrica order *${order.order_number}* is now *${order.status}*.\n\nTotal: $${order.total.toFixed(2)}\nItems: ${order.order_items?.length} product(s)\n\nThank you for shopping with us! 🛍️`);
+    const msg=encodeURIComponent(`Hi ${order.shipping_name?.split(" ")[0]||""}! 👋\n\nYour Tech Innovation order *${order.order_number}* is now *${order.status}*.\n\nTotal: $${order.total.toFixed(2)}\nItems: ${order.order_items?.length} product(s)\n\nThank you for shopping with us! 🛍️`);
     window.open(`https://wa.me/${phone}?text=${msg}`,"_blank");
   };
 

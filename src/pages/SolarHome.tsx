@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Cart } from "@/components/Cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Chatbot } from "@/components/Chatbot";
 
 interface Product {
   id: string;
@@ -176,6 +177,13 @@ const SolarHome = () => {
               <button className="hidden rounded-md p-2.5 hover:bg-slate-100 sm:block" title="Saved products"><Heart className="h-5 w-5" /></button>
               <button onClick={() => navigate(user ? "/account" : "/auth")} className="hidden rounded-md p-2.5 hover:bg-slate-100 sm:block" title="Account"><UserRound className="h-5 w-5" /></button>
               <Cart />
+              <button
+                className="rounded-md p-2.5 hover:bg-slate-100 md:hidden"
+                title="Search"
+                onClick={() => setMobileOpen(true)}
+              >
+                <Search className="h-5 w-5" />
+              </button>
               <button className="rounded-md p-2.5 hover:bg-slate-100 lg:hidden" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>
             </div>
           </div>
@@ -344,12 +352,54 @@ const SolarHome = () => {
 
       <footer className="bg-[#071c38] py-10 text-white">
         <div className="container mx-auto grid gap-8 px-4 md:grid-cols-4">
-          <div className="md:col-span-2"><div className="flex items-center gap-2 font-black"><span className="flex h-8 w-8 items-center justify-center rounded bg-[#ffe000] text-[#111820]"><Sun className="h-4 w-4" /></span> TECH INNOVATION</div><p className="mt-3 max-w-md text-sm leading-6 text-white/55">Solar power, backup systems, batteries, inverters and electronics for homes and businesses in Zimbabwe.</p></div>
-          <div><p className="font-bold">Shop</p><div className="mt-3 space-y-2 text-xs text-white/55"><button onClick={() => setActiveCategory("solar-panels")} className="block hover:text-white">Solar panels</button><button onClick={() => setActiveCategory("inverters")} className="block hover:text-white">Inverters</button><button onClick={() => setActiveCategory("batteries")} className="block hover:text-white">Batteries</button><button onClick={() => setActiveCategory("solar-kits")} className="block hover:text-white">Solar kits</button></div></div>
-          <div><p className="font-bold">Support</p><div className="mt-3 space-y-2 text-xs text-white/55"><Link to="/about" className="block hover:text-white">About Tech Innovation</Link><a href="tel:0778158984" className="block hover:text-white"><Phone className="mr-1 inline h-3 w-3" />0778158984</a><a href="mailto:infotitechinnovations@gmail.com" className="block hover:text-white">infotitechinnovations@gmail.com</a></div></div>
+          <div className="md:col-span-1">
+            <div className="flex items-center gap-2 font-black"><span className="flex h-8 w-8 items-center justify-center rounded bg-[#ffe000] text-[#111820]"><Sun className="h-4 w-4" /></span> TECH INNOVATION</div>
+            <p className="mt-3 max-w-md text-sm leading-6 text-white/55">Solar power, backup systems, batteries, inverters and electronics for homes and businesses in Zimbabwe.</p>
+          </div>
+          <div>
+            <p className="font-bold">Shop</p>
+            <div className="mt-3 space-y-2 text-xs text-white/55">
+              <button onClick={() => setActiveCategory("solar-panels")} className="block hover:text-white">Solar panels</button>
+              <button onClick={() => setActiveCategory("inverters")} className="block hover:text-white">Inverters</button>
+              <button onClick={() => setActiveCategory("batteries")} className="block hover:text-white">Batteries</button>
+              <button onClick={() => setActiveCategory("solar-kits")} className="block hover:text-white">Solar kits</button>
+            </div>
+          </div>
+          <div>
+            <p className="font-bold">Support</p>
+            <div className="mt-3 space-y-2 text-xs text-white/55">
+              <Link to="/about" className="block hover:text-white">About Tech Innovation</Link>
+              <a href="tel:0778158984" className="block hover:text-white"><Phone className="mr-1 inline h-3 w-3" />0778158984</a>
+              <a href="mailto:infotitechinnovations@gmail.com" className="block hover:text-white">infotitechinnovations@gmail.com</a>
+            </div>
+          </div>
+          <div>
+            <p className="font-bold">Account</p>
+            <div className="mt-3 space-y-2 text-xs text-white/55">
+              <Link to="/account" className="block hover:text-white">My Account</Link>
+              <Link to="/orders" className="block hover:text-white">My Orders</Link>
+              <Link to="/auth" className="block hover:text-white">Sign In</Link>
+              <Link to="/about" className="block hover:text-white">About</Link>
+            </div>
+          </div>
         </div>
-        <div className="container mx-auto mt-8 border-t border-white/10 px-4 pt-5 text-xs text-white/30">© {new Date().getFullYear()} Tech Innovation. Solar & Electronics.</div>
+        <div className="container mx-auto mt-8 border-t border-white/10 px-4 pt-5 text-xs text-white/30">
+          © {new Date().getFullYear()} Tech Innovation Zimbabwe. All rights reserved.
+        </div>
       </footer>
+
+      {/* Floating WhatsApp button */}
+      <a
+        href={`https://wa.me/${WHATSAPP}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Chat on WhatsApp"
+        className="fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] shadow-lg hover:bg-[#128C7E] transition-colors"
+      >
+        <MessageCircle className="h-6 w-6 text-white" />
+      </a>
+
+      <Chatbot />
     </div>
   );
 };

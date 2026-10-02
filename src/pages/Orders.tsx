@@ -96,7 +96,7 @@ export default function Orders() {
     const msg = encodeURIComponent(
       `Hi! I'd like to follow up on my order *${order.order_number}*.\n\nCurrent status: ${order.status}\nTotal: $${order.total.toFixed(2)}\n\nThank you!`
     );
-    return `https://wa.me/2630784721912?text=${msg}`;
+    return `https://wa.me/263778158984?text=${msg}`;
   };
 
   if (loading || authLoading) {
