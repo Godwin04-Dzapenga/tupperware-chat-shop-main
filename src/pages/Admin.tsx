@@ -661,7 +661,7 @@ const Admin = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex gap-1 justify-end">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()=>navigate(`/product/${p.id}`)} title="View"><Eye className="h-3.5 w-3.5"/></Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()=>navigate(`/product/${p.id}`)} title="View"><Eye className="h-3.5 w-3.5"/></Button>\n                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()=>navigate(`/admin/products/${p.id}/variants`)} title="Manage variants"><List className="h-3.5 w-3.5"/></Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()=>handleEdit(p)} title="Edit"><Edit className="h-3.5 w-3.5"/></Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={()=>handleDelete(p.id,p.name)} title="Delete"><Trash2 className="h-3.5 w-3.5"/></Button>
                                 </div>
