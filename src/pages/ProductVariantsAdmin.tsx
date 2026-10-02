@@ -131,19 +131,21 @@ export default function ProductVariantsAdmin() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 rounded-xl border bg-white p-5">
-          <div className="flex gap-4">
-            <div className="h-20 w-20 overflow-hidden rounded-lg bg-slate-100">
+      <main className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
+          <div className="flex flex-col gap-5 p-6 sm:flex-row">
+            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
               {product.image_url ? <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" /> : <Package className="m-6 h-8 w-8 text-slate-300" />}
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#0046be]">Parent product</p>
+              <div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#0046be]">Catalogue product</span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">{variants.length} variants</span></div>
               <h1 className="mt-1 text-xl font-black">{product.name}</h1>
-              <p className="mt-1 text-sm text-slate-500">Base price: {product.price.toFixed(2)} USD. Configure capacity, power, size, configuration or colour.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Create the options customers see on the product page. Use variants for capacity, power, voltage, size, colour or other meaningful configurations. Each option can have its own price, SKU, stock and image.</p>
             </div>
           </div>
         </div>
+
+        <div className="mb-5 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl border bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Options</p><p className="mt-1 text-2xl font-black text-slate-950">{variants.length}</p></div><div className="rounded-2xl border bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active options</p><p className="mt-1 text-2xl font-black text-emerald-600">{variants.filter(v => v.is_active).length}</p></div><div className="rounded-2xl border bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Units in stock</p><p className="mt-1 text-2xl font-black text-slate-950">{variants.reduce((sum, v) => sum + Number(v.stock_quantity || 0), 0)}</p></div></div>
 
         <div className="mb-4 flex items-center justify-between">
           <div><h2 className="text-lg font-black">Variants</h2><p className="text-xs text-slate-500">{variants.length} configured options</p></div>
