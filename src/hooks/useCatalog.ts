@@ -21,6 +21,13 @@ export interface StoreProduct {
   product_type: string;
   variant_count: number;
   variant_names: string[];
+  power_watts: number | null;
+  voltage: string | null;
+  capacity: string | null;
+  warranty_months: number | null;
+  installation_required: boolean;
+  specifications: Record<string, unknown>;
+  variant_attributes: Record<string, string[]>;
 }
 
 export interface StoreCategory {
@@ -66,7 +73,7 @@ async function fetchProducts(): Promise<StoreProduct[]> {
       .order("created_at", { ascending: false }),
     supabase
       .from("product_variants")
-      .select("id,product_id,name,price,stock_quantity")
+      .select("id,product_id,name,price,stock_quantity,attributes")
       .eq("is_active", true)
       .order("sort_order"),
   ]);
@@ -107,6 +114,23 @@ async function fetchProducts(): Promise<StoreProduct[]> {
       product_type: product.product_type || "",
       variant_count: productVariants.length,
       variant_names: productVariants.map((v) => v.name),
+      power_watts: product.power_watts ?? null,
+      voltage: product.voltage ?? null,
+      capacity: product.capacity ?? null,
+      warranty_months: product.warranty_months ?? null,
+      installation_required: Boolean(product.installation_required),
+      specifications:
+        product.specifications && typeof product.specifications === "object" && !Array.isArray(product.specifications)
+          ? (product.specifications as Record<string, unknown>)
+          : {},
+      variant_attributes: productVariants.reduce<Record<string, string[]>>((acc, variant) => {
+        if (!variant.attributes || typeof variant.attributes !== "object" || Array.isArray(variant.attributes)) return acc;
+        Object.entries(variant.attributes as Record<string, unknown>).forEach(([key, value]) => {
+          const values = Array.isArray(value) ? value.map(String) : [String(value)];
+          acc[key] = Array.from(new Set([...(acc[key] || []), ...values]));
+        });
+        return acc;
+      }, {}),
     };
   });
 }
