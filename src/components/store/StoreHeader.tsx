@@ -415,7 +415,7 @@ export const StoreHeader = () => {
         <div className="container mx-auto px-4 overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-1 sm:gap-4 py-2 min-w-max text-xs font-bold text-slate-700">
             <Link
-              to="/search?deals=1"
+              to="/deals"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bb-red text-white hover:bg-bb-red-dark transition-colors shadow-sm"
             >
               <Flame className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
