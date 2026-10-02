@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -32,16 +32,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/hooks/useCart";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductQuickView } from "@/components/ProductQuickView";
-import { ProductCompareModal, CompareDock, CompareProduct } from "@/components/ProductCompareModal";
-import { DealOfTheDay } from "@/components/DealOfTheDay";
-import { SystemSizer } from "@/components/SystemSizer";
-import { StoreModal } from "@/components/StoreModal";
+import type { CompareProduct } from "@/components/ProductCompareModal";
 import { BestBuyHeader } from "@/components/BestBuyHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Chatbot } from "@/components/Chatbot";
+const ProductQuickView = lazy(() => import("@/components/ProductQuickView").then((m) => ({ default: m.ProductQuickView })));
+const ProductCompareModal = lazy(() => import("@/components/ProductCompareModal").then((m) => ({ default: m.ProductCompareModal })));
+const CompareDock = lazy(() => import("@/components/ProductCompareModal").then((m) => ({ default: m.CompareDock })));
+const DealOfTheDay = lazy(() => import("@/components/DealOfTheDay").then((m) => ({ default: m.DealOfTheDay })));
+const SystemSizer = lazy(() => import("@/components/SystemSizer").then((m) => ({ default: m.SystemSizer })));
+const StoreModal = lazy(() => import("@/components/StoreModal").then((m) => ({ default: m.StoreModal })));
+const Chatbot = lazy(() => import("@/components/Chatbot").then((m) => ({ default: m.Chatbot })));
 import { SizerPreset, getProductMedia } from "@/data/solarProducts";
 
 interface Product {
@@ -968,6 +970,7 @@ const SolarHome = () => {
       />
 
       {/* ── 11. Modals ── */}
+      <Suspense fallback={null}>
       <StoreModal open={storeModalOpen} onClose={() => setStoreModalOpen(false)} />
 
       <ProductCompareModal
@@ -986,6 +989,8 @@ const SolarHome = () => {
         product={quickViewProduct}
         onOrder={orderViaWhatsApp}
       />
+
+      </Suspense>
 
       {/* Floating WhatsApp Action Button */}
       <a
