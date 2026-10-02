@@ -10,6 +10,7 @@ import { ArrowLeft, Package, MessageCircle, Clock, CheckCircle2, Truck, XCircle,
 interface OrderItem {
   id: string;
   product_name: string;
+  variant_name: string | null;
   quantity: number;
   unit_price: number;
   line_total: number;
@@ -96,7 +97,7 @@ export default function Orders() {
     const msg = encodeURIComponent(
       `Hi! I'd like to follow up on my order *${order.order_number}*.\n\nCurrent status: ${order.status}\nTotal: $${order.total.toFixed(2)}\n\nThank you!`
     );
-    return `https://wa.me/2630784721912?text=${msg}`;
+    return `https://wa.me/263778158984?text=${msg}`;
   };
 
   if (loading || authLoading) {
@@ -197,7 +198,7 @@ export default function Orders() {
                         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Items</h4>
                         {order.order_items?.map((item) => (
                           <div key={item.id} className="flex justify-between text-sm border rounded-lg p-3">
-                            <span className="font-medium">{item.product_name} <span className="text-muted-foreground">×{item.quantity}</span></span>
+                            <div><span className="font-medium">{item.product_name} <span className="text-muted-foreground">×{item.quantity}</span></span>{item.variant_name && <p className="text-xs text-muted-foreground">{item.variant_name}</p>}</div>
                             <span className="font-bold">${item.line_total.toFixed(2)}</span>
                           </div>
                         ))}
