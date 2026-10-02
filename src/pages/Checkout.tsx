@@ -24,6 +24,8 @@ type Step = "cart" | "shipping" | "payment" | "confirm";
 type CheckoutPath = "online" | "whatsapp" | null;
 type PaymentMethod = "cash_on_delivery" | "paynow_ecocash" | "paynow_onemoney" | "stripe_card";
 
+const PAYMENT_LABELS: Record<PaymentMethod, string> = { cash_on_delivery: "Cash on delivery", paynow_ecocash: "EcoCash via Paynow", paynow_onemoney: "OneMoney via Paynow", stripe_card: "Card payment" };
+
 interface ShippingForm {
   name: string; phone: string; email: string;
   line1: string; line2: string; city: string; country: string;
@@ -115,14 +117,14 @@ export default function Checkout() {
 
   // ── WhatsApp direct order (bypass online checkout) ───────────────────
   const orderViaWhatsApp = () => {
-    const itemsList = items.map(i => `• ${i.name} ×${i.quantity} — $${(i.price * i.quantity).toFixed(2)}`).join("\n");
+    const itemsList = items.map(i => `• ${i.name}${i.variant_name ? ` — ${i.variant_name}` : ""} ×${i.quantity} — ${(i.price * i.quantity).toFixed(2)}`).join("\n");
     const msg = encodeURIComponent(
       `Hi! I'd like to place an order:\n\n${itemsList}\n\n` +
       (discount > 0 ? `Coupon: ${couponCode} (-$${discount.toFixed(2)})\n` : "") +
       `Subtotal: $${totalPrice.toFixed(2)}\n` +
       `Shipping: ${shippingFee === 0 ? "FREE" : `$${shippingFee.toFixed(2)}`}\n` +
       `*Total: $${finalTotal.toFixed(2)}*\n\n` +
-      `Please confirm availability and delivery details. Thank you!`
+      `Please confirm availability, payment instructions and delivery details. Thank you!`
     );
     window.open(`https://wa.me/263778158984?text=${msg}`, "_blank");
   };
@@ -186,7 +188,7 @@ export default function Checkout() {
                   <MessageCircle className="h-4 w-4 shrink-0" />
                   Confirm your order on WhatsApp
                 </p>
-                <p className="text-xs text-emerald-700">Our team will confirm your order, arrange payment, and give you a delivery time.</p>
+                <p className="text-xs text-emerald-700">Our team will confirm stock, payment status and delivery arrangements with you.</p>
                 <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm h-11 gap-2"
                   onClick={() => window.open(orderResult.whatsapp_url, "_blank")}>
                   <MessageCircle className="h-4 w-4" /> Open WhatsApp
@@ -199,7 +201,7 @@ export default function Checkout() {
                 {[
                   { n: "1", t: "We confirm stock & availability via WhatsApp" },
                   { n: "2", t: "You pay using your preferred method" },
-                  { n: "3", t: "We deliver to your door in Harare" },
+                  { n: "3", t: "We arrange delivery to your selected location" },
                 ].map(step => (
                   <div key={step.n} className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{step.n}</div>
