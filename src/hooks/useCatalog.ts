@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductMedia } from "@/data/solarProducts";
+import { commerceProvider } from "@/lib/commerce";
+import { medusa } from "@/lib/medusa";
 
 export interface StoreProduct {
   id: string;
@@ -47,11 +49,28 @@ export const isLegacyCategory = (category: { name: string }) => {
 };
 
 export const catalogKeys = {
-  products: ["catalog", "products"] as const,
-  categories: ["catalog", "categories"] as const,
+  products: ["catalog", "products", commerceProvider] as const,
+  categories: ["catalog", "categories", commerceProvider] as const,
 };
 
-async function fetchCategories(): Promise<StoreCategory[]> {
+const metadataString = (metadata: Record<string, unknown> | null | undefined, key: string) => {
+  const value = metadata?.[key];
+  return value === undefined || value === null ? "" : String(value);
+};
+
+const metadataNumber = (metadata: Record<string, unknown> | null | undefined, key: string) => {
+  const value = metadata?.[key];
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+function toMajorCurrencyAmount(amount: number | undefined) {
+  if (amount === undefined || !Number.isFinite(amount)) return 0;
+  // Medusa amounts are represented in the currency's smallest unit.
+  return amount / 100;
+}
+
+async function fetchSupabaseCategories(): Promise<StoreCategory[]> {
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, description, image_url")
@@ -63,7 +82,20 @@ async function fetchCategories(): Promise<StoreCategory[]> {
   return (data || []).filter((c) => !isLegacyCategory(c));
 }
 
-async function fetchProducts(): Promise<StoreProduct[]> {
+async function fetchMedusaCategories(): Promise<StoreCategory[]> {
+  const { product_categories } = await medusa.category.list({ limit: 100, offset: 0 });
+  return (product_categories || [])
+    .filter((category) => !isLegacyCategory({ name: category.name }))
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.handle,
+      description: category.description ?? null,
+      image_url: metadataString(category.metadata, "image_url") || null,
+    }));
+}
+
+async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
   const [productsResult, variantsResult] = await Promise.all([
     supabase
       .from("products")
@@ -133,6 +165,78 @@ async function fetchProducts(): Promise<StoreProduct[]> {
       }, {}),
     };
   });
+}
+
+async function fetchMedusaProducts(): Promise<StoreProduct[]> {
+  const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
+  const { products } = await medusa.product.list({
+    limit: 100,
+    offset: 0,
+    ...(regionId ? { region_id: regionId } : {}),
+    fields: "*variants,*variants.calculated_price,*images,*categories",
+  });
+
+  return (products || [])
+    .filter((product) => !LEGACY_PRODUCT_PATTERNS.some((pattern) => product.title.toLowerCase().includes(pattern)))
+    .map((product) => {
+      const metadata = product.metadata || {};
+      const variants = product.variants || [];
+      const prices = variants
+        .map((variant) => toMajorCurrencyAmount(variant.calculated_price?.calculated_amount))
+        .filter((price) => price > 0);
+      const price = prices.length ? Math.min(...prices) : 0;
+      const originalPrice = metadataNumber(metadata, "original_price") ?? Math.round(price * 1.18);
+      const stockQuantity = variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.inventory_quantity ?? 0)), 0);
+
+      const variantAttributes = variants.reduce<Record<string, string[]>>((acc, variant) => {
+        const attributes = variant.metadata?.attributes;
+        if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return acc;
+        Object.entries(attributes as Record<string, unknown>).forEach(([key, value]) => {
+          const values = Array.isArray(value) ? value.map(String) : [String(value)];
+          acc[key] = Array.from(new Set([...(acc[key] || []), ...values]));
+        });
+        return acc;
+      }, {});
+
+      return {
+        id: product.id,
+        name: product.title,
+        description: product.description ?? null,
+        price,
+        original_price: originalPrice,
+        savings: Math.max(0, originalPrice - price),
+        category_id: product.categories?.[0]?.id ?? null,
+        image_url: product.thumbnail ?? product.images?.[0]?.url ?? null,
+        video_url: metadataString(metadata, "video_url") || null,
+        stock_quantity: stockQuantity,
+        is_featured: metadataString(metadata, "is_featured") === "true",
+        avg_rating: metadataNumber(metadata, "avg_rating") ?? 0,
+        review_count: metadataNumber(metadata, "review_count") ?? 0,
+        brand: metadataString(metadata, "brand"),
+        model_number: metadataString(metadata, "model_number"),
+        product_type: metadataString(metadata, "product_type"),
+        variant_count: variants.length,
+        variant_names: variants.map((variant) => variant.title),
+        power_watts: metadataNumber(metadata, "power_watts"),
+        voltage: metadataString(metadata, "voltage") || null,
+        capacity: metadataString(metadata, "capacity") || null,
+        warranty_months: metadataNumber(metadata, "warranty_months"),
+        installation_required: metadataString(metadata, "installation_required") === "true",
+        specifications:
+          metadata.specifications && typeof metadata.specifications === "object" && !Array.isArray(metadata.specifications)
+            ? (metadata.specifications as Record<string, unknown>)
+            : {},
+        variant_attributes: variantAttributes,
+      };
+    });
+}
+
+async function fetchCategories(): Promise<StoreCategory[]> {
+  return commerceProvider === "medusa" ? fetchMedusaCategories() : fetchSupabaseCategories();
+}
+
+async function fetchProducts(): Promise<StoreProduct[]> {
+  return commerceProvider === "medusa" ? fetchMedusaProducts() : fetchSupabaseProducts();
 }
 
 export function useProducts() {

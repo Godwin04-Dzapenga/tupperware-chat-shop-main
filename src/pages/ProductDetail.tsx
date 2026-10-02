@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getProductMedia } from "@/data/solarProducts";
+import { commerceProvider } from "@/lib/commerce";
+import { medusa } from "@/lib/medusa";
 
 interface Variant {
   id: string;
@@ -92,61 +94,161 @@ export default function ProductDetail() {
 
   const load = async (productId: string) => {
     setLoading(true);
-    const [productRes, variantRes] = await Promise.all([
-      supabase.from("products").select("*, categories(name)").eq("id", productId).single(),
-      supabase
-        .from("product_variants")
-        .select("*")
-        .eq("product_id", productId)
-        .eq("is_active", true)
-        .order("sort_order")
-        .order("name"),
-    ]);
+    try {
+      if (commerceProvider === "medusa") {
+        const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
+        const { product: data } = await medusa.product.retrieve(productId, {
+          ...(regionId ? { region_id: regionId } : {}),
+          fields: "*variants,*variants.calculated_price,*images,*categories",
+        });
 
-    if (productRes.error || !productRes.data) {
-      toast.error("Product not found");
+        const metadata = data.metadata || {};
+        const loaded: Variant[] = (data.variants || []).map((variant) => ({
+          id: variant.id,
+          product_id: data.id,
+          name: variant.title,
+          sku: variant.sku ?? null,
+          price: (variant.calculated_price?.calculated_amount ?? 0) / 100,
+          stock_quantity: Number(variant.inventory_quantity ?? 0),
+          image_url: null,
+          attributes:
+            variant.metadata?.attributes && typeof variant.metadata.attributes === "object" && !Array.isArray(variant.metadata.attributes)
+              ? Object.fromEntries(Object.entries(variant.metadata.attributes).map(([key, value]) => [key, String(value)]))
+              : {},
+          is_active: true,
+          sort_order: 0,
+        }));
+
+        const firstImage = data.thumbnail || data.images?.[0]?.url || "";
+        const mapped: Product = {
+          id: data.id,
+          name: data.title,
+          description: data.description ?? null,
+          price: loaded.length ? Math.min(...loaded.map((v) => v.price)) : 0,
+          category_id: data.categories?.[0]?.id ?? null,
+          image_url: firstImage || null,
+          video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
+          stock_quantity: loaded.reduce((sum, v) => sum + Math.max(0, v.stock_quantity), 0),
+          brand: typeof metadata.brand === "string" ? metadata.brand : null,
+          model_number: typeof metadata.model_number === "string" ? metadata.model_number : null,
+          product_type: typeof metadata.product_type === "string" ? metadata.product_type : "general",
+          power_watts: typeof metadata.power_watts === "number" ? metadata.power_watts : null,
+          voltage: typeof metadata.voltage === "string" ? metadata.voltage : null,
+          capacity: typeof metadata.capacity === "string" ? metadata.capacity : null,
+          warranty_months: typeof metadata.warranty_months === "number" ? metadata.warranty_months : null,
+          installation_required: metadata.installation_required === true || metadata.installation_required === "true",
+          specifications:
+            metadata.specifications && typeof metadata.specifications === "object" && !Array.isArray(metadata.specifications)
+              ? Object.fromEntries(Object.entries(metadata.specifications).map(([key, value]) => [key, String(value)]))
+              : {},
+          categories: data.categories?.[0] ? { name: data.categories[0].name } : undefined,
+        };
+
+        setProduct(mapped);
+        setVariants(loaded);
+        setSelectedVariantId(loaded[0]?.id || null);
+        setActiveImage(firstImage);
+
+        const relatedResult = mapped.category_id
+          ? await medusa.product.list({
+              limit: 4,
+              category_id: mapped.category_id,
+              ...(regionId ? { region_id: regionId } : {}),
+              fields: "*variants,*variants.calculated_price,*images,*categories",
+            })
+          : null;
+
+        const relatedProducts: Product[] = (relatedResult?.products || [])
+          .filter((item) => item.id !== data.id)
+          .map((item) => {
+            const itemVariants = item.variants || [];
+            return {
+              id: item.id,
+              name: item.title,
+              description: item.description ?? null,
+              price: itemVariants.length
+                ? Math.min(...itemVariants.map((v) => (v.calculated_price?.calculated_amount ?? 0) / 100))
+                : 0,
+              category_id: item.categories?.[0]?.id ?? null,
+              image_url: item.thumbnail || item.images?.[0]?.url || null,
+              video_url: typeof item.metadata?.video_url === "string" ? item.metadata.video_url : null,
+              stock_quantity: itemVariants.reduce((sum, v) => sum + Math.max(0, Number(v.inventory_quantity ?? 0)), 0),
+              brand: typeof item.metadata?.brand === "string" ? item.metadata.brand : null,
+              model_number: typeof item.metadata?.model_number === "string" ? item.metadata.model_number : null,
+              product_type: typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "general",
+              power_watts: typeof item.metadata?.power_watts === "number" ? item.metadata.power_watts : null,
+              voltage: typeof item.metadata?.voltage === "string" ? item.metadata.voltage : null,
+              capacity: typeof item.metadata?.capacity === "string" ? item.metadata.capacity : null,
+              warranty_months: typeof item.metadata?.warranty_months === "number" ? item.metadata.warranty_months : null,
+              installation_required: item.metadata?.installation_required === true,
+              specifications: {},
+              categories: item.categories?.[0] ? { name: item.categories[0].name } : undefined,
+            };
+          });
+        setRelated(relatedProducts);
+        setLoading(false);
+        return;
+      }
+
+      const [productRes, variantRes] = await Promise.all([
+        supabase.from("products").select("*, categories(name)").eq("id", productId).single(),
+        supabase
+          .from("product_variants")
+          .select("*")
+          .eq("product_id", productId)
+          .eq("is_active", true)
+          .order("sort_order")
+          .order("name"),
+      ]);
+
+      if (productRes.error || !productRes.data) {
+        toast.error("Product not found");
+        navigate("/");
+        return;
+      }
+
+      const data = productRes.data as Product;
+      const loaded = ((variantRes.data || []) as Variant[]).map((v) => ({
+        ...v,
+        attributes: (v.attributes || {}) as Record<string, string>,
+      }));
+      const media = getProductMedia(data);
+
+      setProduct({
+        ...data,
+        brand: data.brand || media.brand.split("/")[0],
+        model_number: data.model_number || media.modelNumber,
+        image_url: media.imageUrl,
+        specifications: (data.specifications || {}) as Record<string, string>,
+      });
+      setVariants(loaded);
+      setSelectedVariantId(loaded[0]?.id || null);
+      setActiveImage(media.imageUrl);
+
+      const { data: reviews } = await supabase.from("reviews").select("rating").eq("product_id", productId);
+      const ratings = (reviews || []).map((r) => r.rating);
+      if (ratings.length > 0) {
+        setReviewCount(ratings.length);
+        setAvgRating(ratings.reduce((a, b) => a + b, 0) / ratings.length);
+      }
+
+      if (data.category_id) {
+        const { data: rel } = await supabase
+          .from("products")
+          .select("*")
+          .eq("category_id", data.category_id)
+          .eq("is_active", true)
+          .neq("id", productId)
+          .limit(4);
+        setRelated((rel || []) as Product[]);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Product could not be loaded");
       navigate("/");
-      return;
     }
-
-    const data = productRes.data as Product;
-    const loaded = ((variantRes.data || []) as Variant[]).map((v) => ({
-      ...v,
-      attributes: (v.attributes || {}) as Record<string, string>,
-    }));
-
-    const media = getProductMedia(data);
-
-    setProduct({
-      ...data,
-      brand: data.brand || media.brand.split("/")[0],
-      model_number: data.model_number || media.modelNumber,
-      image_url: media.imageUrl,
-      specifications: (data.specifications || {}) as Record<string, string>,
-    });
-    setVariants(loaded);
-    setSelectedVariantId(loaded[0]?.id || null);
-    setActiveImage(media.imageUrl);
-
-    const { data: reviews } = await supabase.from("reviews").select("rating").eq("product_id", productId);
-    const ratings = (reviews || []).map((r) => r.rating);
-    if (ratings.length > 0) {
-      setReviewCount(ratings.length);
-      setAvgRating(ratings.reduce((a, b) => a + b, 0) / ratings.length);
-    }
-
-    if (data.category_id) {
-      const { data: rel } = await supabase
-        .from("products")
-        .select("*")
-        .eq("category_id", data.category_id)
-        .eq("is_active", true)
-        .neq("id", productId)
-        .limit(4);
-      setRelated((rel || []) as Product[]);
-    }
-
-    setLoading(false);
   };
 
   useEffect(() => {
