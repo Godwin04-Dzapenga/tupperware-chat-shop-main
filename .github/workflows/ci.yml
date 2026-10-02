@@ -36,3 +36,25 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+  medusa-backend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Medusa dependencies
+        run: npm install
+
+      - name: Build Medusa backend
+        run: npm run build
