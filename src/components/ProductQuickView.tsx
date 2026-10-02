@@ -21,7 +21,7 @@ import {
   AlertTriangle,
   Zap,
 } from "lucide-react";
-import { getProductMedia } from "@/data/solarProducts";
+import { getProductMedia, resolveProductImage } from "@/data/solarProducts";
 
 interface Product {
   id: string;
@@ -88,9 +88,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
     navigate(`/product/${product.id}`);
   };
 
-  const displayImage = (product.image_url && !product.image_url.includes("0.2930892299948875"))
-    ? product.image_url
-    : media.imageUrl;
+  const displayImage = resolveProductImage(product);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -125,12 +123,12 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {savings > 0 && !outOfStock && (
-                <Badge className="bg-[#bb0620] text-white border-0 rounded font-black text-xs uppercase tracking-wider">
+                <Badge className="bg-bb-red text-white border-0 rounded font-black text-xs uppercase tracking-wider">
                   Save ${savings}
                 </Badge>
               )}
               {outOfStock && (
-                <Badge className="bg-[#111820] text-white border-0 rounded font-bold text-xs uppercase">
+                <Badge className="bg-bb-ink text-white border-0 rounded font-bold text-xs uppercase">
                   Sold out
                 </Badge>
               )}
@@ -154,7 +152,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
             {/* View full page button */}
             <button
               onClick={goToDetail}
-              className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-md bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-900 shadow hover:bg-[#0046be] hover:text-white transition-colors"
+              className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-md bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-900 shadow hover:bg-bb-blue hover:text-white transition-colors"
             >
               Full Specs & Reviews <ArrowRight className="h-3.5 w-3.5" />
             </button>
@@ -164,7 +162,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
           <div className="flex flex-col bg-white p-6 sm:p-7 overflow-y-auto">
             {/* Vendor + category */}
             <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="text-xs font-black uppercase tracking-wider text-[#0046be]">
+              <span className="text-xs font-black uppercase tracking-wider text-bb-blue">
                 {product.brand || media.brand}
               </span>
               <span className="text-[11px] text-slate-400 font-mono">
@@ -198,7 +196,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
             {/* Pricing Box */}
             <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-baseline justify-between">
               <div>
-                <span className="text-2xl font-black text-[#111820]">
+                <span className="text-2xl font-black text-bb-ink">
                   ${product.price.toFixed(2)}
                 </span>
                 {savings > 0 && (
@@ -263,7 +261,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={handleAddToCart}
-                      className="bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-xs h-11 rounded-lg shadow-sm"
+                      className="bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-11 rounded-lg shadow-sm"
                     >
                       <ShoppingCart className="h-4 w-4 mr-1.5" /> Add to Cart
                     </Button>
@@ -272,7 +270,7 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
                       onClick={handleOrder}
                       className="border-slate-300 text-slate-800 hover:bg-slate-100 font-bold text-xs h-11 rounded-lg"
                     >
-                      <MessageCircle className="h-4 w-4 mr-1.5 text-[#25D366]" /> WhatsApp Order
+                      <MessageCircle className="h-4 w-4 mr-1.5 text-wa" /> WhatsApp Order
                     </Button>
                   </div>
                 </>

@@ -113,7 +113,9 @@ export default function ProductVariantsAdmin() {
     try {
       const parsed = value.trim() ? JSON.parse(value) : {};
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) updateVariant(index, { attributes: parsed });
-    } catch {}
+    } catch {
+      // invalid JSON while the user is still typing — keep the previous attributes
+    }
   };
 
   if (loading || !product) {
@@ -121,13 +123,13 @@ export default function ProductVariantsAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8]">
+    <div className="min-h-screen bg-bb-surface">
       <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
         <div className="container mx-auto flex h-16 items-center gap-3 px-4">
           <Button variant="ghost" onClick={() => navigate("/admin")}><ArrowLeft className="mr-2 h-4 w-4" /> Admin</Button>
           <div className="h-6 w-px bg-border" />
           <div><p className="text-sm font-black">Variant manager</p><p className="text-xs text-muted-foreground">{product.name}</p></div>
-          <Button className="ml-auto rounded-md bg-[#0046be]" onClick={save} disabled={saving}><Save className="mr-2 h-4 w-4" />{saving ? "Saving…" : "Save variants"}</Button>
+          <Button className="ml-auto rounded-md bg-bb-blue" onClick={save} disabled={saving}><Save className="mr-2 h-4 w-4" />{saving ? "Saving…" : "Save variants"}</Button>
         </div>
       </header>
 
@@ -138,7 +140,7 @@ export default function ProductVariantsAdmin() {
               {product.image_url ? <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" /> : <Package className="m-6 h-8 w-8 text-slate-300" />}
             </div>
             <div>
-              <div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#0046be]">Catalogue product</span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">{variants.length} variants</span></div>
+              <div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-bb-blue">Catalogue product</span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">{variants.length} variants</span></div>
               <h1 className="mt-1 text-xl font-black">{product.name}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Create the options customers see on the product page. Use variants for capacity, power, voltage, size, colour or other meaningful configurations. Each option can have its own price, SKU, stock and image.</p>
             </div>
@@ -183,7 +185,7 @@ export default function ProductVariantsAdmin() {
               <Image className="mx-auto h-10 w-10 text-slate-300" />
               <h3 className="mt-3 font-black">No variants yet</h3>
               <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Add options such as 450W / 550W panels, 3.2kVA / 5kVA inverters, or 100Ah / 200Ah batteries.</p>
-              <Button className="mt-4 rounded-md bg-[#0046be]" onClick={addVariant}><Plus className="mr-2 h-4 w-4" /> Add first variant</Button>
+              <Button className="mt-4 rounded-md bg-bb-blue" onClick={addVariant}><Plus className="mr-2 h-4 w-4" /> Add first variant</Button>
             </div>
           )}
         </div>

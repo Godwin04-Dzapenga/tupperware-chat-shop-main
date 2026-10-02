@@ -362,7 +362,7 @@ export const Chatbot = () => {
               {/* Footer */}
               <div className="bg-white px-4 py-1.5 border-t text-center">
                 <p className="text-[9px] text-muted-foreground/60">
-                  Powered by Tech Innovation AI · <a href="https://wa.me/263778158984" target="_blank" rel="noreferrer" className="text-[#0046be] font-semibold hover:underline">Switch to WhatsApp</a>
+                  Powered by Tech Innovation AI · <a href="https://wa.me/263778158984" target="_blank" rel="noreferrer" className="text-bb-blue font-semibold hover:underline">Switch to WhatsApp</a>
                 </p>
               </div>
             </>

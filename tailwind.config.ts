@@ -15,6 +15,26 @@ export default {
     },
     extend: {
       colors: {
+        // Best Buy-inspired brand system for Tech Innovation
+        bb: {
+          blue: "#0046be",
+          "blue-dark": "#003b95",
+          "blue-darker": "#003494",
+          "blue-night": "#002870",
+          "blue-deep": "#002d73",
+          "blue-ink": "#001e73",
+          yellow: "#ffe000",
+          "yellow-dark": "#ffd200",
+          red: "#bb0620",
+          "red-dark": "#a1051b",
+          ink: "#111820",
+          footer: "#040c18",
+          surface: "#f4f6f8",
+        },
+        wa: {
+          DEFAULT: "#25D366",
+          dark: "#128C7E",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

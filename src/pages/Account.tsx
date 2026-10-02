@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
-  ArrowLeft, User, MapPin, Package, Heart, Settings,
-  Edit2, Check, X, Plus, Trash2, LogOut, ShoppingBag, Star, Sun
+  User, MapPin, Package, Heart, Settings,
+  Edit2, Check, X, Plus, Trash2, LogOut, ShoppingBag, Star
 } from "lucide-react";
-import { getProductMedia } from "@/data/solarProducts";
+import { resolveProductImage } from "@/data/solarProducts";
 
 interface Profile { full_name: string | null; phone: string | null; email: string | null; }
 interface Address { id: string; label: string | null; recipient_name: string; phone: string; line1: string; city: string; country: string; is_default: boolean; }
@@ -106,43 +106,26 @@ export default function Account() {
   const initials = (profile.full_name || profile.email || "?").split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/98 backdrop-blur-md shadow-sm">
-        <div className="container mx-auto flex items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5 text-muted-foreground">
-            <ArrowLeft className="h-4 w-4" /> Shop
-          </Button>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ffe000] text-[#111820]">
-              <Sun className="h-5 w-5" />
-            </span>
-            <span className="hidden text-sm font-black sm:block">TECH INNOVATION</span>
-          </div>
-          <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">/ My Account</span>
-          <Button variant="ghost" size="sm" onClick={signOut} className="ml-auto gap-1.5 text-muted-foreground hover:text-destructive">
-            <LogOut className="h-4 w-4" /> Sign Out
-          </Button>
+    <div className="store-shell max-w-5xl py-8">
+      {/* Profile hero */}
+      <div className="mb-6 flex items-center gap-4 rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-400 text-white text-2xl font-extrabold shadow-lg">
+          {initials}
         </div>
-      </header>
-
-      <div className="container mx-auto max-w-5xl px-4 py-8">
-        {/* Profile hero */}
-        <div className="mb-6 flex items-center gap-4 rounded-2xl border bg-card p-5 shadow-sm">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-400 text-white text-2xl font-extrabold shadow-lg">
-            {initials}
-          </div>
-          <div>
-            <h1 className="text-xl font-extrabold">{profile.full_name || "My Account"}</h1>
-            <p className="text-sm text-muted-foreground">{profile.email}</p>
-            <div className="mt-1 flex gap-2">
-              <Badge className="text-[10px] bg-primary/10 text-primary border-0">{orders.length} orders</Badge>
-              <Badge className="text-[10px] bg-red-50 text-red-600 border-0">{wishlist.length} wishlist items</Badge>
-            </div>
+        <div>
+          <h1 className="text-xl font-extrabold">{profile.full_name || "My Account"}</h1>
+          <p className="text-sm text-muted-foreground">{profile.email}</p>
+          <div className="mt-1 flex gap-2">
+            <Badge className="text-[10px] bg-primary/10 text-primary border-0">{orders.length} orders</Badge>
+            <Badge className="text-[10px] bg-red-50 text-red-600 border-0">{wishlist.length} wishlist items</Badge>
           </div>
         </div>
+        <Button variant="outline" size="sm" onClick={signOut} className="ml-auto gap-1.5 rounded-full">
+          <LogOut className="h-4 w-4" /> Sign Out
+        </Button>
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-4">
           {/* Sidebar nav */}
           <div className="lg:col-span-1">
             <Card>
@@ -290,11 +273,7 @@ export default function Account() {
                           <div key={item.id} className="flex gap-3 rounded-xl border p-3 bg-card">
                             <div className="h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-muted border">
                               <img
-                                src={
-                                  item.image_url && !item.image_url.includes("0.2930892299948875")
-                                    ? item.image_url
-                                    : getProductMedia(item).imageUrl
-                                }
+                                src={resolveProductImage(item)}
                                 alt={item.name}
                                 className="h-full w-full object-cover"
                               />
@@ -315,7 +294,6 @@ export default function Account() {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }

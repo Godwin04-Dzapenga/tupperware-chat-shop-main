@@ -1,101 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
-All colors MUST be HSL.
-*/
-
+/* Tech Innovation design system — Best Buy-inspired tokens (HSL). */
 @layer base {
   :root {
-    --background: 180 20% 98%;
-    --foreground: 200 15% 15%;
+    --background: 210 25% 98%;
+    --foreground: 221 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 200 15% 15%;
+    --card-foreground: 221 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 15% 15%;
+    --popover-foreground: 221 25% 10%;
 
-    --primary: 180 65% 45%;
+    --primary: 221 100% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 180 30% 92%;
-    --secondary-foreground: 200 15% 15%;
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 221 25% 15%;
 
-    --muted: 180 20% 95%;
-    --muted-foreground: 200 10% 45%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 12% 45%;
 
-    --accent: 15 85% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 221 60% 95%;
+    --accent-foreground: 221 100% 28%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 351 78% 41%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 180 20% 88%;
-    --input: 180 20% 88%;
-    --ring: 180 65% 45%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 221 100% 36%;
 
-    --radius: 0.75rem;
-
-    --gradient-hero: linear-gradient(135deg, hsl(180 65% 45%), hsl(190 70% 55%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(180 20% 98%));
-    --shadow-card: 0 4px 20px -2px hsl(180 65% 45% / 0.1);
-    --shadow-hover: 0 8px 30px -4px hsl(180 65% 45% / 0.2);
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 221 20% 18%;
+    --sidebar-primary: 221 100% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 60% 95%;
+    --sidebar-accent-foreground: 221 100% 28%;
+    --sidebar-border: 214 20% 90%;
+    --sidebar-ring: 221 100% 36%;
   }
 
   .dark {
-    --background: 200 20% 8%;
-    --foreground: 180 10% 95%;
+    --background: 221 30% 6%;
+    --foreground: 210 20% 96%;
 
-    --card: 200 18% 12%;
-    --card-foreground: 180 10% 95%;
+    --card: 221 25% 10%;
+    --card-foreground: 210 20% 96%;
 
-    --popover: 200 18% 12%;
-    --popover-foreground: 180 10% 95%;
+    --popover: 221 25% 10%;
+    --popover-foreground: 210 20% 96%;
 
-    --primary: 180 65% 55%;
+    --primary: 221 100% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 200 15% 20%;
-    --secondary-foreground: 180 10% 95%;
+    --secondary: 221 20% 16%;
+    --secondary-foreground: 210 20% 96%;
 
-    --muted: 200 15% 20%;
-    --muted-foreground: 180 10% 65%;
+    --muted: 221 20% 14%;
+    --muted-foreground: 215 12% 65%;
 
-    --accent: 15 85% 65%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 221 20% 18%;
+    --accent-foreground: 210 20% 96%;
 
-    --destructive: 0 62.8% 50%;
+    --destructive: 351 78% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 15% 20%;
-    --input: 200 15% 20%;
-    --ring: 180 65% 55%;
+    --border: 221 20% 18%;
+    --input: 221 20% 18%;
+    --ring: 221 100% 45%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(180 65% 35%), hsl(190 70% 45%));
-    --gradient-card: linear-gradient(145deg, hsl(200 18% 12%), hsl(200 20% 15%));
-    --shadow-card: 0 4px 20px -2px hsl(180 65% 55% / 0.2);
-    --shadow-hover: 0 8px 30px -4px hsl(180 65% 55% / 0.3);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 221 30% 8%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-primary: 221 100% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 221 20% 15%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 221 20% 15%;
+    --sidebar-ring: 221 100% 45%;
   }
 }
 
@@ -105,12 +93,8 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: "Inter", sans-serif;
-    background-image:
-      radial-gradient(circle at top left, hsl(180 65% 45% / 0.08), transparent 30%),
-      radial-gradient(circle at bottom right, hsl(15 85% 60% / 0.09), transparent 28%);
-    background-attachment: fixed;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
 
   h1,
@@ -119,7 +103,7 @@ All colors MUST be HSL.
   h4,
   h5,
   h6 {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
 
   ::selection {
@@ -127,109 +111,39 @@ All colors MUST be HSL.
   }
 }
 
-
-/* ── 3D GLOBAL STYLES ───────────────────────────────────────────────────── */
-
-/* Ensure 3D context on the page */
-body { transform-style: preserve-3d; }
-
-/* Perspective wrapper for product grid */
-.product-grid-3d {
-  perspective: 1200px;
-  perspective-origin: 50% 50%;
+/* Slim branded scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-
-/* 3D floating animation */
-@keyframes float3d {
-  0%, 100% { transform: perspective(600px) translateZ(0px) translateY(0px) rotateX(0deg); }
-  33%       { transform: perspective(600px) translateZ(8px) translateY(-6px) rotateX(1deg); }
-  66%       { transform: perspective(600px) translateZ(4px) translateY(-3px) rotateX(-0.5deg); }
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-/* 3D pulse glow */
-@keyframes glow3d {
-  0%, 100% { box-shadow: 0 0 20px hsl(180 65% 45% / 0.2), 0 0 40px hsl(180 65% 45% / 0.1); }
-  50%      { box-shadow: 0 0 30px hsl(180 65% 45% / 0.35), 0 0 60px hsl(180 65% 45% / 0.15); }
-}
-
-/* Trust badge 3D lift */
-@keyframes badge-lift {
-  0%, 100% { transform: perspective(400px) translateZ(0px); }
-  50%      { transform: perspective(400px) translateZ(6px); }
-}
-
-/* Hero badge animate */
-.badge-3d {
-  animation: badge-lift 3s ease-in-out infinite;
-}
-
-/* Frosted glass card */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* 3D depth shadow on trust badges */
-.trust-badge {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  transform: perspective(400px) translateZ(0px);
-}
-.trust-badge:hover {
-  transform: perspective(400px) translateZ(12px) translateY(-2px);
-  box-shadow: 0 12px 32px -6px hsl(180 65% 45% / 0.25), 0 0 0 1px hsl(180 65% 45% / 0.1);
-}
-
-/* 3D footer hover lift */
-.footer-link-3d {
-  transition: transform 0.2s ease;
-  display: inline-block;
-}
-.footer-link-3d:hover {
-  transform: perspective(200px) translateZ(4px);
-}
-
-/* Glow text effect */
-.glow-text {
-  text-shadow: 0 0 30px hsl(180 65% 45% / 0.5), 0 0 60px hsl(180 65% 45% / 0.2);
-}
-
-/* 3D button press */
-.btn-3d {
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  transform: perspective(300px) translateZ(0px);
-}
-.btn-3d:hover {
-  transform: perspective(300px) translateZ(8px) translateY(-1px);
-  box-shadow: 0 8px 24px -4px hsl(180 65% 45% / 0.35);
-}
-.btn-3d:active {
-  transform: perspective(300px) translateZ(-2px) translateY(1px);
-  box-shadow: 0 2px 8px -2px hsl(180 65% 45% / 0.2);
-}
-
-/* Floating orb ambient */
-.orb-ambient {
-  position: fixed; pointer-events: none; z-index: 0; border-radius: 50%;
-  filter: blur(80px); opacity: 0.07;
-  animation: float3d 8s ease-in-out infinite;
-}
-
-/* Scrollbar 3D styling */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: hsl(var(--muted)); }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
+  background: hsl(var(--muted-foreground) / 0.35);
   border-radius: 999px;
-  box-shadow: 0 0 6px hsl(180 65% 45% / 0.3);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.55);
 }
 
+/* Hide horizontal scrollbars on carousels */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
-/* Tech Innovation storefront utilities */
-.store-shell { width: min(100% - 32px, 1440px); margin-inline: auto; }
-@media (max-width: 640px) { .store-shell { width: min(100% - 24px, 1440px); } }
-
-.store-section { scroll-margin-top: 150px; }
-.product-card-pro { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
-.product-card-pro:hover { transform: translateY(-3px); box-shadow: 0 14px 35px -18px rgba(15,23,42,.35); }
+/* Storefront utilities */
+.store-section {
+  scroll-margin-top: 150px;
+}
+.product-card-pro {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.product-card-pro:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 35px -18px rgba(15, 23, 42, 0.35);
+}

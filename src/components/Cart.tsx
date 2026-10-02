@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Minus, Plus, Trash2, ArrowRight, ShieldCheck, MapPin } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
-import { getProductMedia } from "@/data/solarProducts";
+import { resolveProductImage } from "@/data/solarProducts";
 
 interface CartProps {
   onOrder?: (items: Array<{ name: string; quantity: number; price: number }>) => void;
@@ -19,20 +19,20 @@ export const Cart = ({ onOrder }: CartProps) => {
     <Sheet>
       <SheetTrigger asChild>
         <button
-          className="relative flex items-center gap-2 h-10 px-3 rounded-md bg-[#003494] hover:bg-[#002870] text-white transition-colors"
+          className="relative flex items-center gap-2 h-10 px-3 rounded-md bg-bb-blue-darker hover:bg-bb-blue-night text-white transition-colors"
           title="Shopping Cart"
         >
           <div className="relative">
             <ShoppingCart className="h-5 w-5 text-white" />
             {totalItems > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-4 min-w-4 flex items-center justify-center p-0.5 bg-[#ffe000] text-black font-black text-[10px] rounded-full border-0">
+              <Badge className="absolute -top-2 -right-2 h-4 min-w-4 flex items-center justify-center p-0.5 bg-bb-yellow text-black font-black text-[10px] rounded-full border-0">
                 {totalItems}
               </Badge>
             )}
           </div>
           <div className="hidden xl:flex flex-col text-left leading-none text-xs">
             <span className="text-[10px] text-white/70">Cart</span>
-            <span className="font-extrabold text-[#ffe000]">${totalPrice.toFixed(2)}</span>
+            <span className="font-extrabold text-bb-yellow">${totalPrice.toFixed(2)}</span>
           </div>
         </button>
       </SheetTrigger>
@@ -42,7 +42,7 @@ export const Cart = ({ onOrder }: CartProps) => {
           <SheetTitle className="text-lg font-black text-slate-900 flex items-center justify-between">
             <span>Your Cart ({totalItems} item{totalItems !== 1 ? "s" : ""})</span>
             {totalItems > 0 && (
-              <span className="text-xs font-bold text-[#0046be]">${totalPrice.toFixed(2)} USD</span>
+              <span className="text-xs font-bold text-bb-blue">${totalPrice.toFixed(2)} USD</span>
             )}
           </SheetTitle>
         </SheetHeader>
@@ -68,10 +68,7 @@ export const Cart = ({ onOrder }: CartProps) => {
             </div>
           ) : (
             items.map((item) => {
-              const media = getProductMedia(item);
-              const img = item.image_url && !item.image_url.includes("0.2930892299948875")
-                ? item.image_url
-                : media.imageUrl;
+              const img = resolveProductImage(item);
 
               return (
                 <div key={item.id} className="flex gap-3 p-3 border border-slate-200 rounded-xl bg-white shadow-xs">
@@ -83,7 +80,7 @@ export const Cart = ({ onOrder }: CartProps) => {
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-xs text-slate-900 truncate">{item.name}</h4>
                     {item.variant_name && (
-                      <p className="text-[10px] font-semibold text-[#0046be]">{item.variant_name}</p>
+                      <p className="text-[10px] font-semibold text-bb-blue">{item.variant_name}</p>
                     )}
                     <p className="text-xs text-slate-500 mt-0.5">${item.price.toFixed(2)} each</p>
 
@@ -142,12 +139,12 @@ export const Cart = ({ onOrder }: CartProps) => {
               </div>
               <div className="flex justify-between font-black text-base text-slate-900 border-t pt-2">
                 <span>Total</span>
-                <span className="text-[#0046be]">${(totalPrice + shippingFee).toFixed(2)} USD</span>
+                <span className="text-bb-blue">${(totalPrice + shippingFee).toFixed(2)} USD</span>
               </div>
             </div>
 
             <Button
-              className="w-full bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-sm h-12 rounded-lg shadow-sm"
+              className="w-full bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-sm h-12 rounded-lg shadow-sm"
               onClick={() => navigate("/checkout")}
             >
               Checkout Now <ArrowRight className="ml-2 h-4 w-4" />

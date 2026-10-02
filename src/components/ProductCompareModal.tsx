@@ -45,10 +45,10 @@ export const ProductCompareModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-full p-0 overflow-hidden rounded-2xl border-0 shadow-2xl max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#0046be] text-white p-5 flex items-center justify-between shrink-0">
+        <div className="bg-bb-blue text-white p-5 flex items-center justify-between shrink-0">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-wider text-[#ffe000]">
-              Best Buy Product Comparison
+            <div className="text-[11px] font-black uppercase tracking-wider text-bb-yellow">
+              Product Comparison
             </div>
             <DialogTitle className="text-xl font-black mt-1 text-white">
               Compare Side-by-Side ({products.length} Products)
@@ -101,13 +101,13 @@ export const ProductCompareModal = ({
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <Badge className="w-fit mb-1 text-[10px] bg-[#0046be]/10 text-[#0046be] border-0 uppercase">
+                    <Badge className="w-fit mb-1 text-[10px] bg-bb-blue/10 text-bb-blue border-0 uppercase">
                       {p.brand || media.brand.split("/")[0]}
                     </Badge>
                     <h4 className="font-bold text-xs text-slate-900 line-clamp-2 min-h-[32px]">
                       {p.name}
                     </h4>
-                    <div className="mt-2 text-lg font-black text-[#111820]">
+                    <div className="mt-2 text-lg font-black text-bb-ink">
                       ${p.price.toFixed(2)}
                     </div>
                     {media.originalPrice > p.price && (
@@ -117,7 +117,7 @@ export const ProductCompareModal = ({
                     )}
                     <Button
                       onClick={() => onAddToCart(p)}
-                      className="mt-3 w-full bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-xs h-9 shadow-sm"
+                      className="mt-3 w-full bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-9 shadow-sm"
                     >
                       <ShoppingCart className="h-3.5 w-3.5 mr-1.5" /> Add to Cart
                     </Button>
@@ -180,7 +180,7 @@ export const ProductCompareModal = ({
               {products.map((p) => {
                 const media = getProductMedia(p);
                 return (
-                  <div key={`warranty-${p.id}`} className="py-3 border-t text-xs font-bold text-[#0046be]">
+                  <div key={`warranty-${p.id}`} className="py-3 border-t text-xs font-bold text-bb-blue">
                     {media.warranty}
                   </div>
                 );
@@ -211,7 +211,7 @@ export const ProductCompareModal = ({
                 <div key={`action-${p.id}`} className="py-4 border-t space-y-2">
                   <Button
                     onClick={() => onAddToCart(p)}
-                    className="w-full bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-xs h-9 shadow-sm"
+                    className="w-full bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-9 shadow-sm"
                   >
                     Add to Cart
                   </Button>
@@ -220,7 +220,7 @@ export const ProductCompareModal = ({
                     onClick={() => onOrderViaWhatsApp(p)}
                     className="w-full text-xs h-8 font-bold border-slate-300 hover:bg-slate-100"
                   >
-                    <MessageCircle className="h-3.5 w-3.5 mr-1 text-[#25D366]" /> WhatsApp
+                    <MessageCircle className="h-3.5 w-3.5 mr-1 text-wa" /> WhatsApp
                   </Button>
                 </div>
               ))}
@@ -244,11 +244,11 @@ export const CompareDock = ({ products, onOpenModal, onRemove, onClear }: Compar
   if (products.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 bg-[#001e73] text-white py-3 px-4 shadow-2xl border-t-2 border-[#ffe000] animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-0 inset-x-0 z-40 bg-bb-blue-ink text-white py-3 px-4 shadow-2xl border-t-2 border-bb-yellow animate-in slide-in-from-bottom duration-300">
       <div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="text-xs">
-            <span className="font-black text-sm text-[#ffe000]">{products.length} of 4</span> products selected to compare
+            <span className="font-black text-sm text-bb-yellow">{products.length} of 4</span> products selected to compare
           </div>
 
           <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export const CompareDock = ({ products, onOpenModal, onRemove, onClear }: Compar
           </button>
           <Button
             onClick={onOpenModal}
-            className="bg-[#ffe000] hover:bg-[#ffd200] text-black font-black text-xs h-10 px-5 shadow-lg"
+            className="bg-bb-yellow hover:bg-bb-yellow-dark text-black font-black text-xs h-10 px-5 shadow-lg"
           >
             Compare Now <ArrowRight className="ml-1.5 h-4 w-4" />
           </Button>

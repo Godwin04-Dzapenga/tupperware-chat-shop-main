@@ -39,8 +39,8 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
   return (
     <section id="system-sizer" className="my-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
       <div className="max-w-3xl">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0046be]/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-[#0046be]">
-          <Sparkles className="h-3.5 w-3.5" /> Best Buy Solar System Finder
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-bb-blue/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-bb-blue">
+          <Sparkles className="h-3.5 w-3.5" /> Solar System Finder
         </div>
         <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
           Find Your Ideal Solar Setup in 2 Easy Steps
@@ -70,11 +70,11 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
                   onClick={() => setSelectedLoad(id)}
                   className={`flex flex-col text-left p-4 rounded-xl border-2 transition-all ${
                     selectedLoad === id
-                      ? "border-[#0046be] bg-blue-50/50 shadow-sm"
+                      ? "border-bb-blue bg-blue-50/50 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
-                  <Icon className={`h-6 w-6 ${selectedLoad === id ? "text-[#0046be]" : "text-slate-400"}`} />
+                  <Icon className={`h-6 w-6 ${selectedLoad === id ? "text-bb-blue" : "text-slate-400"}`} />
                   <span className="font-bold text-sm text-slate-900 mt-2">{label}</span>
                   <span className="text-[11px] text-slate-500 mt-1 leading-normal">{desc}</span>
                 </button>
@@ -99,7 +99,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
                   onClick={() => setBackupGoal(g.key as any)}
                   className={`py-3 px-3 rounded-lg border text-center transition-all ${
                     backupGoal === g.key
-                      ? "border-[#0046be] bg-[#0046be] text-white font-bold shadow-sm"
+                      ? "border-bb-blue bg-bb-blue text-white font-bold shadow-sm"
                       : "border-slate-200 bg-slate-50 text-slate-700 font-semibold hover:bg-slate-100"
                   }`}
                 >
@@ -122,13 +122,13 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
         </div>
 
         {/* Recommended System Card */}
-        <div className="rounded-2xl border-2 border-[#0046be] bg-gradient-to-b from-blue-50/40 to-white p-6 shadow-md flex flex-col justify-between">
+        <div className="rounded-2xl border-2 border-bb-blue bg-gradient-to-b from-blue-50/40 to-white p-6 shadow-md flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#0046be]">
+              <span className="text-[11px] font-black uppercase tracking-wider text-bb-blue">
                 Recommended Match
               </span>
-              <Badge className="bg-[#ffe000] text-black hover:bg-[#ffe000] font-black text-[10px] border-0">
+              <Badge className="bg-bb-yellow text-black hover:bg-bb-yellow font-black text-[10px] border-0">
                 Turnkey Complete
               </Badge>
             </div>
@@ -143,7 +143,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
             {/* Spec breakdown */}
             <div className="mt-5 space-y-3">
               <div className="flex items-start gap-2.5 text-xs">
-                <div className="h-6 w-6 rounded-md bg-[#0046be]/10 text-[#0046be] flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-6 w-6 rounded-md bg-bb-blue/10 text-bb-blue flex items-center justify-center shrink-0 mt-0.5">
                   <Zap className="h-3.5 w-3.5" />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
               </div>
 
               <div className="flex items-start gap-2.5 text-xs">
-                <div className="h-6 w-6 rounded-md bg-blue-100 text-[#0046be] flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-6 w-6 rounded-md bg-blue-100 text-bb-blue flex items-center justify-center shrink-0 mt-0.5">
                   <ShieldCheck className="h-3.5 w-3.5" />
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
               <div className="flex items-baseline justify-between">
                 <div>
                   <span className="text-xs text-slate-500 font-semibold">Estimated System Price</span>
-                  <div className="text-3xl font-black text-[#111820]">
+                  <div className="text-3xl font-black text-bb-ink">
                     ${adjustedPrice.toLocaleString()}
                   </div>
                 </div>
@@ -208,7 +208,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
           <div className="mt-6 space-y-2">
             <Button
               onClick={() => onAddPresetToCart({ ...currentPreset, estimatedPrice: adjustedPrice })}
-              className="w-full bg-[#ffe000] hover:bg-[#ffd200] text-black font-extrabold text-sm h-11 rounded-lg shadow-sm"
+              className="w-full bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-sm h-11 rounded-lg shadow-sm"
             >
               <ShoppingCart className="h-4 w-4 mr-2" /> Add Package to Cart
             </Button>
@@ -217,7 +217,7 @@ export const SystemSizer = ({ onAddPresetToCart, onConsultWhatsApp }: SystemSize
               onClick={() => onConsultWhatsApp({ ...currentPreset, estimatedPrice: adjustedPrice })}
               className="w-full border-slate-300 font-bold text-xs h-10 hover:bg-slate-100 text-slate-800"
             >
-              <MessageCircle className="h-4 w-4 mr-1.5 text-[#25D366]" /> Chat with Solar Engineer on WhatsApp
+              <MessageCircle className="h-4 w-4 mr-1.5 text-wa" /> Chat with Solar Engineer on WhatsApp
             </Button>
           </div>
         </div>

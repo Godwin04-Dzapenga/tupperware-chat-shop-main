@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock, Mail, User, Sparkles, Shield, Sun } from "lucide-react";
+import { Lock, Mail, User, Sparkles, Shield, Sun } from "lucide-react";
 
 
 
@@ -93,27 +93,12 @@ const Auth = () => {
   };
 
   return (
-    <div 
-      className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 select-none font-sans bg-cover bg-center"
-      style={{ 
-        backgroundImage: "radial-gradient(circle at 75% 20%, rgba(245,158,11,.28), transparent 30%), linear-gradient(135deg,#020617 0%,#0f172a 55%,#451a03 100%)" 
-      }}
-    >
-      {/* Blue tinted overlay matching the website's brand tone */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-amber-950/50 backdrop-blur-[4px] pointer-events-none" />
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 select-none font-sans bg-gradient-to-br from-bb-blue-ink via-bb-blue-deep to-bb-blue-night">
+      <div className="absolute inset-0 bg-gradient-to-br from-bb-blue-ink/90 via-bb-blue-deep/80 to-bb-blue-night/50 backdrop-blur-[4px] pointer-events-none" />
 
       {/* Main Glassmorphic Wrapper */}
       <div className="relative w-full max-w-[390px] z-10 transition-all duration-300">
         
-        {/* Floating return button */}
-        <button
-          onClick={() => navigate("/")}
-          className="absolute -top-9 left-0 flex items-center gap-1 text-xs font-semibold text-white/95 hover:text-white hover:scale-105 transition-all duration-200"
-        >
-          <ArrowLeft className="h-3.5 w-3.5 drop-shadow" />
-          Back to Store
-        </button>
-
         {/* Outer card glow */}
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-blue-400 rounded-2xl blur opacity-25" />
 
@@ -123,8 +108,8 @@ const Auth = () => {
           {/* Header branding */}
           <div className="flex flex-col items-center text-center mb-4">
             <div className="relative mb-2 p-1.5 rounded-xl bg-white border border-slate-200/50 shadow-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                <Sun className="h-5 w-5 text-amber-500" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow">
+                <Sun className="h-5 w-5 text-bb-ink" />
               </div>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
@@ -271,7 +256,7 @@ const Auth = () => {
 
           <div className="mt-5 text-center">
             <span className="text-[9px] text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1 font-semibold">
-              <Sparkles className="h-3 w-3 text-amber-500" />
+              <Sparkles className="h-3 w-3 text-bb-ink" />
               Secure Authentication by Supabase
             </span>
           </div>

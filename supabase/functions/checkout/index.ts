@@ -72,11 +72,11 @@ Deno.serve(async (req) => {
       if (item.variant_id) {
         const variant = variantMap[item.variant_id];
         if (!variant || variant.product_id !== product.id || !variant.is_active) throw new Error("Selected product option is unavailable");
-        if (variant.stock_quantity < item.quantity) throw new Error("Insufficient stock for "" + product.name + " — " + variant.name + """);
+        if (variant.stock_quantity < item.quantity) throw new Error('Insufficient stock for "' + product.name + " — " + variant.name + '"');
         name += " — " + variant.name;
         unitPrice = Number(variant.price);
       } else {
-        if (product.stock_quantity < item.quantity) throw new Error("Insufficient stock for "" + product.name + "". Available: " + product.stock_quantity);
+        if (product.stock_quantity < item.quantity) throw new Error('Insufficient stock for "' + product.name + '". Available: ' + product.stock_quantity);
       }
 
       const lineTotal = unitPrice * item.quantity;

@@ -4,7 +4,7 @@ import { Heart, ShoppingCart, CheckCircle2, AlertTriangle, Eye, Star, Layers, Me
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
-import { getProductMedia } from "@/data/solarProducts";
+import { getProductMedia, resolveProductImage } from "@/data/solarProducts";
 
 interface Product {
   id: string;
@@ -64,13 +64,11 @@ export const ProductCard = ({
     navigate(`/product/${product.id}`);
   }, [navigate, product.id]);
 
-  const displayImage = (!imgError && product.image_url && !product.image_url.includes("0.2930892299948875"))
-    ? product.image_url
-    : media.imageUrl;
+  const displayImage = !imgError ? resolveProductImage(product) : media.imageUrl;
 
   return (
     <div
-      className="group relative flex flex-col rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm hover:shadow-xl hover:border-[#0046be]/40 transition-all duration-300 cursor-pointer"
+      className="group relative flex flex-col rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm hover:shadow-xl hover:border-bb-blue/40 transition-all duration-300 cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleCardClick}
@@ -99,12 +97,12 @@ export const ProductCard = ({
         {/* Badges on Image */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
           {savings > 0 && !outOfStock && (
-            <span className="rounded bg-[#bb0620] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+            <span className="rounded bg-bb-red px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
               Save ${savings}
             </span>
           )}
           {outOfStock ? (
-            <span className="rounded bg-[#111820] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded bg-bb-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
               Sold out
             </span>
           ) : lowStock ? (
@@ -140,7 +138,7 @@ export const ProductCard = ({
                 e.stopPropagation();
                 onQuickView(product);
               }}
-              className="flex items-center gap-1.5 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl hover:bg-[#0046be] hover:text-white transition-colors"
+              className="flex items-center gap-1.5 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl hover:bg-bb-blue hover:text-white transition-colors"
             >
               <Eye className="h-3.5 w-3.5" /> Quick View
             </button>
@@ -153,7 +151,7 @@ export const ProductCard = ({
         <div>
           {/* Brand & Model */}
           <div className="flex items-center justify-between gap-1 text-[11px]">
-            <span className="font-extrabold uppercase tracking-wider text-[#0046be]">
+            <span className="font-extrabold uppercase tracking-wider text-bb-blue">
               {product.brand || media.brand.split("/")[0]}
             </span>
             <span className="text-[10px] text-slate-400 font-mono">
@@ -162,7 +160,7 @@ export const ProductCard = ({
           </div>
 
           {/* Product Title */}
-          <h3 className="mt-1 text-sm font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-[#0046be] transition-colors">
+          <h3 className="mt-1 text-sm font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-bb-blue transition-colors">
             {product.name}
           </h3>
 
@@ -185,7 +183,7 @@ export const ProductCard = ({
 
           {/* Price Block */}
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl font-black text-[#111820]">
+            <span className="text-xl font-black text-bb-ink">
               ${product.price.toFixed(2)}
             </span>
             {savings > 0 && (
@@ -205,7 +203,7 @@ export const ProductCard = ({
           </div>
         </div>
 
-        {/* ── Best Buy Yellow Add to Cart & Actions ── */}
+        {/* ── Yellow Add to Cart & Actions ── */}
         <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
           {!outOfStock ? (
             <button
@@ -218,7 +216,7 @@ export const ProductCard = ({
               className={`w-full h-10 rounded-md font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all ${
                 inCart
                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "bg-[#ffe000] text-black hover:bg-[#ffd200]"
+                  : "bg-bb-yellow text-black hover:bg-bb-yellow-dark"
               }`}
             >
               {inCart ? (
@@ -251,7 +249,7 @@ export const ProductCard = ({
                   type="checkbox"
                   checked={isCompared}
                   onChange={() => onToggleCompare(product)}
-                  className="rounded border-slate-300 text-[#0046be] focus:ring-0"
+                  className="rounded border-slate-300 text-bb-blue focus:ring-0"
                 />
                 <Layers className="h-3 w-3 text-slate-400" />
                 <span>Compare</span>
@@ -264,9 +262,9 @@ export const ProductCard = ({
                 e.stopPropagation();
                 onOrder(product);
               }}
-              className="text-[11px] font-bold text-[#0046be] hover:underline flex items-center gap-1 ml-auto"
+              className="text-[11px] font-bold text-bb-blue hover:underline flex items-center gap-1 ml-auto"
             >
-              <MessageCircle className="h-3 w-3 text-[#25D366]" /> WhatsApp Order
+              <MessageCircle className="h-3 w-3 text-wa" /> WhatsApp Order
             </button>
           </div>
         </div>

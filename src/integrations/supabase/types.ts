@@ -76,6 +76,8 @@ export type Database = {
           warranty_months: number | null
           installation_required: boolean
           specifications: Json
+          avg_rating: number | null
+          review_count: number | null
         }
         Insert: {
           category_id?: string | null
@@ -102,6 +104,8 @@ export type Database = {
           warranty_months?: number | null
           installation_required?: boolean
           specifications?: Json
+          avg_rating?: number | null
+          review_count?: number | null
         }
         Update: {
           category_id?: string | null
@@ -128,6 +132,8 @@ export type Database = {
           warranty_months?: number | null
           installation_required?: boolean
           specifications?: Json
+          avg_rating?: number | null
+          review_count?: number | null
         }
         Relationships: [
           {

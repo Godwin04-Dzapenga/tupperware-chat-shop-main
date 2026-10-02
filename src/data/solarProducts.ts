@@ -1,4 +1,4 @@
-// Curated product imagery and specifications for Tech Innovation (Best Buy Solar & Electronics)
+// Curated product imagery and specifications for Tech Innovation
 
 export interface ProductMediaData {
   imageUrl: string;
@@ -339,7 +339,15 @@ export function getProductMedia(product: {
   };
 }
 
-// System Sizer Presets for Best Buy "Solution Guide"
+export function resolveProductImage(item: {
+  image_url?: string | null;
+  name?: string;
+  product_type?: string | null;
+}): string {
+  return getProductMedia(item).imageUrl;
+}
+
+// System Sizer Presets for the solar solution guide
 export interface SizerPreset {
   id: string;
   title: string;

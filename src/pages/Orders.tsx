@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Package, MessageCircle, Clock, CheckCircle2, Truck, XCircle, RotateCcw, ShoppingBag } from "lucide-react";
+import { Package, MessageCircle, Clock, CheckCircle2, Truck, XCircle, RotateCcw, ShoppingBag } from "lucide-react";
 
 interface OrderItem {
   id: string;
@@ -109,21 +109,13 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center gap-4 px-4 py-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Shop
-          </Button>
-          <div>
-            <h1 className="text-lg font-bold">My Orders</h1>
-            <p className="text-xs text-muted-foreground">{orders.length} order{orders.length !== 1 ? "s" : ""}</p>
-          </div>
-        </div>
-      </header>
+    <div className="store-shell max-w-3xl py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-black tracking-tight">My Orders</h1>
+        <p className="text-sm text-muted-foreground">{orders.length} order{orders.length !== 1 ? "s" : ""}</p>
+      </div>
 
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        {orders.length === 0 ? (
+      {orders.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/30" />
             <h2 className="text-xl font-bold text-muted-foreground">No orders yet</h2>
@@ -246,7 +238,6 @@ export default function Orders() {
             })}
           </div>
         )}
-      </div>
     </div>
   );
 }
