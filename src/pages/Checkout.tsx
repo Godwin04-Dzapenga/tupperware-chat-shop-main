@@ -212,7 +212,7 @@ export default function Checkout() {
 
         // Cash on Delivery uses Medusa's built-in system/manual provider.
         if (paymentMethod === "cash_on_delivery") {
-          await medusa.cart.initiatePaymentSession(paymentCollection.id, "pp_system");
+          await medusa.cart.initiatePaymentSession(paymentCollection.id, "pp_system_default");
         }
 
         const completed = await medusa.cart.complete(cart.id);
