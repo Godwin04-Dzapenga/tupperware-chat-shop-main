@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { medusa, medusaConfigured } from "@/lib/medusa";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ const STEPS: { key: Step; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function Checkout() {
-  const { items, totalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
+  const { items, totalPrice, clearCart, resetCart, updateQuantity, removeFromCart, cartId } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -93,10 +94,91 @@ export default function Checkout() {
     } finally { setCouponLoading(false); }
   };
 
-  // ── Place order (online checkout path) ───────────────────────────────
+  // ── Place order ─────────────────────────────────────────────────────
   const placeOrder = async () => {
     setLoading(true);
     try {
+      if (medusaConfigured) {
+        if (!cartId || items.length === 0) {
+          throw new Error("Your Medusa cart is empty. Please return to the shop and try again.");
+        }
+
+        const countryCode = "zw";
+        const addressName = shipping.name.trim();
+        const nameParts = addressName.split(/\\s+/);
+        const firstName = nameParts.shift() || "Customer";
+        const lastName = nameParts.join(" ") || firstName;
+
+        const { cart: addressedCart } = await medusa.cart.update(cartId, {
+          email: shipping.email.trim() || user?.email || undefined,
+          shipping_address: {
+            first_name: firstName,
+            last_name: lastName,
+            address_1: shipping.line1.trim(),
+            address_2: shipping.line2.trim() || undefined,
+            city: shipping.city,
+            country_code: countryCode,
+            phone: shipping.phone.trim(),
+            postal_code: "00000",
+          },
+          billing_address: {
+            first_name: firstName,
+            last_name: lastName,
+            address_1: shipping.line1.trim(),
+            address_2: shipping.line2.trim() || undefined,
+            city: shipping.city,
+            country_code: countryCode,
+            phone: shipping.phone.trim(),
+            postal_code: "00000",
+          },
+        });
+
+        const { shipping_options } = await medusa.cart.listShippingOptions(addressedCart.id);
+        if (!shipping_options?.length) {
+          throw new Error("No Medusa shipping option is configured for Zimbabwe yet. Create a shipping option in Medusa Admin first.");
+        }
+
+        // The selected Medusa shipping option is authoritative for the order total.
+        // The storefront currently uses the first option; we will expose multiple
+        // options in the checkout UI next.
+        const { cart: shippedCart } = await medusa.cart.addShippingMethod(addressedCart.id, {
+          option_id: shipping_options[0].id,
+        });
+
+        const { payment_providers } = await medusa.payment.listProviders(shippedCart.region_id || import.meta.env.VITE_MEDUSA_REGION_ID);
+        const manualProvider = payment_providers?.find((provider) =>
+          /manual|system/i.test(provider.id)
+        );
+
+        if (!manualProvider) {
+          throw new Error("Medusa has no manual payment provider enabled for this region. Enable the Manual System Payment Provider for Zimbabwe in Medusa Admin.");
+        }
+
+        const { payment_collection } = await medusa.payment.createCollection(shippedCart.id);
+        await medusa.payment.initializeSession(payment_collection.id, manualProvider.id);
+
+        const completed = await medusa.cart.complete(shippedCart.id);
+
+        if (completed.type !== "order" || !completed.order) {
+          throw new Error("Medusa could not complete the order.");
+        }
+
+        const displayId = completed.order.display_id ?? completed.order.id;
+        const total = Number(completed.order.total ?? shippedCart.total ?? 0) / 100;
+        const whatsappMessage = encodeURIComponent(
+          `Hello Tech Innovation, I have placed order #${displayId}. Please confirm payment and delivery arrangements.`
+        );
+
+        resetCart();
+        setOrderResult({
+          order_number: String(displayId),
+          total,
+          whatsapp_url: `https://wa.me/263778158984?text=${whatsappMessage}`,
+        });
+        setStep("confirm");
+        return;
+      }
+
       const res = await supabase.functions.invoke("checkout", {
         body: {
           items: items.map(i => ({ product_id: i.product_id || i.id, variant_id: i.variant_id || undefined, quantity: i.quantity })),
