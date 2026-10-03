@@ -219,6 +219,12 @@ export const medusa = {
     },
   },
 
+  order: {
+    async retrieve(id: string) {
+      return medusaRequest<{ order: MedusaOrder }>(`/store/orders/${encodeURIComponent(id)}`);
+    },
+  },
+
   health: async () => {
     if (!medusaConfigured) return { configured: false, reachable: false };
     try {
