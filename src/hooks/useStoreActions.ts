@@ -22,13 +22,49 @@ export function useStoreActions() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const addProduct = (product: StoreProduct | CartProduct & { variant_count?: number }) => {
-    if (product.variant_count) {
+  const addProduct = async (product: StoreProduct | (CartProduct & { variant_count?: number })) => {
+    if ((product.variant_count ?? 0) > 1) {
       navigate(`/product/${product.id}`);
       return;
     }
-    addToCart(product as CartProduct);
-    toast.success(`${product.name} added to cart`);
+
+    try {
+      let variantId =
+        ("variant_id" in product ? product.variant_id : null) ||
+        ("default_variant_id" in product ? product.default_variant_id : null) ||
+        null;
+
+      if (!variantId) {
+        const { product: remoteProduct } = await medusa.product.retrieve(product.id, {
+          ...(import.meta.env.VITE_MEDUSA_REGION_ID
+            ? { region_id: import.meta.env.VITE_MEDUSA_REGION_ID }
+            : {}),
+          fields:
+            "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+        });
+
+        variantId =
+          remoteProduct.variants?.find(
+            (variant) =>
+              variant.manage_inventory === false ||
+              variant.allow_backorder === true ||
+              Number(variant.inventory_quantity ?? 0) > 0
+          )?.id ?? remoteProduct.variants?.[0]?.id ?? null;
+      }
+
+      if (!variantId) {
+        throw new Error("This product has no purchasable variant configured.");
+      }
+
+      await addToCart({
+        ...product,
+        product_id: ("product_id" in product ? product.product_id : undefined) || product.id,
+        variant_id: variantId,
+      } as CartProduct);
+      toast.success(`${product.name} added to cart`);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not add this product to the cart.");
+    }
   };
 
   const orderViaWhatsApp = (product: { name: string; price: number; variant_count?: number }) => {
