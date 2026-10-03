@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/useCart";
+import { useStoreActions } from "@/hooks/useStoreActions";
 import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -56,7 +57,8 @@ interface Props {
 
 export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }: Props) => {
   const navigate = useNavigate();
-  const { addToCart, isInCart } = useCart();
+  const { isInCart } = useCart();
+  const { addProduct } = useStoreActions();
   const { toggle: toggleWishlist, isWishlisted } = useWishlist();
   const [qty, setQty] = useState(1);
 
@@ -74,14 +76,15 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
   const originalPrice = media.originalPrice > product.price ? media.originalPrice : Math.round(product.price * 1.18);
   const savings = originalPrice - product.price;
 
-  const handleAddToCart = () => {
-    addToCart({
-      ...product,
-      product_id: product.id,
-      variant_id: product.default_variant_id || null,
-      quantity: qty,
-    } as any);
-    toast.success(`${qty > 1 ? qty + "× " : ""}${product.name} added to cart!`);
+  const handleAddToCart = async () => {
+    try {
+      for (let i = 0; i < qty; i += 1) {
+        await addProduct(product);
+      }
+      toast.success(`${qty > 1 ? qty + "× " : ""}${product.name} added to cart!`);
+    } catch {
+      // addProduct already reports the backend error.
+    }
   };
 
   const handleOrder = () => {
