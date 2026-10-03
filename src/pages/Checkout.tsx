@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { isMedusaCommerce } from "@/lib/commerce";
@@ -161,6 +161,27 @@ export default function Checkout() {
       if (isMedusaCommerce) {
         const cart = await syncWithBackend();
         if (!cart?.id) throw new Error("Your cart could not be synchronized.");
+
+        if (paymentMethod === "paynow_ecocash" || paymentMethod === "paynow_onemoney") {
+          const providerId = "pp_paynow_paynow";
+          const selected = await medusa.cart.selectPaymentSession(cart.id, providerId, {
+            cart_id: cart.id,
+            email: shipping.email.trim(),
+            phone: shipping.phone.trim(),
+            payment_method: paymentMethod === "paynow_ecocash" ? "ecocash" : "onemoney",
+          });
+          const session = selected.cart.payment_collection?.payment_sessions?.find(
+            (payment) => payment.provider_id === providerId,
+          );
+          const redirectUrl = session?.data?.redirect_url;
+          if (typeof redirectUrl !== "string" || !redirectUrl) {
+            throw new Error("Paynow did not return a payment link.");
+          }
+          localStorage.setItem("tech_innovation_paynow_cart_id", cart.id);
+          window.location.assign(redirectUrl);
+          return;
+        }
+
         const completed = await medusa.cart.complete(cart.id);
         if (completed.type !== "order" || !completed.order) {
           throw new Error("Medusa could not complete the order. Please check the payment session and try again.");
@@ -211,6 +232,51 @@ export default function Checkout() {
     );
     window.open(`https://wa.me/263778158984?text=${msg}`, "_blank");
   };
+
+  useEffect(() => {
+    if (!isMedusaCommerce) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paynow") !== "return") return;
+
+    const cartId = params.get("cart_id") || localStorage.getItem("tech_innovation_paynow_cart_id");
+    if (!cartId) {
+      toast.error("We could not find the Paynow checkout session.");
+      return;
+    }
+
+    let cancelled = false;
+    const completePaynowOrder = async () => {
+      setLoading(true);
+      try {
+        const completed = await medusa.cart.complete(cartId);
+        if (cancelled) return;
+        if (completed.type !== "order" || !completed.order) {
+          throw new Error("Paynow payment has not been confirmed yet. Please wait a moment and try again.");
+        }
+        const order = completed.order;
+        const total = (order.total || 0) / 100;
+        const orderNumber = order.display_id ? String(order.display_id) : order.id;
+        const itemsList = items.map(i => `• ${i.name} ×${i.quantity}`).join("\n");
+        const whatsapp_url = `https://wa.me/263778158984?text=${encodeURIComponent(
+          `Hi Tech Innovation, I have paid for order #${orderNumber}.\\n\\n${itemsList}\\n\\nTotal: ${total.toFixed(2)} USD\\nDelivery: ${shipping.city}, Zimbabwe`
+        )}`;
+        const history = JSON.parse(localStorage.getItem("tech_innovation_order_ids") || "[]") as string[];
+        localStorage.setItem("tech_innovation_order_ids", JSON.stringify([order.id, ...history.filter((id) => id !== order.id)].slice(0, 20)));
+        localStorage.removeItem("tech_innovation_paynow_cart_id");
+        window.history.replaceState({}, "", "/checkout");
+        clearCart();
+        setOrderResult({ order_number: orderNumber, total, whatsapp_url });
+        setStep("confirm");
+      } catch (error: any) {
+        if (!cancelled) toast.error(error?.message || "Paynow payment could not be confirmed.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void completePaynowOrder();
+    return () => { cancelled = true; };
+  }, [clearCart, isMedusaCommerce, items, shipping.city]);
 
   // ── Empty cart ────────────────────────────────────────────────────────
   if (items.length === 0 && step !== "confirm") {
@@ -633,7 +699,7 @@ export default function Checkout() {
                         id: "paynow_ecocash" as PaymentMethod,
                         icon: Smartphone,
                         iconBg: "bg-red-100 text-red-600",
-                        disabled: true,
+                        disabled: false,
                         label: "EcoCash",
                         sub: "Instant mobile money payment via EcoCash",
                         badge: "Instant",
@@ -643,7 +709,7 @@ export default function Checkout() {
                         id: "paynow_onemoney" as PaymentMethod,
                         icon: Zap,
                         iconBg: "bg-blue-100 text-blue-600",
-                        disabled: true,
+                        disabled: false,
                         label: "OneMoney",
                         sub: "Pay instantly via NetOne's OneMoney",
                         badge: "Instant",
