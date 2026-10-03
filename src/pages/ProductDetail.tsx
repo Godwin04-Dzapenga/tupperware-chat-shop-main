@@ -340,10 +340,16 @@ export default function ProductDetail() {
     toast.success("Link copied to clipboard");
   };
 
-  const handleAddBundle = async () => {
-    await add();
-    setBundleAdded(true);
-    toast.success("Main product added. The accessory bundle shown below is a quotation-only package; contact us to add the accessories.");
+  const handleAddBundle = () => {
+    if (!product) return;
+    const message = `Hello Tech Innovation, I would like the complete installation bundle for *${product.name}*.
+
+Main product: ${price.toFixed(2)}
+6mm² Solar DC Cable (20m Roll): $50.00
+Automatic Voltage Protector 63A: $65.00
+
+Please confirm the real Medusa products/variants, stock and the final bundle price.`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   if (loading) {
@@ -700,7 +706,7 @@ export default function ProductDetail() {
               onClick={handleAddBundle}
               className="mt-3 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-10 px-5 shadow-sm"
             >
-              {bundleAdded ? "Added All 3 to Cart" : "Add All 3 Items to Cart"}
+              {bundleAdded ? "Added All 3 to Cart" : "Request Complete Bundle"}
             </Button>
           </div>
         </div>
