@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
+import { medusa } from "@/lib/medusa";
 import type { StoreProduct } from "@/hooks/useCatalog";
 
 export const WHATSAPP_NUMBER = "263778158984";
@@ -11,6 +12,9 @@ interface CartProduct {
   price: number;
   image_url: string | null;
   stock_quantity?: number;
+  default_variant_id?: string | null;
+  product_id?: string;
+  variant_id?: string | null;
 }
 
 /** Shared cart + WhatsApp order actions used across the storefront. */
