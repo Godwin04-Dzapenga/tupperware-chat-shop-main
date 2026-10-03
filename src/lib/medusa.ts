@@ -211,6 +211,24 @@ export const medusa = {
         { method: "POST", body: JSON.stringify(payload) },
       );
     },
+    async addPromotion(id: string, promoCode: string) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/promotions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ promo_codes: [promoCode] }),
+        },
+      );
+    },
+    async removePromotion(id: string, promoCode: string) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/promotions`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ promo_codes: [promoCode] }),
+        },
+      );
+    },
     async complete(id: string) {
       return medusaRequest<{ type: string; order?: MedusaOrder; cart?: MedusaCart; error?: { message?: string } }>(
         `/store/carts/${encodeURIComponent(id)}/complete`,
