@@ -46,13 +46,9 @@ function hashValues(values: string[], key: string) {
   return createHash("sha512").update(values.join("") + key).digest("hex").toUpperCase()
 }
 
-function verifyHash(values: Record<string, string>, key: string) {
-  const hash = values.hash || values.Hash
-  if (!hash) return false
-  const ordered = Object.entries(values)
-    .filter(([name]) => name.toLowerCase() !== "hash")
-    .map(([, value]) => value)
-  return hashValues(ordered, key) === hash.toUpperCase()
+function verifyHash(values: string[], suppliedHash: string | undefined, key: string) {
+  if (!suppliedHash) return false
+  return hashValues(values, key) === suppliedHash.toUpperCase()
 }
 
 function parsePaynowResponse(raw: string) {
@@ -83,7 +79,7 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   }
 
   async initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentOutput> {
-    const reference = `TI-${input.data?.cart_id || Date.now()}-${Date.now().toString(36)}`
+    const reference = String(input.data?.session_id || `TI-${input.data?.cart_id || Date.now()}-${Date.now().toString(36)}`)
     const amount = Number(input.amount) / 100
     const currency = String(input.currency_code || "usd").toLowerCase()
 
@@ -100,11 +96,24 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
       additionalinfo: "Tech Innovation ecommerce order",
       returnurl: returnUrl,
       resulturl: resultUrl,
-      authemail: String(input.data?.email || ""),
-      authphone: String(input.data?.phone || ""),
       status: "Message",
     }
-    fields.hash = hashValues(Object.values(fields), this.options_.integrationKey)
+    const email = String(input.data?.email || "")
+    const phone = String(input.data?.phone || "")
+    if (email) fields.authemail = email
+    if (phone) fields.authphone = phone
+    const hashFields = [
+      fields.id,
+      fields.reference,
+      fields.amount,
+      fields.additionalinfo,
+      fields.returnurl,
+      fields.resulturl,
+      ...(fields.authemail ? [fields.authemail] : []),
+      ...(fields.authphone ? [fields.authphone] : []),
+      fields.status,
+    ]
+    fields.hash = hashValues(hashFields, this.options_.integrationKey)
 
     const response = await fetch(PAYNOW_INITIATE_URL, {
       method: "POST",
@@ -120,11 +129,16 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
     if (data.status !== "ok" || !data.browserurl || !data.pollurl) {
       throw new MedusaError(MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR, data.error || "Paynow could not initialize the payment.")
     }
+    if (!verifyHash([data.status, data.browserurl, data.pollurl], data.hash, this.options_.integrationKey)) {
+      throw new MedusaError(MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR, "Paynow returned an invalid response signature.")
+    }
 
     return {
       id: reference,
       data: {
         reference,
+        session_id: String(input.data?.session_id || ""),
+        cart_id: String(input.data?.cart_id || ""),
         poll_url: data.pollurl,
         redirect_url: data.browserurl,
         status: data.status,
@@ -212,7 +226,13 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
     payload: ProviderWebhookPayload["payload"],
   ): Promise<WebhookActionResult> {
     const data = (payload.data || {}) as Record<string, string>
-    if (!verifyHash(data, this.options_.integrationKey)) {
+    const suppliedHash = data.hash || data.Hash
+    const valid = verifyHash(
+      [data.reference || "", data.amount || "", data.paynowreference || "", data.pollurl || "", data.status || ""],
+      suppliedHash,
+      this.options_.integrationKey,
+    )
+    if (!valid) {
       return {
         action: "failed",
         data: { session_id: "", amount: 0 },
