@@ -145,7 +145,6 @@ export default function Checkout() {
       const standard = options.shipping_options?.find((option) => /standard/i.test(option.name)) || options.shipping_options?.[0];
       if (!standard) throw new Error("No Zimbabwe shipping option is available for this cart.");
       checkoutCart = (await medusa.cart.addShippingMethod(checkoutCart.id, standard.id)).cart;
-      checkoutCart = (await medusa.cart.createPaymentSessions(checkoutCart.id)).cart;
       setBackendShipping((checkoutCart.shipping_total || 0) / 100);
       setBackendTotal((checkoutCart.total || 0) / 100);
       setStep("payment");
@@ -164,19 +163,34 @@ export default function Checkout() {
 
         if (paymentMethod === "paynow_ecocash" || paymentMethod === "paynow_onemoney") {
           const providerId = "pp_paynow_paynow";
-          const selected = await medusa.cart.selectPaymentSession(cart.id, providerId, {
-            cart_id: cart.id,
-            email: shipping.email.trim(),
-            phone: shipping.phone.trim(),
-            payment_method: paymentMethod === "paynow_ecocash" ? "ecocash" : "onemoney",
-          });
-          const session = selected.cart.payment_collection?.payment_sessions?.find(
+          const paymentCollection =
+            cart.payment_collection?.id
+              ? cart.payment_collection
+              : (await medusa.cart.createPaymentCollection(cart.id)).payment_collection;
+
+          if (!paymentCollection?.id) {
+            throw new Error("Medusa could not create a payment collection.");
+          }
+
+          const initialized = await medusa.cart.initiatePaymentSession(
+            paymentCollection.id,
+            providerId,
+            {
+              cart_id: cart.id,
+              email: shipping.email.trim(),
+              phone: shipping.phone.trim(),
+              payment_method: paymentMethod === "paynow_ecocash" ? "ecocash" : "onemoney",
+            },
+          );
+
+          const session = initialized.payment_collection.payment_sessions?.find(
             (payment) => payment.provider_id === providerId,
           );
           const redirectUrl = session?.data?.redirect_url;
           if (typeof redirectUrl !== "string" || !redirectUrl) {
             throw new Error("Paynow did not return a payment link.");
           }
+
           localStorage.setItem("tech_innovation_paynow_cart_id", cart.id);
           window.location.assign(redirectUrl);
           return;
