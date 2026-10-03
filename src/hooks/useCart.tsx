@@ -36,6 +36,7 @@ interface CartContextType {
   totalPrice: number;
   isInCart: (id: string) => boolean;
   loading: boolean;
+  cartId: string | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -294,6 +295,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         totalPrice,
         isInCart,
         loading,
+        cartId,
       }}
     >
       {children}
