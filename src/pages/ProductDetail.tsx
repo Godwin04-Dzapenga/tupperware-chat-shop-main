@@ -99,7 +99,7 @@ export default function ProductDetail() {
         const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
         const { product: data } = await medusa.product.retrieve(productId, {
           ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,*images,*categories",
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
         });
 
         const metadata = data.metadata || {};
@@ -263,7 +263,9 @@ export default function ProductDetail() {
   const price = selected?.price ?? product?.price ?? 0;
   const stock = selected?.stock_quantity ?? product?.stock_quantity ?? 999;
   const cartId = selected && product ? product.id + "::" + selected.id : product?.id || "";
-  const outOfStock = stock <= 0;
+  const selectedCanPurchase =
+    selected?.manage_inventory === false || selected?.allow_backorder === true;
+  const outOfStock = !selectedCanPurchase && stock <= 0;
   const lowStock = stock > 0 && stock <= 5;
   const inCart = isInCart(cartId);
   const wishlisted = product ? isWishlisted(product.id) : false;
@@ -292,7 +294,7 @@ export default function ProductDetail() {
   }, [product, selected, media]);
 
   const add = () => {
-    if (!product || outOfStock) return;
+    if (!product || outOfStock || (isMedusaCommerce && !selected)) return;
     for (let i = 0; i < quantity; i++) {
       addToCart({
         id: cartId,
