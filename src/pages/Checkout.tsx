@@ -587,17 +587,24 @@ export default function Checkout() {
                 </div>
 
                 <div className="bg-white rounded-2xl border shadow-sm p-5 space-y-4">
-                  {/* Email for guests */}
-                  {!user && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email *</Label>
-                      <Input type="email" placeholder="you@example.com" value={shipping.email}
-                        onChange={e => setShipping(s => ({ ...s, email: e.target.value }))} className="rounded-sm h-10" />
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />Order confirmation goes here
-                      </p>
-                    </div>
-                  )}
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email *</Label>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={shipping.email}
+                      onChange={e => setShipping(s => ({ ...s, email: e.target.value }))}
+                      className="rounded-sm h-10"
+                      aria-invalid={Boolean(shipping.email.trim() && !isValidEmail(shipping.email))}
+                    />
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />Order confirmation goes here
+                    </p>
+                    {shipping.email.trim() && !isValidEmail(shipping.email) && (
+                      <p className="text-[10px] text-destructive">Please enter a valid email address.</p>
+                    )}
+                  </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
