@@ -113,7 +113,7 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
     }
     const hashFields = Object.keys(fields)
       .filter((key) => key !== "hash")
-      .map((key) => fields[key])
+      .map((key) => encodeURI(fields[key]))
     fields.hash = hashValues(hashFields, this.options_.integrationKey)
 
     const response = await fetch(PAYNOW_INITIATE_URL, {
