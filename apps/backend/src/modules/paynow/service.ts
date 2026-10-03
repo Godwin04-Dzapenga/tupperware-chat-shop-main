@@ -45,7 +45,10 @@ type PaynowData = {
 const PAYNOW_INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction"
 
 function hashValues(values: string[], key: string) {
-  return createHash("sha512").update(values.join("") + key).digest("hex").toUpperCase()
+  return createHash("sha512")
+    .update(values.join("") + key.toLowerCase())
+    .digest("hex")
+    .toUpperCase()
 }
 
 function verifyHash(values: string[], suppliedHash: string | undefined, key: string) {
@@ -99,29 +102,18 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
     const returnUrl = this.buildReturnUrl(String(input.data?.cart_id || reference))
     const resultUrl = this.options_.resultUrl
     const fields: Record<string, string> = {
-      id: this.options_.integrationId,
+      resulturl: resultUrl,
+      returnurl: returnUrl,
       reference,
       amount: amount.toFixed(2),
+      id: this.options_.integrationId,
       additionalinfo: "Tech Innovation ecommerce order",
-      returnurl: returnUrl,
-      resulturl: resultUrl,
+      authemail: String(input.data?.email || ""),
+      status: "Message",
     }
-    const email = String(input.data?.email || "")
-    const phone = String(input.data?.phone || "")
-    if (email) fields.authemail = email
-    if (phone) fields.authphone = phone
-    fields.status = "Message"
-    const hashFields = [
-      fields.id,
-      fields.reference,
-      fields.amount,
-      fields.additionalinfo,
-      fields.returnurl,
-      fields.resulturl,
-      ...(fields.authemail ? [fields.authemail] : []),
-      ...(fields.authphone ? [fields.authphone] : []),
-      fields.status,
-    ]
+    const hashFields = Object.keys(fields)
+      .filter((key) => key !== "hash")
+      .map((key) => fields[key])
     fields.hash = hashValues(hashFields, this.options_.integrationKey)
 
     const response = await fetch(PAYNOW_INITIATE_URL, {
