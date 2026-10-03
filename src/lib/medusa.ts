@@ -96,6 +96,7 @@ export interface MedusaCategory {
 export interface MedusaCart {
   id: string;
   currency_code: string;
+  region_id?: string;
   email?: string | null;
   items?: Array<{
     id: string;
