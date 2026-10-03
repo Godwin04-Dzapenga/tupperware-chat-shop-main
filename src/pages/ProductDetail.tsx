@@ -39,8 +39,8 @@ interface Variant {
   sku: string | null;
   price: number;
   stock_quantity: number;
-  manage_inventory: boolean;
-  allow_backorder: boolean;
+  manage_inventory?: boolean;
+  allow_backorder?: boolean;
   image_url: string | null;
   attributes: Record<string, string>;
   is_active: boolean;
