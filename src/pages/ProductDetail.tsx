@@ -305,21 +305,24 @@ export default function ProductDetail() {
     return [...base, ...attrs, ...Object.entries(product.specifications || {}).map(([k, v]) => [k, String(v)])];
   }, [product, selected, media]);
 
-  const add = () => {
-    if (!product || outOfStock) return;
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
+  const add = async () => {
+    if (!product || outOfStock || !selected) return;
+    try {
+      await addToCart({
         id: cartId,
         product_id: product.id,
-        variant_id: selected?.id || null,
-        variant_name: selected?.name || null,
-        name: selected ? `${product.name} — ${selected.name}` : product.name,
+        variant_id: selected.id,
+        variant_name: selected.name,
+        name: `${product.name} — ${selected.name}`,
         price,
-        image_url: selected?.image_url || activeImage || product.image_url,
+        quantity,
+        image_url: selected.image_url || activeImage || product.image_url,
         stock_quantity: stock,
       });
+      toast.success(`${quantity} × ${selected.name} added to cart`);
+    } catch {
+      // addToCart already reports the backend error.
     }
-    toast.success(`${quantity} × ${selected?.name || product.name} added to cart`);
   };
 
   const whatsapp = () => {
@@ -337,25 +340,10 @@ export default function ProductDetail() {
     toast.success("Link copied to clipboard");
   };
 
-  const handleAddBundle = () => {
-    if (!product) return;
-    add();
-    addToCart({
-      id: "bundle-cables",
-      name: "6mm² Solar DC Cable (20m Roll)",
-      price: 50,
-      image_url: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 20,
-    });
-    addToCart({
-      id: "bundle-protector",
-      name: "Automatic Voltage Protector 63A",
-      price: 65,
-      image_url: "https://images.unsplash.com/photo-1558441719-8b449c6ff673?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 15,
-    });
+  const handleAddBundle = async () => {
+    await add();
     setBundleAdded(true);
-    toast.success("Complete 3-piece installation bundle added to cart! Save $15.");
+    toast.success("Main product added. The accessory bundle shown below is a quotation-only package; contact us to add the accessories.");
   };
 
   if (loading) {
