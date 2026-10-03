@@ -63,6 +63,13 @@ function parsePaynowResponse(raw: string) {
 }
 
 class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
+  protected options_: Options
+
+  constructor(container: any, options: Options) {
+    super(container, options)
+    this.options_ = options
+  }
+
   static identifier = "paynow"
 
   static validateOptions(options: Record<string, any>) {
