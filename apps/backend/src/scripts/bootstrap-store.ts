@@ -400,6 +400,11 @@ export default async function bootstrapStore({ container }: ExecArgs) {
       provider.is_enabled !== false &&
       /system|manual/i.test(`${provider.id} ${provider.name ?? ""}`)
   )
+  const paynowPaymentProvider = (paymentProviders as any[]).find(
+    (provider) =>
+      provider.is_enabled !== false &&
+      /paynow/i.test(`${provider.id} ${provider.name ?? ""}`)
+  )
 
   if (!systemPaymentProvider) {
     throw new Error(
@@ -421,6 +426,20 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     logger.info(`Enabled system payment provider ${systemPaymentProvider.id} for Zimbabwe.`)
   } else {
     logger.info("System payment provider is already enabled for Zimbabwe.")
+  }
+
+  if (paynowPaymentProvider) {
+    if (!regionPaymentProviders.some((provider: any) => provider.id === paynowPaymentProvider.id)) {
+      await link.create({
+        [Modules.REGION]: { region_id: region.id },
+        [Modules.PAYMENT]: { payment_provider_id: paynowPaymentProvider.id },
+      })
+      logger.info(`Enabled Paynow payment provider ${paynowPaymentProvider.id} for Zimbabwe.`)
+    } else {
+      logger.info("Paynow payment provider is already enabled for Zimbabwe.")
+    }
+  } else {
+    logger.info("Paynow payment provider is not registered yet; add Paynow credentials and restart Medusa before seeding.")
   }
 
   let shippingProfile = (await fulfillmentModuleService.listShippingProfiles({
