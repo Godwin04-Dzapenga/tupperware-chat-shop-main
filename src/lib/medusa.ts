@@ -223,10 +223,10 @@ export const medusa = {
         { method: "POST" },
       );
     },
-    async selectPaymentSession(id: string, providerId: string) {
+    async selectPaymentSession(id: string, providerId: string, data: Record<string, unknown> = {}) {
       return medusaRequest<{ cart: MedusaCart }>(
         `/store/carts/${encodeURIComponent(id)}/payment-session`,
-        { method: "POST", body: JSON.stringify({ provider_id: providerId }) },
+        { method: "POST", body: JSON.stringify({ provider_id: providerId, data }) },
       );
     },
     async complete(id: string) {
