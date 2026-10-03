@@ -115,6 +115,7 @@ export interface MedusaCart {
   discount_total?: number;
   metadata?: Record<string, unknown> | null;
   payment_collection?: {
+    id: string;
     payment_sessions?: Array<{
       id: string;
       provider_id: string;
@@ -217,16 +218,26 @@ export const medusa = {
         body: JSON.stringify({ option_id: optionId, data }),
       });
     },
-    async createPaymentSessions(id: string) {
-      return medusaRequest<{ cart: MedusaCart }>(
-        `/store/carts/${encodeURIComponent(id)}/payment-sessions`,
-        { method: "POST" },
+    async createPaymentCollection(cartId: string) {
+      return medusaRequest<{ payment_collection: NonNullable<MedusaCart["payment_collection"]> }>(
+        "/store/payment-collections",
+        {
+          method: "POST",
+          body: JSON.stringify({ cart_id: cartId }),
+        },
       );
     },
-    async selectPaymentSession(id: string, providerId: string, data: Record<string, unknown> = {}) {
-      return medusaRequest<{ cart: MedusaCart }>(
-        `/store/carts/${encodeURIComponent(id)}/payment-session`,
-        { method: "POST", body: JSON.stringify({ provider_id: providerId, data }) },
+    async initiatePaymentSession(
+      paymentCollectionId: string,
+      providerId: string,
+      data: Record<string, unknown> = {},
+    ) {
+      return medusaRequest<{ payment_collection: NonNullable<MedusaCart["payment_collection"]> }>(
+        `/store/payment-collections/${encodeURIComponent(paymentCollectionId)}/payment-sessions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ provider_id: providerId, data }),
+        },
       );
     },
     async complete(id: string) {
