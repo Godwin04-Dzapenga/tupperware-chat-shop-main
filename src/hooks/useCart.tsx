@@ -83,10 +83,10 @@ function mapMedusaCartItems(cartItems: NonNullable<import("@/lib/medusa").Medusa
 }
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const cartIdRef = useRef<string | null>(readCartId());
   const [items, setItems] = useState<CartItem[]>([]);
   const [cartId, setCartId] = useState<string | null>(cartIdRef.current);
   const [refreshing, setRefreshing] = useState(false);
-  const cartIdRef = useRef<string | null>(readCartId());
   const cartPromiseRef = useRef<Promise<string> | null>(null);
 
   const ensureMedusaCart = useCallback(async (): Promise<string> => {
@@ -140,6 +140,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setItems(mapMedusaCartItems(cart.items || []));
     } catch (error: any) {
       cartIdRef.current = null;
+      setCartId(null);
       writeCartId(null);
       setItems([]);
       console.warn("Medusa cart could not be retrieved:", error?.message || error);
