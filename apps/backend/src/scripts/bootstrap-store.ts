@@ -145,7 +145,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     filters: { name: SALES_CHANNEL_NAME },
   })
 
-  let salesChannel = salesChannels[0]
+  let salesChannel: any = salesChannels[0]
 
   if (!salesChannel) {
     const { result } = await createSalesChannelsWorkflow(container).run({
@@ -165,7 +165,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     filters: { name: REGION_NAME },
   })
 
-  let region = regions.find((item: any) => item.currency_code === CURRENCY_CODE)
+  let region: any = regions.find((item: any) => item.currency_code === CURRENCY_CODE)
 
   if (!region) {
     const { result } = await createRegionsWorkflow(container).run({
@@ -189,7 +189,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     filters: { title: API_KEY_TITLE, type: "publishable" },
   })
 
-  let apiKey = apiKeys[0]
+  let apiKey: any = apiKeys[0]
 
   if (!apiKey) {
     const { data: adminUsers } = await query.graph({
@@ -230,7 +230,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
             description: category.description,
             is_active: true,
             is_internal: false,
-            is_discountable: true,
           }],
         },
       })
@@ -322,7 +321,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     fields: ["id", "name"],
   })
 
-  let stockLocation = stockLocations.find(
+  let stockLocation: any = stockLocations.find(
     (location: any) => location.name === "Tech Innovation Main Warehouse"
   )
 
@@ -465,7 +464,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     filters: { name: "Tech Innovation Zimbabwe Delivery" },
   })
 
-  let fulfillmentSet = existingFulfillmentSets[0]
+  let fulfillmentSet: any = existingFulfillmentSets[0]
 
   if (!fulfillmentSet) {
     fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
