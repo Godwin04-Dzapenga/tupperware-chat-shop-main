@@ -245,6 +245,7 @@ export const medusa = {
         name?: string;
         price_type?: string;
         amount?: number;
+        data?: Record<string, unknown>;
       }> }>("/store/shipping-options", {
         query: { cart_id: cartId },
       });
