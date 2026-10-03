@@ -98,17 +98,12 @@ const SolarHome = () => {
   };
 
   const handleAddSizerPreset = (preset: SizerPreset) => {
-    addToCart({
-      id: `preset-${preset.id}`,
-      name: `${preset.title} Package`,
-      price: preset.estimatedPrice,
-      image_url:
-        preset.id === "family"
-          ? "https://images.unsplash.com/photo-1545208942-e1c9c916524b?w=800&h=800&fit=crop&q=85"
-          : "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 5,
-    });
-    toast.success(`${preset.title} complete solar kit added to cart!`);
+    const message = encodeURIComponent(
+      `Hello Tech Innovation, I would like a quotation for the ${preset.title} solar package.
+Estimated package value: ${preset.estimatedPrice.toFixed(2)}.
+Please confirm the exact Medusa products/variants available and prepare the package for me.`
+    );
+    window.open(`https://wa.me/263778158984?text=${message}`, "_blank");
   };
 
   const handleConsultWhatsApp = (preset: SizerPreset) => {
