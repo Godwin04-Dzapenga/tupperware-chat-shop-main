@@ -39,6 +39,8 @@ interface Variant {
   sku: string | null;
   price: number;
   stock_quantity: number;
+  manage_inventory: boolean;
+  allow_backorder: boolean;
   image_url: string | null;
   attributes: Record<string, string>;
   is_active: boolean;
@@ -99,7 +101,7 @@ export default function ProductDetail() {
         const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
         const { product: data } = await medusa.product.retrieve(productId, {
           ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,*images,*categories",
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
         });
 
         const metadata = data.metadata || {};
@@ -109,7 +111,12 @@ export default function ProductDetail() {
           name: variant.title,
           sku: variant.sku ?? null,
           price: (variant.calculated_price?.calculated_amount ?? 0) / 100,
-          stock_quantity: Number(variant.inventory_quantity ?? 0),
+          stock_quantity:
+            variant.manage_inventory === false
+              ? 999999
+              : Number(variant.inventory_quantity ?? 0),
+          manage_inventory: variant.manage_inventory !== false,
+          allow_backorder: variant.allow_backorder === true,
           image_url: null,
           attributes:
             variant.metadata?.attributes && typeof variant.metadata.attributes === "object" && !Array.isArray(variant.metadata.attributes)
@@ -154,7 +161,7 @@ export default function ProductDetail() {
               limit: 4,
               category_id: mapped.category_id,
               ...(regionId ? { region_id: regionId } : {}),
-              fields: "*variants,*variants.calculated_price,*images,*categories",
+              fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
             })
           : null;
 
@@ -172,7 +179,12 @@ export default function ProductDetail() {
               category_id: item.categories?.[0]?.id ?? null,
               image_url: item.thumbnail || item.images?.[0]?.url || null,
               video_url: typeof item.metadata?.video_url === "string" ? item.metadata.video_url : null,
-              stock_quantity: itemVariants.reduce((sum, v) => sum + Math.max(0, Number(v.inventory_quantity ?? 0)), 0),
+              stock_quantity: itemVariants.some((v) => v.manage_inventory === false)
+                ? 999999
+                : itemVariants.reduce(
+                    (sum, v) => sum + Math.max(0, Number(v.inventory_quantity ?? 0)),
+                    0
+                  ),
               brand: typeof item.metadata?.brand === "string" ? item.metadata.brand : null,
               model_number: typeof item.metadata?.model_number === "string" ? item.metadata.model_number : null,
               product_type: typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "general",
@@ -263,7 +275,9 @@ export default function ProductDetail() {
   const price = selected?.price ?? product?.price ?? 0;
   const stock = selected?.stock_quantity ?? product?.stock_quantity ?? 999;
   const cartId = selected && product ? product.id + "::" + selected.id : product?.id || "";
-  const outOfStock = stock <= 0;
+  const selectedAllowsPurchase =
+    selected?.manage_inventory === false || selected?.allow_backorder === true;
+  const outOfStock = !selectedAllowsPurchase && stock <= 0;
   const lowStock = stock > 0 && stock <= 5;
   const inCart = isInCart(cartId);
   const wishlisted = product ? isWishlisted(product.id) : false;
