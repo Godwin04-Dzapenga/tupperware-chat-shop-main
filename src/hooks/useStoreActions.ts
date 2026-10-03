@@ -18,13 +18,18 @@ export function useStoreActions() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const addProduct = (product: StoreProduct | CartProduct & { variant_count?: number }) => {
+  const addProduct = async (product: StoreProduct | CartProduct & { variant_count?: number }) => {
     if (product.variant_count) {
       navigate(`/product/${product.id}`);
       return;
     }
-    addToCart(product as CartProduct);
-    toast.success(`${product.name} added to cart`);
+
+    try {
+      await addToCart(product as CartProduct);
+      toast.success(`${product.name} added to cart`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add this item to the cart.");
+    }
   };
 
   const orderViaWhatsApp = (product: { name: string; price: number; variant_count?: number }) => {
