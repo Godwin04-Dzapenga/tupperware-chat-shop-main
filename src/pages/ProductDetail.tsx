@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getProductMedia } from "@/data/solarProducts";
-import { commerceProvider } from "@/lib/commerce";
+import { commerceProvider, isMedusaCommerce } from "@/lib/commerce";
 import { medusa } from "@/lib/medusa";
 
 interface Variant {
@@ -325,7 +325,14 @@ export default function ProductDetail() {
 
   const handleAddBundle = () => {
     if (!product) return;
+    // Accessories must exist as Medusa variants before they can be placed in a
+    // Medusa cart. Never add frontend-only products to a real checkout.
     add();
+    if (isMedusaCommerce) {
+      setBundleAdded(true);
+      toast.success("Main product added. Bundle accessories will be available once they are added to the Medusa catalogue.");
+      return;
+    }
     addToCart({
       id: "bundle-cables",
       name: "6mm² Solar DC Cable (20m Roll)",
