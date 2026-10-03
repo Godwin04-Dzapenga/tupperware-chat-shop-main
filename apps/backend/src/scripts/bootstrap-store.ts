@@ -7,6 +7,8 @@ import {
   linkSalesChannelsToApiKeyWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { ExecArgs } from "@medusajs/framework/types"
+import { writeFileSync } from "node:fs"
+import path from "node:path"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 const SALES_CHANNEL_NAME = "Tech Innovation Online Store"
@@ -292,6 +294,21 @@ export default async function bootstrapStore({ container }: ExecArgs) {
       remove: [],
     },
   })
+
+  const rootEnvLocal = path.resolve(process.cwd(), "../../.env.local")
+  writeFileSync(
+    rootEnvLocal,
+    [
+      "VITE_MEDUSA_BACKEND_URL=http://localhost:9000",
+      "VITE_MEDUSA_PUBLISHABLE_KEY=" + apiKey.token,
+      "VITE_MEDUSA_REGION_ID=" + region.id,
+      "VITE_MEDUSA_CURRENCY_CODE=usd",
+      "VITE_COMMERCE_CATALOG_PROVIDER=medusa",
+      "",
+    ].join("\n"),
+    "utf8"
+  )
+  logger.info("Updated root .env.local with Medusa storefront configuration.")
 
   logger.info("")
   logger.info("=== TECH INNOVATION MEDUSA STORE READY ===")
