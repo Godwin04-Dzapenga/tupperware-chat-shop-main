@@ -193,7 +193,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const cart = await ensureCart();
       const { cart: updated } = await medusa.cart.addLineItem(cart.id, {
         variant_id: variantId,
-        quantity: 1,
+        quantity: Math.max(1, product.quantity ?? 1),
       });
 
       setItems(mapMedusaCart(updated));
