@@ -246,7 +246,10 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     .map((product) => {
       const category = categoryByHandle.get(product.categoryHandle)
       const productOptions = product.options
-        ? [{ title: product.options.title, values: product.options.values }]
+        ? [{
+            title: product.options.title,
+            values: product.variants?.map((variant) => variant.title) ?? product.options.values,
+          }]
         : [{ title: "Default Option", values: ["Default"] }]
 
       const variants = product.variants?.length
@@ -268,6 +271,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
         : [{
             title: "Default",
             sku: product.sku,
+            options: { "Default Option": "Default" },
             manage_inventory: true,
             allow_backorder: false,
             prices: [{ currency_code: CURRENCY_CODE, amount: product.basePrice }],
