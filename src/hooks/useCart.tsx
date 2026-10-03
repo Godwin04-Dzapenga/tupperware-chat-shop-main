@@ -181,14 +181,33 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       // variant before creating the Medusa line item.
       if (!variantId) {
         const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
-        const { product: medusaProduct } = await medusa.product.retrieve(product.product_id || product.id, {
-          ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,*images",
-        });
-        variantId = medusaProduct.variants?.[0]?.id || null;
+        const productId = product.product_id || product.id;
+
+        try {
+          const { product: medusaProduct } = await medusa.product.retrieve(productId, {
+            ...(regionId ? { region_id: regionId } : {}),
+            fields: "*variants,*variants.calculated_price,*images",
+          });
+          variantId = medusaProduct.variants?.[0]?.id || null;
+        } catch {
+          // Some legacy UI bundle actions only have a display name. Resolve
+          // those names against the Medusa catalogue instead of creating a
+          // second local cart.
+          const searchName = product.name.split(" (")[0].trim();
+          const { products } = await medusa.product.list({
+            q: searchName,
+            limit: 10,
+            ...(regionId ? { region_id: regionId } : {}),
+            fields: "*variants,*variants.calculated_price,*images",
+          });
+          const match = products.find((item) =>
+            item.title.toLowerCase().includes(searchName.toLowerCase())
+          );
+          variantId = match?.variants?.[0]?.id || null;
+        }
       }
 
-      if (!variantId) throw new Error("This product has no purchasable variant.");
+      if (!variantId) throw new Error("This product has no purchasable Medusa variant.");
 
       const cart = await ensureCart();
       const { cart: updated } = await medusa.cart.addLineItem(cart.id, {
