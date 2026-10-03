@@ -78,6 +78,7 @@ export interface MedusaProduct {
 
 export interface MedusaVariant {
   id: string;
+  product_id?: string;
   title: string;
   sku?: string | null;
   manage_inventory?: boolean;
