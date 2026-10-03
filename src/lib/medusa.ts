@@ -71,14 +71,6 @@ export interface MedusaProduct {
   variants?: MedusaVariant[];
   categories?: Array<{ id: string; name: string; handle: string }>;
   metadata?: Record<string, unknown> | null;
-  payment_collection?: {
-    payment_sessions?: Array<{
-      id: string;
-      provider_id: string;
-      status?: string;
-      data?: Record<string, unknown>;
-    }>;
-  } | null;
 }
 
 export interface MedusaVariant {
@@ -122,6 +114,14 @@ export interface MedusaCart {
   shipping_total?: number;
   discount_total?: number;
   metadata?: Record<string, unknown> | null;
+  payment_collection?: {
+    payment_sessions?: Array<{
+      id: string;
+      provider_id: string;
+      status?: string;
+      data?: Record<string, unknown>;
+    }>;
+  } | null;
 }
 
 export interface MedusaOrder {
