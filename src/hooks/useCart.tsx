@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
-import type { Json } from "@/integrations/supabase/types";
+import { medusa, medusaConfigured, type MedusaCart } from "@/lib/medusa";
+import { commerceProvider } from "@/lib/commerce";
 
 export interface CartItem {
+  /** Medusa line-item id when the cart is Medusa-backed. */
   id: string;
   product_id?: string;
   variant_id?: string | null;
@@ -15,137 +15,287 @@ export interface CartItem {
   stock_quantity?: number;
 }
 
+interface AddToCartProduct {
+  id: string;
+  product_id?: string;
+  variant_id?: string | null;
+  variant_name?: string | null;
+  name: string;
+  price?: number;
+  image_url?: string | null;
+  stock_quantity?: number;
+}
+
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: { id: string; product_id?: string; variant_id?: string | null; variant_name?: string | null; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (product: AddToCartProduct) => Promise<void>;
+  removeFromCart: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   totalItems: number;
   totalPrice: number;
   isInCart: (id: string) => boolean;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
-const LS_KEY = "tuppafrica_cart";
+const LS_KEY = "techinnovation_medusa_cart_id";
 
-function readLocalCart(): CartItem[] {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); }
-  catch { return []; }
-}
+const isMedusaCart = commerceProvider === "medusa" && medusaConfigured;
 
-function writeLocalCart(items: CartItem[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(items));
-}
-
-function parseCartItem(value: Json): CartItem | null {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
-
-  const item = value as unknown as Record<string, unknown>;
-
-  if (
-    typeof item.id !== "string" ||
-    typeof item.name !== "string" ||
-    typeof item.price !== "number" ||
-    typeof item.quantity !== "number"
-  ) {
+function getStoredCartId() {
+  try {
+    return localStorage.getItem(LS_KEY);
+  } catch {
     return null;
   }
+}
 
-  return {
-    id: item.id,
-    ...(typeof item.product_id === "string" ? { product_id: item.product_id } : {}),
-    ...(typeof item.variant_id === "string" ? { variant_id: item.variant_id } : {}),
-    ...(typeof item.variant_name === "string" ? { variant_name: item.variant_name } : {}),
-    name: item.name,
-    price: item.price,
-    quantity: item.quantity,
-    ...(typeof item.image_url === "string" ? { image_url: item.image_url } : {}),
-    ...(typeof item.stock_quantity === "number" ? { stock_quantity: item.stock_quantity } : {}),
-  };
+function setStoredCartId(id: string | null) {
+  try {
+    if (id) localStorage.setItem(LS_KEY, id);
+    else localStorage.removeItem(LS_KEY);
+  } catch {
+    // Ignore storage failures; Medusa remains the source of truth for this session.
+  }
+}
+
+function mapMedusaCart(cart: MedusaCart): CartItem[] {
+  return (cart.items || []).map((item) => {
+    const variant = item.variant;
+    const product = variant?.product || item.product;
+    const productId = product?.id;
+    const variantName = variant?.title;
+    const imageUrl = product?.thumbnail || product?.images?.[0]?.url || null;
+
+    return {
+      id: item.id,
+      ...(productId ? { product_id: productId } : {}),
+      ...(variant?.id ? { variant_id: variant.id } : {}),
+      ...(variantName ? { variant_name: variantName } : {}),
+      name: product?.title
+        ? variantName && variantName !== "Default variant"
+          ? `${product.title} — ${variantName}`
+          : product.title
+        : variantName || "Product",
+      price: Number(item.unit_price || 0) / 100,
+      quantity: item.quantity,
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+      ...(typeof variant?.inventory_quantity === "number"
+        ? { stock_quantity: variant.inventory_quantity }
+        : {}),
+    };
+  });
 }
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  const [items, setItemsRaw] = useState<CartItem[]>(readLocalCart);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartId, setCartId] = useState<string | null>(getStoredCartId);
+  const [loading, setLoading] = useState(isMedusaCart);
 
-  const setItems = useCallback((updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => {
-    setItemsRaw((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      writeLocalCart(next);
-      return next;
+  const loadCart = useCallback(async (id: string) => {
+    const { cart } = await medusa.cart.retrieve(id, {
+      fields: "*items,*items.variant,*items.variant.product,*items.product",
     });
+    setCartId(cart.id);
+    setStoredCartId(cart.id);
+    setItems(mapMedusaCart(cart));
+    return cart;
   }, []);
 
-  const syncToCloud = useCallback(async (cartItems: CartItem[]) => {
-    if (!user) return;
-    await supabase.from("carts").upsert(
-      { user_id: user.id, items: cartItems as unknown as Json, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  }, [user]);
-
   useEffect(() => {
-    if (!user) return;
+    if (!isMedusaCart) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     (async () => {
-      const { data } = await supabase.from("carts").select("items").eq("user_id", user.id).maybeSingle();
-      if (data?.items && Array.isArray(data.items)) {
-        const cloudItems: CartItem[] = data.items
-          .map(parseCartItem)
-          .filter((item): item is CartItem => item !== null);
-        setItems((local) => {
-          const merged = [...cloudItems];
-          for (const localItem of local) {
-            const existing = merged.find((i) => i.id === localItem.id);
-            if (existing) { existing.quantity = Math.max(existing.quantity, localItem.quantity); }
-            else { merged.push(localItem); }
-          }
-          return merged;
-        });
+      const storedId = getStoredCartId();
+      if (!storedId) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      try {
+        await loadCart(storedId);
+      } catch {
+        // A stale/expired Medusa cart should not block the storefront.
+        setStoredCartId(null);
+        setCartId(null);
+        setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
-    const t = setTimeout(() => syncToCloud(items), 1000);
-    return () => clearTimeout(t);
-  }, [items, user, syncToCloud]);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadCart]);
 
-  const addToCart = useCallback((product: { id: string; product_id?: string; variant_id?: string | null; variant_name?: string | null; name: string; price: number; image_url?: string | null; stock_quantity?: number }) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      const maxQty = product.stock_quantity ?? 999;
-      if (existing) {
-        if (existing.quantity >= maxQty) return prev;
-        return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+  const ensureCart = useCallback(async () => {
+    if (cartId) {
+      try {
+        return await loadCart(cartId);
+      } catch {
+        setStoredCartId(null);
+        setCartId(null);
+        setItems([]);
       }
-      return [...prev, { ...product, quantity: 1 }];
-    });
-  }, [setItems]);
+    }
 
-  const removeFromCart = useCallback((id: string) => setItems((p) => p.filter((i) => i.id !== id)), [setItems]);
+    const regionId = import.meta.env.VITE_MEDUSA_REGION_ID;
+    const salesChannelId = import.meta.env.VITE_MEDUSA_SALES_CHANNEL_ID;
+    const currencyCode = import.meta.env.VITE_MEDUSA_CURRENCY_CODE || "usd";
 
-  const updateQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity <= 0) { removeFromCart(id); return; }
-    setItems((p) => p.map((i) => {
-      if (i.id !== id) return i;
-      const maxQty = i.stock_quantity ?? 999;
-      return { ...i, quantity: Math.min(quantity, maxQty) };
-    }));
-  }, [setItems, removeFromCart]);
+    if (!regionId) {
+      throw new Error("VITE_MEDUSA_REGION_ID is missing.");
+    }
 
-  const clearCart = useCallback(() => {
-    setItems([]);
-    if (user) supabase.from("carts").update({ items: [] }).eq("user_id", user.id);
-  }, [setItems, user]);
+    const payload: Record<string, unknown> = {
+      region_id: regionId,
+      currency_code: currencyCode,
+    };
 
-  const isInCart = useCallback((id: string) => items.some((i) => i.id === id), [items]);
-  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-  const totalPrice = items.reduce((s, i) => s + i.price * i.quantity, 0);
+    if (salesChannelId) payload.sales_channel_id = salesChannelId;
+
+    const { cart } = await medusa.cart.create(payload);
+    setCartId(cart.id);
+    setStoredCartId(cart.id);
+    setItems(mapMedusaCart(cart));
+    return cart;
+  }, [cartId, loadCart]);
+
+  const addToCart = useCallback(async (product: AddToCartProduct) => {
+    if (!isMedusaCart) {
+      throw new Error("The cart is configured for Medusa, but Medusa is unavailable.");
+    }
+
+    setLoading(true);
+    try {
+      let variantId = product.variant_id || null;
+
+      // Product cards only know the product id. Resolve their first active
+      // variant before creating the Medusa line item.
+      if (!variantId) {
+        const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
+        const productId = product.product_id || product.id;
+
+        try {
+          const { product: medusaProduct } = await medusa.product.retrieve(productId, {
+            ...(regionId ? { region_id: regionId } : {}),
+            fields: "*variants,*variants.calculated_price,*images",
+          });
+          variantId = medusaProduct.variants?.[0]?.id || null;
+        } catch {
+          // Some legacy UI bundle actions only have a display name. Resolve
+          // those names against the Medusa catalogue instead of creating a
+          // second local cart.
+          const searchName = product.name.split(" (")[0].trim();
+          const { products } = await medusa.product.list({
+            q: searchName,
+            limit: 10,
+            ...(regionId ? { region_id: regionId } : {}),
+            fields: "*variants,*variants.calculated_price,*images",
+          });
+          const match = products.find((item) =>
+            item.title.toLowerCase().includes(searchName.toLowerCase())
+          );
+          variantId = match?.variants?.[0]?.id || null;
+        }
+      }
+
+      if (!variantId) throw new Error("This product has no purchasable Medusa variant.");
+
+      const cart = await ensureCart();
+      const { cart: updated } = await medusa.cart.addLineItem(cart.id, {
+        variant_id: variantId,
+        quantity: Math.max(1, product.quantity ?? 1),
+      });
+
+      setItems(mapMedusaCart(updated));
+      setCartId(updated.id);
+      setStoredCartId(updated.id);
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureCart]);
+
+  const removeFromCart = useCallback(async (lineItemId: string) => {
+    if (!isMedusaCart) return;
+
+    setLoading(true);
+    try {
+      if (!cartId) return;
+      const { parent } = await medusa.cart.deleteLineItem(cartId, lineItemId);
+      setItems(mapMedusaCart(parent));
+    } finally {
+      setLoading(false);
+    }
+  }, [cartId]);
+
+  const updateQuantity = useCallback(async (lineItemId: string, quantity: number) => {
+    if (!isMedusaCart) return;
+
+    if (quantity <= 0) {
+      await removeFromCart(lineItemId);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (!cartId) return;
+      const { cart } = await medusa.cart.updateLineItem(cartId, lineItemId, { quantity });
+      setItems(mapMedusaCart(cart));
+    } finally {
+      setLoading(false);
+    }
+  }, [cartId, removeFromCart]);
+
+  const clearCart = useCallback(async () => {
+    if (!isMedusaCart) return;
+
+    setLoading(true);
+    try {
+      if (!cartId) {
+        setItems([]);
+        return;
+      }
+
+      const current = await loadCart(cartId);
+      for (const item of current.items || []) {
+        await medusa.cart.deleteLineItem(cartId, item.id);
+      }
+
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [cartId, loadCart]);
+
+  const isInCart = useCallback((id: string) => {
+    return items.some((item) => item.id === id || item.product_id === id || item.variant_id === id);
+  }, [items]);
+
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, isInCart }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+        isInCart,
+        loading,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -291,21 +291,24 @@ export default function ProductDetail() {
     return [...base, ...attrs, ...Object.entries(product.specifications || {}).map(([k, v]) => [k, String(v)])];
   }, [product, selected, media]);
 
-  const add = () => {
-    if (!product || outOfStock) return;
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
+  const add = async () => {
+    if (!product || outOfStock || !selected?.id) return;
+    try {
+      await addToCart({
         id: cartId,
         product_id: product.id,
-        variant_id: selected?.id || null,
-        variant_name: selected?.name || null,
-        name: selected ? `${product.name} — ${selected.name}` : product.name,
+        variant_id: selected.id,
+        variant_name: selected.name,
+        name: `${product.name} — ${selected.name}`,
         price,
-        image_url: selected?.image_url || activeImage || product.image_url,
+        image_url: selected.image_url || activeImage || product.image_url,
         stock_quantity: stock,
+        quantity,
       });
+      toast.success(`${quantity} × ${selected.name} added to cart`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add this item to the cart.");
     }
-    toast.success(`${quantity} × ${selected?.name || product.name} added to cart`);
   };
 
   const whatsapp = () => {
@@ -325,7 +328,7 @@ export default function ProductDetail() {
 
   const handleAddBundle = () => {
     if (!product) return;
-    add();
+    void add();
     addToCart({
       id: "bundle-cables",
       name: "6mm² Solar DC Cable (20m Roll)",

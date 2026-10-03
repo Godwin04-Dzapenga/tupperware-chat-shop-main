@@ -103,7 +103,7 @@ export interface MedusaCart {
     unit_price: number;
     subtotal?: number;
     total?: number;
-    variant?: MedusaVariant;
+    variant?: MedusaVariant & { product?: MedusaProduct };
     product?: MedusaProduct;
   }>;
   subtotal?: number;
@@ -151,8 +151,8 @@ export const medusa = {
         body: JSON.stringify(payload),
       });
     },
-    async retrieve(id: string) {
-      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`);
+    async retrieve(id: string, query?: Record<string, QueryValue>) {
+      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`, { query });
     },
     async update(id: string, payload: Record<string, unknown>) {
       return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`, {
