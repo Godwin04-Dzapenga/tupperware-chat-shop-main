@@ -93,8 +93,23 @@ export interface MedusaCategory {
   metadata?: Record<string, unknown> | null;
 }
 
+export interface MedusaPaymentSession {
+  id: string;
+  provider_id: string;
+  status?: string;
+  amount?: number;
+  data?: Record<string, unknown>;
+}
+
+export interface MedusaPaymentCollection {
+  id: string;
+  payment_sessions?: MedusaPaymentSession[];
+}
+
 export interface MedusaCart {
   id: string;
+  region_id?: string | null;
+  sales_channel_id?: string | null;
   currency_code: string;
   email?: string | null;
   items?: Array<{
@@ -114,10 +129,7 @@ export interface MedusaCart {
   shipping_address?: Record<string, unknown> | null;
   billing_address?: Record<string, unknown> | null;
   shipping_methods?: Array<Record<string, unknown>>;
-  payment_collection?: {
-    id: string;
-    payment_sessions?: Array<Record<string, unknown>>;
-  } | null;
+  payment_collection?: MedusaPaymentCollection | null;
   subtotal?: number;
   total?: number;
   shipping_total?: number;
@@ -163,8 +175,8 @@ export const medusa = {
         body: JSON.stringify(payload),
       });
     },
-    async retrieve(id: string) {
-      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`);
+    async retrieve(id: string, query?: Record<string, QueryValue>) {
+      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`, { query });
     },
     async update(id: string, payload: Record<string, unknown>) {
       return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`, {
@@ -190,10 +202,65 @@ export const medusa = {
         { method: "DELETE" },
       );
     },
+    async addShippingMethod(id: string, payload: { option_id: string; data?: Record<string, unknown> }) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/shipping-methods`,
+        { method: "POST", body: JSON.stringify(payload) },
+      );
+    },
     async complete(id: string) {
-      return medusaRequest<{ type: string; order?: MedusaOrder; cart?: MedusaCart }>(
+      return medusaRequest<{ type: string; order?: MedusaOrder; cart?: MedusaCart; error?: { message?: string } }>(
         `/store/carts/${encodeURIComponent(id)}/complete`,
         { method: "POST" },
+      );
+    },
+  },
+
+  shipping: {
+    async listOptions(cartId: string) {
+      return medusaRequest<{ shipping_options: Array<{
+        id: string;
+        name?: string;
+        price_type?: string;
+        amount?: number;
+      }> }>("/store/shipping-options", {
+        query: { cart_id: cartId },
+      });
+    },
+  },
+
+  payment: {
+    async listProviders(regionId: string) {
+      return medusaRequest<{ payment_providers: Array<{ id: string; is_enabled?: boolean }> }>(
+        "/store/payment-providers",
+        { query: { region_id: regionId } },
+      );
+    },
+
+    async createCollection(cartId: string) {
+      return medusaRequest<{ payment_collection: MedusaPaymentCollection }>(
+        "/store/payment-collections",
+        {
+          method: "POST",
+          body: JSON.stringify({ cart_id: cartId }),
+        },
+      );
+    },
+
+    async initiatePaymentSession(
+      paymentCollectionId: string,
+      providerId: string,
+      data?: Record<string, unknown>,
+    ) {
+      return medusaRequest<{ payment_collection: MedusaPaymentCollection }>(
+        `/store/payment-collections/${encodeURIComponent(paymentCollectionId)}/payment-sessions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            provider_id: providerId,
+            ...(data ? { data } : {}),
+          }),
+        },
       );
     },
   },
