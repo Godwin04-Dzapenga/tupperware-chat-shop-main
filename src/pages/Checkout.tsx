@@ -174,13 +174,34 @@ export default function Checkout() {
       throw new Error("No shipping option is configured for this cart in Medusa. Add at least one shipping option for Zimbabwe.");
     }
 
-    const wantsFree = (Number(cart.item_total ?? cart.subtotal ?? 0) - Number(cart.discount_total ?? 0)) >= 5000;
-    const selectedShipping =
-      shipping_options.find((option) => wantsFree && Number(option.amount ?? 0) === 0) ||
-      shipping_options.find((option) => !wantsFree && Number(option.amount ?? 0) > 0) ||
-      shipping_options[0];
+    const resolvedOptions = await Promise.all(
+      shipping_options.map(async (option) => {
+        if (option.price_type === "calculated") {
+          try {
+            const calculated = await medusa.shipping.calculateOption(option.id, cartId);
+            return { ...option, amount: calculated.shipping_option.amount };
+          } catch {
+            return option;
+          }
+        }
+        return option;
+      })
+    );
 
-    cart = (await medusa.cart.addShippingMethod(cartId, { option_id: selectedShipping.id })).cart;
+    const wantsFree =
+      Number(cart.item_total ?? cart.subtotal ?? 0) - Number(cart.discount_total ?? 0) >= 5000;
+
+    const selectedShipping =
+      resolvedOptions.find((option) => wantsFree && Number(option.amount ?? 0) === 0) ||
+      resolvedOptions.find((option) => !wantsFree && Number(option.amount ?? 0) > 0) ||
+      resolvedOptions[0];
+
+    cart = (
+      await medusa.cart.addShippingMethod(cartId, {
+        option_id: selectedShipping.id,
+        data: selectedShipping.data,
+      })
+    ).cart;
 
     setBackendTotal(Number(cart.total ?? 0) / 100);
     return cart;
