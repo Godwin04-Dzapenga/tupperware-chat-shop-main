@@ -22,6 +22,7 @@ export interface StoreProduct {
   model_number: string;
   product_type: string;
   variant_count: number;
+  default_variant_id: string | null;
   variant_names: string[];
   power_watts: number | null;
   voltage: string | null;
@@ -173,7 +174,7 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
     limit: 100,
     offset: 0,
     ...(regionId ? { region_id: regionId } : {}),
-    fields: "*variants,*variants.calculated_price,*images,*categories",
+    fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
   });
 
   return (products || [])
@@ -186,7 +187,16 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
         .filter((price) => price > 0);
       const price = prices.length ? Math.min(...prices) : 0;
       const originalPrice = metadataNumber(metadata, "original_price") ?? Math.round(price * 1.18);
-      const stockQuantity = variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.inventory_quantity ?? 0)), 0);
+      const hasUnlimitedVariant = variants.some((variant) => variant.manage_inventory === false);
+      const stockQuantity = hasUnlimitedVariant
+        ? 999999
+        : variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.inventory_quantity ?? 0)), 0);
+      const defaultVariantId =
+        variants.find(
+          (variant) =>
+            variant.manage_inventory === false ||
+            Number(variant.inventory_quantity ?? 0) > 0
+        )?.id ?? variants[0]?.id ?? null;
 
       const variantAttributes = variants.reduce<Record<string, string[]>>((acc, variant) => {
         const attributes = variant.metadata?.attributes;
@@ -216,6 +226,7 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
         model_number: metadataString(metadata, "model_number"),
         product_type: metadataString(metadata, "product_type"),
         variant_count: variants.length,
+        default_variant_id: defaultVariantId,
         variant_names: variants.map((variant) => variant.title),
         power_watts: metadataNumber(metadata, "power_watts"),
         voltage: metadataString(metadata, "voltage") || null,
