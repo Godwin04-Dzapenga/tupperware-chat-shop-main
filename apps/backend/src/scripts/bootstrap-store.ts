@@ -245,11 +245,17 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     .filter((product) => !existingHandles.has(product.handle))
     .map((product) => {
       const category = categoryByHandle.get(product.categoryHandle)
+      const productOptions = product.options
+        ? [{ title: product.options.title, values: product.options.values }]
+        : [{ title: "Default Option", values: ["Default"] }]
+
       const variants = product.variants?.length
         ? product.variants.map((variant) => ({
             title: variant.title,
             sku: variant.sku,
-            options: product.options ? { [product.options.title]: variant.title } : undefined,
+            options: product.options
+              ? { [product.options.title]: variant.title }
+              : { "Default Option": "Default" },
             manage_inventory: true,
             allow_backorder: false,
             prices: [{ currency_code: CURRENCY_CODE, amount: variant.price }],
@@ -274,7 +280,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
         status: "published" as const,
         categories: category ? [{ id: category.id }] : [],
         sales_channels: [{ id: salesChannel.id }],
-        options: product.options ? [{ title: product.options.title, values: product.options.values }] : undefined,
+        options: productOptions,
         variants,
         metadata: {
           ...product.metadata,
