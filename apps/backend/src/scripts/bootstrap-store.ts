@@ -394,8 +394,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
   // This is intentionally idempotent: existing links/options are reused.
   const link = container.resolve(ContainerRegistrationKeys.LINK)
   const fulfillmentModuleService = container.resolve(Modules.FULFILLMENT)
-  const paymentModuleService = container.resolve(Modules.PAYMENT)
-
   const { data: paymentProviders } = await query.graph({
     entity: "payment_provider",
     fields: ["id", "name", "is_enabled"],
@@ -420,8 +418,8 @@ export default async function bootstrapStore({ container }: ExecArgs) {
   const regionPaymentProviders = regionWithProviders[0]?.payment_providers ?? []
   if (!regionPaymentProviders.some((provider: any) => provider.id === systemPaymentProvider.id)) {
     await link.create({
-      [Modules.REGION]: { region_id: region.id },
       [Modules.PAYMENT]: { payment_provider_id: systemPaymentProvider.id },
+      [Modules.REGION]: { region_id: region.id },
     })
     logger.info(`Enabled system payment provider ${systemPaymentProvider.id} for Zimbabwe.`)
   } else {
