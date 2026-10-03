@@ -34,6 +34,8 @@ interface ShippingForm {
   line1: string; line2: string; city: string; country: string;
 }
 
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 const ZW_CITIES = [
   "Harare","Bulawayo","Gweru","Mutare","Masvingo",
   "Chinhoyi","Marondera","Kwekwe","Kadoma","Victoria Falls",
@@ -78,7 +80,15 @@ export default function Checkout() {
   const shippingFee   = backendShipping ?? ((totalPrice - discount) >= 50 ? 0 : items.length > 0 ? 5 : 0);
   const finalTotal    = backendTotal ?? (totalPrice - discount + shippingFee);
   const currentStepIdx = STEPS.findIndex(s => s.key === step);
-  const shippingValid = shipping.name.trim() && shipping.phone.trim() && shipping.line1.trim() && shipping.city.trim() && (user || shipping.email.trim());
+  const emailValid = !shipping.email.trim() || isValidEmail(shipping.email);
+  const shippingValid = Boolean(
+    shipping.name.trim() &&
+    shipping.phone.trim() &&
+    shipping.line1.trim() &&
+    shipping.city.trim() &&
+    emailValid &&
+    (user || isValidEmail(shipping.email)),
+  );
 
   // ── Coupon ────────────────────────────────────────────────────────────
   const validateCoupon = async () => {
@@ -119,8 +129,12 @@ export default function Checkout() {
       const cart = await syncWithBackend();
       if (!cart?.id) throw new Error("Could not create the Medusa cart.");
       const addressParts = shipping.name.trim().split(/\s+/);
+      const customerEmail = shipping.email.trim();
+      if (!isValidEmail(customerEmail)) {
+        throw new Error("Please enter a valid email address.");
+      }
       const updated = await medusa.cart.updateAddress(cart.id, {
-        email: shipping.email.trim(),
+        email: customerEmail,
         shipping_address: {
           first_name: addressParts[0] || shipping.name,
           last_name: addressParts.slice(1).join(" ") || "Customer",
