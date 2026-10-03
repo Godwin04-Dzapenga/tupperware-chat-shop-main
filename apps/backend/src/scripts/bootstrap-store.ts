@@ -5,6 +5,9 @@ import {
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
+  createInventoryLevelsWorkflow,
+  createStockLocationsWorkflow,
+  linkSalesChannelsToStockLocationWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { ExecArgs } from "@medusajs/framework/types"
 import { writeFileSync } from "node:fs"
@@ -312,6 +315,78 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     },
   })
 
+  // Medusa only reports managed inventory as available when an inventory
+  // level exists at a stock location linked to the storefront's sales channel.
+  const { data: stockLocations } = await query.graph({
+    entity: "stock_location",
+    fields: ["id", "name"],
+  })
+
+  let stockLocation = stockLocations.find(
+    (location: any) => location.name === "Tech Innovation Main Warehouse"
+  )
+
+  if (!stockLocation) {
+    const { result } = await createStockLocationsWorkflow(container).run({
+      input: {
+        locations: [{ name: "Tech Innovation Main Warehouse" }],
+      },
+    })
+    stockLocation = result[0]
+    logger.info(`Created stock location: ${stockLocation.name} (${stockLocation.id})`)
+  } else {
+    logger.info(`Using existing stock location: ${stockLocation.name} (${stockLocation.id})`)
+  }
+
+  await linkSalesChannelsToStockLocationWorkflow(container).run({
+    input: {
+      id: stockLocation.id,
+      add: [salesChannel.id],
+      remove: [],
+    },
+  })
+
+  const { data: inventoryItems } = await query.graph({
+    entity: "inventory_item",
+    fields: ["id", "sku", "location_levels.*"],
+  })
+
+  const skuToStock = new Map<string, number>()
+  for (const product of products) {
+    const stock = Number(product.stock ?? 0)
+    for (const variant of product.variants?.length
+      ? product.variants
+      : [{ sku: product.sku }]) {
+      if (variant.sku) skuToStock.set(variant.sku, stock)
+    }
+  }
+
+  const existingLevels = new Set<string>()
+  for (const item of inventoryItems as any[]) {
+    for (const level of item.location_levels || []) {
+      if (level.location_id === stockLocation.id) {
+        existingLevels.add(item.id)
+      }
+    }
+  }
+
+  const inventoryLevels = (inventoryItems as any[])
+    .filter((item) => !existingLevels.has(item.id))
+    .map((item) => ({
+      inventory_item_id: item.id,
+      location_id: stockLocation.id,
+      stocked_quantity: skuToStock.get(item.sku) ?? 0,
+    }))
+
+  if (inventoryLevels.length) {
+    await createInventoryLevelsWorkflow(container).run({
+      input: { inventory_levels: inventoryLevels },
+    })
+    logger.info(`Created ${inventoryLevels.length} inventory levels.`)
+  } else {
+    logger.info("Inventory levels already exist for the storefront stock location.")
+  }
+
   const rootEnvLocal = path.resolve(process.cwd(), "../../.env.local")
   writeFileSync(
     rootEnvLocal,
@@ -319,6 +394,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
       "VITE_MEDUSA_BACKEND_URL=http://localhost:9000",
       "VITE_MEDUSA_PUBLISHABLE_KEY=" + apiKey.token,
       "VITE_MEDUSA_REGION_ID=" + region.id,
+      "VITE_MEDUSA_SALES_CHANNEL_ID=" + salesChannel.id,
       "VITE_MEDUSA_CURRENCY_CODE=usd",
       "VITE_COMMERCE_CATALOG_PROVIDER=medusa",
       "",
