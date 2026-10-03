@@ -154,7 +154,7 @@ export default function ProductDetail() {
               limit: 4,
               category_id: mapped.category_id,
               ...(regionId ? { region_id: regionId } : {}),
-              fields: "*variants,*variants.calculated_price,*images,*categories",
+              fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
             })
           : null;
 
