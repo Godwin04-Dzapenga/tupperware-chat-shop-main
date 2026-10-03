@@ -490,24 +490,26 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     })
     logger.info("Linked warehouse to Zimbabwe fulfillment set.")
   }
-  if (!linkedLocation?.fulfillment_providers?.some((provider: any) => provider.id === systemPaymentProvider.id)) {
-    const { data: fulfillmentProviders } = await query.graph({
+  const { data: fulfillmentProviders } = await query.graph({
       entity: "fulfillment_provider",
       fields: ["id", "name", "is_enabled"],
     })
-    const manualFulfillmentProvider = (fulfillmentProviders as any[]).find(
-      (provider) =>
-        provider.is_enabled !== false &&
-        /manual/i.test(`${provider.id} ${provider.name ?? ""}`)
-    )
-    if (!manualFulfillmentProvider) {
-      throw new Error("No manual fulfillment provider is registered in Medusa.")
-    }
+  const manualFulfillmentProvider = (fulfillmentProviders as any[]).find(
+    (provider) =>
+      provider.is_enabled !== false &&
+      /manual/i.test(`${provider.id} ${provider.name ?? ""}`)
+  )
+  if (!manualFulfillmentProvider) {
+    throw new Error("No manual fulfillment provider is registered in Medusa.")
+  }
+  if (!linkedLocation?.fulfillment_providers?.some((provider: any) => provider.id === manualFulfillmentProvider.id)) {
     await link.create({
       [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
       [Modules.FULFILLMENT]: { fulfillment_provider_id: manualFulfillmentProvider.id },
     })
     logger.info(`Linked warehouse to manual fulfillment provider ${manualFulfillmentProvider.id}.`)
+  } else {
+    logger.info("Manual fulfillment provider is already linked to the warehouse.")
   }
 
   const { data: shippingOptions } = await query.graph({
@@ -521,7 +523,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
       input: [{
         name: "Standard Delivery",
         price_type: "flat",
-        provider_id: "manual_manual",
+        provider_id: manualFulfillmentProvider.id,
         service_zone_id: serviceZone.id,
         shipping_profile_id: shippingProfile.id,
         type: {
