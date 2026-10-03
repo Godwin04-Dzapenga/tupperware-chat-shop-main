@@ -103,6 +103,9 @@ export interface MedusaCart {
     unit_price: number;
     subtotal?: number;
     total?: number;
+    variant_id?: string;
+    product_id?: string;
+    title?: string;
     variant?: MedusaVariant;
     product?: MedusaProduct;
   }>;
@@ -176,6 +179,36 @@ export const medusa = {
       return medusaRequest<{ parent: MedusaCart }>(
         `/store/carts/${encodeURIComponent(id)}/line-items/${encodeURIComponent(lineItemId)}`,
         { method: "DELETE" },
+      );
+    },
+    async updateAddress(id: string, payload: Record<string, unknown>) {
+      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    async getShippingOptions(id: string) {
+      return medusaRequest<{ shipping_options: Array<{ id: string; name: string; amount?: number; price_type?: string }> }>(
+        "/store/shipping-options",
+        { query: { cart_id: id } },
+      );
+    },
+    async addShippingMethod(id: string, optionId: string, data: Record<string, unknown> = {}) {
+      return medusaRequest<{ cart: MedusaCart }>(`/store/carts/${encodeURIComponent(id)}/shipping-methods`, {
+        method: "POST",
+        body: JSON.stringify({ option_id: optionId, data }),
+      });
+    },
+    async createPaymentSessions(id: string) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/payment-sessions`,
+        { method: "POST" },
+      );
+    },
+    async selectPaymentSession(id: string, providerId: string) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/payment-session`,
+        { method: "POST", body: JSON.stringify({ provider_id: providerId }) },
       );
     },
     async complete(id: string) {
