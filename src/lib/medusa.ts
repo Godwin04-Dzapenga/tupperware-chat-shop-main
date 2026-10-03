@@ -123,8 +123,18 @@ export interface MedusaOrder {
   fulfillment_status?: string;
   payment_status?: string;
   total?: number;
+  subtotal?: number;
+  shipping_total?: number;
+  discount_total?: number;
   currency_code?: string;
+  created_at?: string;
   items?: MedusaCart["items"];
+  shipping_address?: {
+    first_name?: string;
+    last_name?: string;
+    address_1?: string;
+    city?: string;
+  } | null;
   metadata?: Record<string, unknown> | null;
 }
 
