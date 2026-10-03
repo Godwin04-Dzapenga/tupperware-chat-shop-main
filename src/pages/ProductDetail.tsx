@@ -88,7 +88,6 @@ export default function ProductDetail() {
   const [avgRating, setAvgRating] = useState(4.9);
   const [reviewCount, setReviewCount] = useState(16);
   const [tab, setTab] = useState<TabId>("overview");
-  const [bundleAdded, setBundleAdded] = useState(false);
 
   useEffect(() => {
     if (id) load(id);
@@ -706,7 +705,7 @@ Please confirm the real Medusa products/variants, stock and the final bundle pri
               onClick={handleAddBundle}
               className="mt-3 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-10 px-5 shadow-sm"
             >
-              {bundleAdded ? "Added All 3 to Cart" : "Request Complete Bundle"}
+Request Complete Bundle
             </Button>
           </div>
         </div>
