@@ -37,6 +37,7 @@ interface Product {
   brand?: string | null;
   model_number?: string | null;
   product_type?: string;
+  default_variant_id?: string | null;
 }
 
 interface Category {
@@ -74,7 +75,12 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
   const savings = originalPrice - product.price;
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) addToCart(product);
+    addToCart({
+      ...product,
+      product_id: product.id,
+      variant_id: product.default_variant_id || null,
+      quantity: qty,
+    } as any);
     toast.success(`${qty > 1 ? qty + "× " : ""}${product.name} added to cart!`);
   };
 
