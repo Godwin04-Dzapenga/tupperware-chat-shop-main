@@ -22,7 +22,7 @@ import type {
   ProviderWebhookPayload,
   WebhookActionResult,
 } from "@medusajs/framework/types"
-import { createHash } from "node:crypto"
+import { Paynow } from "paynow"
 
 type Options = {
   integrationId: string
@@ -43,27 +43,6 @@ type PaynowData = {
 }
 
 const PAYNOW_INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction"
-
-function hashValues(values: string[], key: string) {
-  return createHash("sha512")
-    .update(values.join("") + key.toLowerCase())
-    .digest("hex")
-    .toUpperCase()
-}
-
-function verifyHash(values: string[], suppliedHash: string | undefined, key: string) {
-  if (!suppliedHash) return false
-  return hashValues(values, key) === suppliedHash.toUpperCase()
-}
-
-function parsePaynowResponse(raw: string) {
-  const params = new URLSearchParams(raw)
-  const result: Record<string, string> = {}
-  params.forEach((value, key) => {
-    result[key.toLowerCase()] = value
-  })
-  return result
-}
 
 class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   protected options_: Options
@@ -91,7 +70,11 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   }
 
   async initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentOutput> {
-    const reference = String(input.data?.session_id || `TI-${input.data?.cart_id || Date.now()}-${Date.now().toString(36)}`)
+    const options = this.options_
+    const reference = String(
+      input.data?.session_id ||
+        `TI-${input.data?.cart_id || Date.now()}-${Date.now().toString(36)}`,
+    )
     const amount = Number(input.amount) / 100
     const currency = String(input.currency_code || "usd").toLowerCase()
 
@@ -99,39 +82,34 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
       throw new MedusaError(MedusaError.Types.INVALID_DATA, "Paynow is configured for USD payments.")
     }
 
-    const returnUrl = this.buildReturnUrl(String(input.data?.cart_id || reference))
-    const resultUrl = this.options_.resultUrl
-    const fields: Record<string, string> = {
-      resulturl: resultUrl,
-      returnurl: returnUrl,
-      reference,
-      amount: amount.toFixed(2),
-      id: this.options_.integrationId,
-      additionalinfo: "Tech Innovation ecommerce order",
-      authemail: String(input.data?.email || ""),
-      status: "Message",
-    }
-    const hashFields = Object.keys(fields)
-      .filter((key) => key !== "hash")
-      .map((key) => encodeURI(fields[key]))
-    fields.hash = hashValues(hashFields, this.options_.integrationKey)
-
-    const response = await fetch(PAYNOW_INITIATE_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(fields),
-    })
-    const raw = await response.text()
-    if (!response.ok) {
-      throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `Paynow returned HTTP ${response.status}`)
+    const email = String(input.data?.email || "").trim()
+    if (!email) {
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, "A valid customer email is required for Paynow.")
     }
 
-    const data = parsePaynowResponse(raw)
-    if (data.status !== "ok" || !data.browserurl || !data.pollurl) {
-      throw new MedusaError(MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR, data.error || "Paynow could not initialize the payment.")
+    const paynow = new Paynow(
+      options.integrationId.trim(),
+      options.integrationKey.trim(),
+      options.resultUrl,
+      this.buildReturnUrl(String(input.data?.cart_id || reference)),
+    )
+
+    const payment = paynow.createPayment(reference, email)
+    payment.add("Tech Innovation ecommerce order", Number(amount.toFixed(2)))
+
+    const response = await paynow.send(payment)
+    if (!response?.success) {
+      throw new MedusaError(
+        MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
+        String(response?.error || "Paynow could not initialize the payment."),
+      )
     }
-    if (!verifyHash([data.status, data.browserurl, data.pollurl], data.hash, this.options_.integrationKey)) {
-      throw new MedusaError(MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR, "Paynow returned an invalid response signature.")
+
+    if (!response.pollUrl || !response.redirectUrl) {
+      throw new MedusaError(
+        MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
+        "Paynow returned an incomplete payment response.",
+      )
     }
 
     return {
@@ -140,9 +118,9 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
         reference,
         session_id: String(input.data?.session_id || ""),
         cart_id: String(input.data?.cart_id || ""),
-        poll_url: data.pollurl,
-        redirect_url: data.browserurl,
-        status: data.status,
+        poll_url: String(response.pollUrl),
+        redirect_url: String(response.redirectUrl),
+        status: String(response.status || "Ok"),
         payment_method: String(input.data?.payment_method || "web"),
         currency_code: currency,
       } satisfies PaynowData,
@@ -228,11 +206,24 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   ): Promise<WebhookActionResult> {
     const data = (payload.data || {}) as Record<string, string>
     const suppliedHash = data.hash || data.Hash
-    const valid = verifyHash(
-      [data.reference || "", data.amount || "", data.paynowreference || "", data.pollurl || "", data.status || ""],
-      suppliedHash,
-      this.options_.integrationKey,
+    if (!suppliedHash) {
+      return {
+        action: "failed",
+        data: { session_id: "", amount: 0 },
+      }
+    }
+
+    const paynow = new Paynow(
+      this.options_.integrationId.trim(),
+      this.options_.integrationKey.trim(),
+      this.options_.resultUrl,
+      this.options_.returnUrl,
     )
+
+    const normalized = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key.toLowerCase(), String(value)]),
+    )
+    const valid = paynow.verifyHash(normalized)
     if (!valid) {
       return {
         action: "failed",
@@ -252,6 +243,7 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
     }
     return { action: "not_supported", data: { session_id: sessionId, amount } }
   }
+
 }
 
 export default PaynowPaymentProviderService
