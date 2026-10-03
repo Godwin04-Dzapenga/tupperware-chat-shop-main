@@ -248,6 +248,19 @@ export const medusa = {
         query: { cart_id: cartId },
       });
     },
+    async calculateOption(id: string, cartId: string, data?: Record<string, unknown>) {
+      return medusaRequest<{ shipping_option: {
+        id: string;
+        amount?: number;
+        price_type?: string;
+      } }>(
+        `/store/shipping-options/${encodeURIComponent(id)}/calculate`,
+        {
+          method: "POST",
+          body: JSON.stringify({ cart_id: cartId, data: data || {} }),
+        },
+      );
+    },
   },
 
   payment: {
