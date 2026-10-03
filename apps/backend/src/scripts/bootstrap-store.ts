@@ -7,7 +7,7 @@ import {
   linkSalesChannelsToApiKeyWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { ExecArgs } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 const SALES_CHANNEL_NAME = "Tech Innovation Online Store"
 const REGION_NAME = "Zimbabwe"
@@ -127,7 +127,7 @@ const products = [
 ]
 
 export default async function bootstrapStore({ container }: ExecArgs) {
-  const query = container.resolve("query")
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const logger = container.resolve("logger")
 
   logger.info("Starting Tech Innovation Medusa store bootstrap...")
@@ -167,8 +167,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
           name: REGION_NAME,
           currency_code: CURRENCY_CODE,
           countries: ["zw"],
-          automatic_taxes: false,
-          is_tax_inclusive: false,
         }],
       },
     })
