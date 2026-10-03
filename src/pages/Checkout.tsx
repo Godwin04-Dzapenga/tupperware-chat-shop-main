@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { isMedusaCommerce } from "@/lib/commerce";
+import { medusa } from "@/lib/medusa";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +49,7 @@ const STEPS: { key: Step; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function Checkout() {
-  const { items, totalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
+  const { items, totalPrice, clearCart, updateQuantity, removeFromCart, medusaCartId, syncWithBackend } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -63,6 +65,8 @@ export default function Checkout() {
   const [orderResult, setOrderResult]   = useState<{
     order_number: string; total: number; whatsapp_url: string;
   } | null>(null);
+  const [backendTotal, setBackendTotal] = useState<number | null>(null);
+  const [backendShipping, setBackendShipping] = useState<number | null>(null);
 
   const [shipping, setShipping] = useState<ShippingForm>({
     name: user?.user_metadata?.full_name ?? "",
@@ -71,8 +75,8 @@ export default function Checkout() {
   });
 
   // ── Derived ───────────────────────────────────────────────────────────
-  const shippingFee   = (totalPrice - discount) >= 50 ? 0 : items.length > 0 ? 5 : 0;
-  const finalTotal    = totalPrice - discount + shippingFee;
+  const shippingFee   = backendShipping ?? ((totalPrice - discount) >= 50 ? 0 : items.length > 0 ? 5 : 0);
+  const finalTotal    = backendTotal ?? (totalPrice - discount + shippingFee);
   const currentStepIdx = STEPS.findIndex(s => s.key === step);
   const shippingValid = shipping.name.trim() && shipping.phone.trim() && shipping.line1.trim() && shipping.city.trim() && (user || shipping.email.trim());
 
@@ -81,6 +85,18 @@ export default function Checkout() {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
     try {
+      if (isMedusaCommerce) {
+        const cart = await syncWithBackend();
+        if (!cart?.id) throw new Error("Your cart is still syncing. Please try again.");
+        const result = await medusa.cart.addPromotion(cart.id, couponCode.trim().toUpperCase());
+        const updated = result.cart;
+        const discountAmount = (updated.discount_total || 0) / 100;
+        setDiscount(discountAmount);
+        setBackendTotal((updated.total || 0) / 100);
+        setCouponApplied(true);
+        toast.success(`Coupon applied — you save $${discountAmount.toFixed(2)}!`);
+        return;
+      }
       const { data } = await supabase.from("coupons").select("*").eq("code", couponCode.toUpperCase()).eq("active", true).maybeSingle();
       if (!data) { toast.error("Invalid or expired coupon"); return; }
       if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Coupon expired"); return; }
@@ -90,13 +106,77 @@ export default function Checkout() {
         : Math.min(data.discount_value, totalPrice);
       setDiscount(d); setCouponApplied(true);
       toast.success(`Coupon applied — you save $${d.toFixed(2)}!`);
+    } catch (error: any) {
+      toast.error(error?.message || "Coupon could not be applied");
     } finally { setCouponLoading(false); }
   };
 
-  // ── Place order (online checkout path) ───────────────────────────────
+  // ── Prepare Medusa checkout ───────────────────────────────────────────
+  const prepareCheckout = async () => {
+    if (!isMedusaCommerce) { setStep("payment"); return; }
+    setLoading(true);
+    try {
+      const cart = await syncWithBackend();
+      if (!cart?.id) throw new Error("Could not create the Medusa cart.");
+      const addressParts = shipping.name.trim().split(/\s+/);
+      const updated = await medusa.cart.updateAddress(cart.id, {
+        email: shipping.email.trim(),
+        shipping_address: {
+          first_name: addressParts[0] || shipping.name,
+          last_name: addressParts.slice(1).join(" ") || "Customer",
+          address_1: shipping.line1.trim(),
+          address_2: shipping.line2.trim() || undefined,
+          city: shipping.city.trim(),
+          country_code: "zw",
+          phone: shipping.phone.trim(),
+        },
+        billing_address: {
+          first_name: addressParts[0] || shipping.name,
+          last_name: addressParts.slice(1).join(" ") || "Customer",
+          address_1: shipping.line1.trim(),
+          address_2: shipping.line2.trim() || undefined,
+          city: shipping.city.trim(),
+          country_code: "zw",
+          phone: shipping.phone.trim(),
+        },
+      });
+      let checkoutCart = updated.cart;
+      const options = await medusa.cart.getShippingOptions(checkoutCart.id);
+      const standard = options.shipping_options?.find((option) => /standard/i.test(option.name)) || options.shipping_options?.[0];
+      if (!standard) throw new Error("No Zimbabwe shipping option is available for this cart.");
+      checkoutCart = (await medusa.cart.addShippingMethod(checkoutCart.id, standard.id)).cart;
+      checkoutCart = (await medusa.cart.createPaymentSessions(checkoutCart.id)).cart;
+      setBackendShipping((checkoutCart.shipping_total || 0) / 100);
+      setBackendTotal((checkoutCart.total || 0) / 100);
+      setStep("payment");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not prepare checkout.");
+    } finally { setLoading(false); }
+  };
+
+  // ── Place order ───────────────────────────────────────────────────────
   const placeOrder = async () => {
     setLoading(true);
     try {
+      if (isMedusaCommerce) {
+        const cart = await syncWithBackend();
+        if (!cart?.id) throw new Error("Your cart could not be synchronized.");
+        const completed = await medusa.cart.complete(cart.id);
+        if (completed.type !== "order" || !completed.order) {
+          throw new Error("Medusa could not complete the order. Please check the payment session and try again.");
+        }
+        const order = completed.order;
+        const total = (order.total || 0) / 100;
+        const orderNumber = order.display_id ? String(order.display_id) : order.id;
+        const itemsList = items.map(i => `• ${i.name} ×${i.quantity}`).join("\n");
+        const whatsapp_url = `https://wa.me/263778158984?text=${encodeURIComponent(
+          `Hi Tech Innovation, I have placed order #${orderNumber}.\n\n${itemsList}\n\nTotal: $${total.toFixed(2)} USD\nDelivery: ${shipping.city}, Zimbabwe`
+        )}`;
+        clearCart();
+        setOrderResult({ order_number: orderNumber, total, whatsapp_url });
+        setStep("confirm");
+        return;
+      }
       const res = await supabase.functions.invoke("checkout", {
         body: {
           items: items.map(i => ({ product_id: i.product_id || i.id, variant_id: i.variant_id || undefined, quantity: i.quantity })),
@@ -490,7 +570,7 @@ export default function Checkout() {
 
                 <Button className="w-full rounded-sm h-12 text-sm font-bold gap-2"
                   disabled={!shippingValid}
-                  onClick={() => setStep("payment")}>
+                  onClick={prepareCheckout}>
                   Continue to Payment <ChevronRight className="h-4 w-4" />
                 </Button>
 
@@ -550,6 +630,7 @@ export default function Checkout() {
                         id: "paynow_ecocash" as PaymentMethod,
                         icon: Smartphone,
                         iconBg: "bg-red-100 text-red-600",
+                        disabled: true,
                         label: "EcoCash",
                         sub: "Instant mobile money payment via EcoCash",
                         badge: "Instant",
@@ -559,6 +640,7 @@ export default function Checkout() {
                         id: "paynow_onemoney" as PaymentMethod,
                         icon: Zap,
                         iconBg: "bg-blue-100 text-blue-600",
+                        disabled: true,
                         label: "OneMoney",
                         sub: "Pay instantly via NetOne's OneMoney",
                         badge: "Instant",
@@ -568,6 +650,7 @@ export default function Checkout() {
                         id: "stripe_card" as PaymentMethod,
                         icon: CreditCard,
                         iconBg: "bg-purple-100 text-purple-600",
+                        disabled: true,
                         label: "Visa / Mastercard",
                         sub: "Secure card payment (USD)",
                         badge: null,
@@ -578,16 +661,19 @@ export default function Checkout() {
                       const selected = paymentMethod === method.id;
                       return (
                         <label key={method.id}
+                          aria-disabled={method.disabled}
                           className={`flex items-center gap-4 rounded-xl border p-4 cursor-pointer transition-all ${selected ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30 hover:bg-bb-surface"}`}>
-                          <input type="radio" name="payment" className="sr-only" checked={selected}
-                            onChange={() => setPaymentMethod(method.id)} />
+                          <input type="radio" name="payment" className="sr-only" checked={selected} disabled={method.disabled}
+                            onChange={() => !method.disabled && setPaymentMethod(method.id)} />
                           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${method.iconBg}`}>
                             <Icon className="h-5 w-5" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-sm">{method.label}</p>
-                              {method.badge && (
+                              {method.disabled ? (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">Coming soon</span>
+                              ) : method.badge && (
                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${method.badgeColor}`}>{method.badge}</span>
                               )}
                             </div>
