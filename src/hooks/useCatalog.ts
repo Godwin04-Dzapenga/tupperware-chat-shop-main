@@ -146,6 +146,7 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
       model_number: product.model_number || media.modelNumber,
       product_type: product.product_type || "",
       variant_count: productVariants.length,
+      default_variant_id: productVariants[0]?.id ?? null,
       variant_names: productVariants.map((v) => v.name),
       power_watts: product.power_watts ?? null,
       voltage: product.voltage ?? null,
