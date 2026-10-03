@@ -99,6 +99,11 @@ export interface MedusaCart {
   email?: string | null;
   items?: Array<{
     id: string;
+    title?: string;
+    variant_id?: string | null;
+    product_id?: string | null;
+    variant_title?: string | null;
+    thumbnail?: string | null;
     quantity: number;
     unit_price: number;
     subtotal?: number;
@@ -106,6 +111,13 @@ export interface MedusaCart {
     variant?: MedusaVariant;
     product?: MedusaProduct;
   }>;
+  shipping_address?: Record<string, unknown> | null;
+  billing_address?: Record<string, unknown> | null;
+  shipping_methods?: Array<Record<string, unknown>>;
+  payment_collection?: {
+    id: string;
+    payment_sessions?: Array<Record<string, unknown>>;
+  } | null;
   subtotal?: number;
   total?: number;
   shipping_total?: number;
