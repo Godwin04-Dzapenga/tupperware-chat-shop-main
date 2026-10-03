@@ -135,6 +135,7 @@ export interface MedusaCart {
   shipping_methods?: Array<Record<string, unknown>>;
   payment_collection?: MedusaPaymentCollection | null;
   subtotal?: number;
+  item_total?: number;
   total?: number;
   shipping_total?: number;
   discount_total?: number;
