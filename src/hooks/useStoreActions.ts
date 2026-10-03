@@ -11,20 +11,37 @@ interface CartProduct {
   price: number;
   image_url: string | null;
   stock_quantity?: number;
+  product_id?: string;
+  variant_id?: string | null;
+  default_variant_id?: string | null;
+  variant_count?: number;
 }
 
-/** Shared cart + WhatsApp order actions used across the storefront. */
+/** Shared storefront actions. Commerce mutations go through the Medusa-backed cart. */
 export function useStoreActions() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const addProduct = (product: StoreProduct | CartProduct & { variant_count?: number }) => {
-    if (product.variant_count) {
+  const addProduct = async (product: StoreProduct | CartProduct) => {
+    if ((product.variant_count ?? 0) > 1) {
       navigate(`/product/${product.id}`);
       return;
     }
-    addToCart(product as CartProduct);
-    toast.success(`${product.name} added to cart`);
+
+    try {
+      await addToCart({
+        id: product.id,
+        product_id: product.product_id || product.id,
+        variant_id: product.variant_id || product.default_variant_id || null,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        stock_quantity: product.stock_quantity,
+      });
+      toast.success(`${product.name} added to cart`);
+    } catch {
+      // addToCart already reports the backend error.
+    }
   };
 
   const orderViaWhatsApp = (product: { name: string; price: number; variant_count?: number }) => {
