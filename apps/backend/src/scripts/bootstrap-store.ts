@@ -317,8 +317,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     },
   })
 
-  // Medusa only reports managed inventory as available when an inventory
-  // level exists at a stock location linked to the storefront's sales channel.
   const { data: stockLocations } = await query.graph({
     entity: "stock_location",
     fields: ["id", "name"],
@@ -389,7 +387,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     logger.info("Inventory levels already exist for the storefront stock location.")
   }
 
-
   // Configure the fulfillment and payment pieces required by the Medusa storefront checkout.
   // This is intentionally idempotent: existing links/options are reused.
   const link = container.resolve(ContainerRegistrationKeys.LINK)
@@ -418,8 +415,8 @@ export default async function bootstrapStore({ container }: ExecArgs) {
   const regionPaymentProviders = regionWithProviders[0]?.payment_providers ?? []
   if (!regionPaymentProviders.some((provider: any) => provider.id === systemPaymentProvider.id)) {
     await link.create({
-      [Modules.PAYMENT]: { payment_provider_id: systemPaymentProvider.id },
       [Modules.REGION]: { region_id: region.id },
+      [Modules.PAYMENT]: { payment_provider_id: systemPaymentProvider.id },
     })
     logger.info(`Enabled system payment provider ${systemPaymentProvider.id} for Zimbabwe.`)
   } else {
@@ -473,8 +470,6 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     throw new Error("Zimbabwe fulfillment set has no service zone.")
   }
 
-  // A stock location must be connected to both the fulfillment set and the manual
-  // fulfillment provider before its shipping options can be used at checkout.
   const { data: locationLinks } = await query.graph({
     entity: "stock_location",
     fields: ["id", "fulfillment_sets.*", "fulfillment_providers.*"],
