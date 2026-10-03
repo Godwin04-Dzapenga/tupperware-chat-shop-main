@@ -1,5 +1,8 @@
-const MEDUSA_BACKEND_URL = (import.meta.env.VITE_MEDUSA_BACKEND_URL || "").replace(/\/$/, "");
-const MEDUSA_PUBLISHABLE_KEY = import.meta.env.VITE_MEDUSA_PUBLISHABLE_KEY || "";
+export const MEDUSA_BACKEND_URL = (import.meta.env.VITE_MEDUSA_BACKEND_URL || "").replace(/\/$/, "");
+export const MEDUSA_PUBLISHABLE_KEY = import.meta.env.VITE_MEDUSA_PUBLISHABLE_KEY || "";
+
+export const MEDUSA_REGION_ID = import.meta.env.VITE_MEDUSA_REGION_ID || "";
+export const MEDUSA_SALES_CHANNEL_ID = import.meta.env.VITE_MEDUSA_SALES_CHANNEL_ID || "";
 
 export const medusaConfigured = Boolean(MEDUSA_BACKEND_URL && MEDUSA_PUBLISHABLE_KEY);
 
