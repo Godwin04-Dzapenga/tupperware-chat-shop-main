@@ -9,6 +9,7 @@ import {
   createStockLocationsWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   createShippingProfilesWorkflow,
+  updateProductsWorkflow,
   createShippingOptionsWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { ExecArgs } from "@medusajs/framework/types"
@@ -288,6 +289,7 @@ export default async function bootstrapStore({ container }: ExecArgs) {
         status: "published" as const,
         categories: category ? [{ id: category.id }] : [],
         sales_channels: [{ id: salesChannel.id }],
+        shipping_profile_id: shippingProfile?.id,
         options: productOptions,
         variants,
         metadata: {
@@ -456,6 +458,18 @@ export default async function bootstrapStore({ container }: ExecArgs) {
     })
     shippingProfile = result[0]
     logger.info(`Created shipping profile: ${shippingProfile.name} (${shippingProfile.id})`)
+  }
+
+  if (existingProducts.length && shippingProfile?.id) {
+    await updateProductsWorkflow(container).run({
+      input: {
+        products: existingProducts.map((product: any) => ({
+          id: product.id,
+          shipping_profile_id: shippingProfile.id,
+        })),
+      },
+    })
+    logger.info(`Assigned shipping profile ${shippingProfile.id} to ${existingProducts.length} existing products.`)
   }
 
   const { data: existingFulfillmentSets } = await query.graph({
