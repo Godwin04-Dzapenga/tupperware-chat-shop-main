@@ -18,4 +18,25 @@ module.exports = defineConfig({
     backendUrl:
       process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
   },
+  modules: [
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/paynow",
+            id: "paynow",
+            options: {
+              integrationId: process.env.PAYNOW_INTEGRATION_ID,
+              integrationKey: process.env.PAYNOW_INTEGRATION_KEY,
+              returnUrl: process.env.PAYNOW_RETURN_URL || "http://localhost:8080/checkout",
+              resultUrl:
+                process.env.PAYNOW_RESULT_URL ||
+                "http://localhost:9000/hooks/payment/paynow_paynow",
+            },
+          },
+        ],
+      },
+    },
+  ],
 })
