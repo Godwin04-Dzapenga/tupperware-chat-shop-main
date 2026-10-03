@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { isMedusaCommerce } from "@/lib/commerce";
+import { medusa } from "@/lib/medusa";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,39 +56,69 @@ export default function Orders() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate("/auth"); return; }
     fetchOrders();
-
-    // Realtime subscription for order status updates
-    const channel = supabase
-      .channel("orders-realtime")
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "orders",
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        setOrders((prev) =>
-          prev.map((o) => o.id === payload.new.id ? { ...o, ...(payload.new as any) } : o)
-        );
-        toast.info(`Order ${payload.new.order_number} updated to "${payload.new.status}"`);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
   }, [user, authLoading]);
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
+      if (isMedusaCommerce) {
+        const ids = JSON.parse(localStorage.getItem("tech_innovation_order_ids") || "[]") as string[];
+        const results = await Promise.all(ids.map(async (id) => {
+          try {
+            const { order } = await medusa.order.retrieve(id);
+            const fulfillment = order.fulfillment_status || "";
+            const status =
+              fulfillment === "delivered" ? "delivered" :
+              fulfillment === "shipped" || fulfillment === "partially_shipped" ? "shipped" :
+              fulfillment === "fulfilled" || fulfillment === "partially_fulfilled" ? "processing" :
+              order.status === "canceled" ? "cancelled" : "pending";
+            return {
+              id: order.id,
+              order_number: order.display_id ? String(order.display_id) : order.id,
+              status,
+              total: (order.total || 0) / 100,
+              subtotal: (order.subtotal || 0) / 100,
+              discount_total: (order.discount_total || 0) / 100,
+              shipping_fee: (order.shipping_total || 0) / 100,
+              currency: (order.currency_code || "usd").toUpperCase(),
+              shipping_name: order.shipping_address
+                ? [order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ")
+                : "",
+              shipping_line1: order.shipping_address?.address_1 || "",
+              shipping_city: order.shipping_address?.city || "",
+              notes: null,
+              created_at: order.created_at || new Date().toISOString(),
+              order_items: (order.items || []).map((item: any) => ({
+                id: item.id,
+                product_name: item.product_title || item.title || "Product",
+                variant_name: item.variant_title || null,
+                quantity: item.quantity,
+                unit_price: (item.unit_price || 0) / 100,
+                line_total: (item.total || item.unit_price * item.quantity || 0) / 100,
+              })),
+            } as Order;
+          } catch {
+            return null;
+          }
+        }));
+        setOrders(results.filter((order): order is Order => order !== null));
+        return;
+      }
+
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
       const { data, error } = await supabase
         .from("orders")
         .select(`*, order_items(*)`)
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       setOrders((data as Order[]) || []);
     } catch (err: any) {
+      console.error(err);
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
