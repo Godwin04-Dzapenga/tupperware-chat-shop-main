@@ -33,6 +33,8 @@ type Options = {
 
 type PaynowData = {
   reference: string
+  session_id?: string
+  cart_id?: string
   poll_url?: string
   redirect_url?: string
   status?: string
