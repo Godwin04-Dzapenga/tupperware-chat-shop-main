@@ -32,6 +32,7 @@ interface CartContextType {
   removeFromCart: (id: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  resetCart: () => void;
   totalItems: number;
   totalPrice: number;
   isInCart: (id: string) => boolean;
@@ -275,6 +276,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [cartId, loadCart]);
+
+  const resetCart = useCallback(() => {
+    setItems([]);
+    setCartId(null);
+    setStoredCartId(null);
+  }, []);
 
   const isInCart = useCallback((id: string) => {
     return items.some((item) => item.id === id || item.product_id === id || item.variant_id === id);
