@@ -175,17 +175,17 @@ export default function Checkout() {
         const cart = await syncWithBackend();
         if (!cart?.id) throw new Error("Your cart could not be synchronized.");
 
+        const paymentCollection =
+          cart.payment_collection?.id
+            ? cart.payment_collection
+            : (await medusa.cart.createPaymentCollection(cart.id)).payment_collection;
+
+        if (!paymentCollection?.id) {
+          throw new Error("Medusa could not create a payment collection.");
+        }
+
         if (paymentMethod === "paynow_ecocash" || paymentMethod === "paynow_onemoney") {
           const providerId = "pp_paynow_paynow";
-          const paymentCollection =
-            cart.payment_collection?.id
-              ? cart.payment_collection
-              : (await medusa.cart.createPaymentCollection(cart.id)).payment_collection;
-
-          if (!paymentCollection?.id) {
-            throw new Error("Medusa could not create a payment collection.");
-          }
-
           const initialized = await medusa.cart.initiatePaymentSession(
             paymentCollection.id,
             providerId,
@@ -208,6 +208,11 @@ export default function Checkout() {
           localStorage.setItem("tech_innovation_paynow_cart_id", cart.id);
           window.location.assign(redirectUrl);
           return;
+        }
+
+        // Cash on Delivery uses Medusa's built-in system/manual provider.
+        if (paymentMethod === "cash_on_delivery") {
+          await medusa.cart.initiatePaymentSession(paymentCollection.id, "pp_system");
         }
 
         const completed = await medusa.cart.complete(cart.id);
