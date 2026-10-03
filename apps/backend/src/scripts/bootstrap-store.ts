@@ -187,11 +187,18 @@ export default async function bootstrapStore({ container }: ExecArgs) {
   let apiKey = apiKeys[0]
 
   if (!apiKey) {
+    const { data: adminUsers } = await query.graph({
+      entity: "user",
+      fields: ["id", "email"],
+    })
+    const createdBy = adminUsers[0]?.id ?? ""
+
     const { result } = await createApiKeysWorkflow(container).run({
       input: {
         api_keys: [{
           title: API_KEY_TITLE,
           type: "publishable",
+          created_by: createdBy,
         }],
       },
     })
