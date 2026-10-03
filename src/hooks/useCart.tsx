@@ -164,9 +164,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const finalCart = (await medusa.cart.retrieve(cartId)).cart;
-      const backendItems = mapMedusaCart(finalCart);
-      setItemsRaw(backendItems);
-      writeLocalCart(backendItems);
       return finalCart;
     } finally {
       syncing.current = false;
