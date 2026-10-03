@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+import { medusa, MEDUSA_REGION_ID } from "@/lib/medusa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,15 @@ const STEPS: { key: Step; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function Checkout() {
-  const { items, totalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
+  const {
+    items,
+    totalPrice,
+    clearCart,
+    updateQuantity,
+    removeFromCart,
+    cartId,
+    refreshCart,
+  } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -60,9 +68,13 @@ export default function Checkout() {
   const [loading, setLoading]           = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
   const [cityOpen, setCityOpen]         = useState(false);
-  const [orderResult, setOrderResult]   = useState<{
-    order_number: string; total: number; whatsapp_url: string;
+  const [orderResult, setOrderResult] = useState<{
+    order_number: string;
+    total: number;
+    status: string;
+    whatsapp_url: string;
   } | null>(null);
+  const [backendTotal, setBackendTotal] = useState<number | null>(null);
 
   const [shipping, setShipping] = useState<ShippingForm>({
     name: user?.user_metadata?.full_name ?? "",
@@ -72,48 +84,202 @@ export default function Checkout() {
 
   // ── Derived ───────────────────────────────────────────────────────────
   const shippingFee   = (totalPrice - discount) >= 50 ? 0 : items.length > 0 ? 5 : 0;
-  const finalTotal    = totalPrice - discount + shippingFee;
+  const finalTotal = backendTotal ?? (totalPrice - discount + shippingFee);
   const currentStepIdx = STEPS.findIndex(s => s.key === step);
   const shippingValid = shipping.name.trim() && shipping.phone.trim() && shipping.line1.trim() && shipping.city.trim() && (user || shipping.email.trim());
 
   // ── Coupon ────────────────────────────────────────────────────────────
   const validateCoupon = async () => {
     if (!couponCode.trim()) return;
+    if (!cartId) {
+      toast.error("Your cart is not connected to the store backend yet.");
+      return;
+    }
+
     setCouponLoading(true);
     try {
-      const { data } = await supabase.from("coupons").select("*").eq("code", couponCode.toUpperCase()).eq("active", true).maybeSingle();
-      if (!data) { toast.error("Invalid or expired coupon"); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Coupon expired"); return; }
-      if (data.min_order_total && totalPrice < data.min_order_total) { toast.error(`Min order $${data.min_order_total} required`); return; }
-      const d = data.discount_type === "percent"
-        ? Math.min((totalPrice * data.discount_value) / 100, totalPrice)
-        : Math.min(data.discount_value, totalPrice);
-      setDiscount(d); setCouponApplied(true);
-      toast.success(`Coupon applied — you save $${d.toFixed(2)}!`);
-    } finally { setCouponLoading(false); }
+      const { cart } = await medusa.cart.addPromotion(cartId, couponCode.toUpperCase());
+      const discountAmount = Number(cart.discount_total ?? 0) / 100;
+      setDiscount(Math.max(0, discountAmount));
+      setBackendTotal(Number(cart.total ?? 0) / 100);
+      setCouponApplied(true);
+      toast.success(
+        discountAmount > 0
+          ? `Coupon applied — you save ${discountAmount.toFixed(2)}!`
+          : "Coupon accepted."
+      );
+      await refreshCart();
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or unavailable coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
-  // ── Place order (online checkout path) ───────────────────────────────
+  const removeCoupon = async () => {
+    if (!cartId || !couponApplied || !couponCode.trim()) {
+      setCouponApplied(false);
+      setDiscount(0);
+      setCouponCode("");
+      return;
+    }
+
+    setCouponLoading(true);
+    try {
+      const { cart } = await medusa.cart.removePromotion(cartId, couponCode.toUpperCase());
+      setDiscount(Number(cart.discount_total ?? 0) / 100);
+      setBackendTotal(Number(cart.total ?? 0) / 100);
+      setCouponApplied(false);
+      setCouponCode("");
+      await refreshCart();
+      toast.success("Coupon removed.");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not remove the coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  // ── Prepare Medusa cart ─────────────────────────────────────────────
+  const prepareCheckoutCart = async () => {
+    if (!cartId) throw new Error("Your cart is not connected to Medusa.");
+    if (!MEDUSA_REGION_ID) throw new Error("VITE_MEDUSA_REGION_ID is missing from the storefront configuration.");
+
+    let { cart } = await medusa.cart.retrieve(cartId);
+
+    cart = (
+      await medusa.cart.update(cartId, {
+        email: shipping.email.trim(),
+        shipping_address: {
+          first_name: shipping.name.trim(),
+          address_1: shipping.line1.trim(),
+          address_2: shipping.line2.trim() || undefined,
+          city: shipping.city,
+          country_code: "zw",
+          phone: shipping.phone.trim(),
+        },
+        billing_address: {
+          first_name: shipping.name.trim(),
+          address_1: shipping.line1.trim(),
+          address_2: shipping.line2.trim() || undefined,
+          city: shipping.city,
+          country_code: "zw",
+          phone: shipping.phone.trim(),
+        },
+      })
+    ).cart;
+
+    const { shipping_options } = await medusa.shipping.listOptions(cartId);
+    if (!shipping_options?.length) {
+      throw new Error("No shipping option is configured for this cart in Medusa. Add at least one shipping option for Zimbabwe.");
+    }
+
+    const wantsFree = (Number(cart.item_total ?? cart.subtotal ?? 0) - Number(cart.discount_total ?? 0)) >= 5000;
+    const selectedShipping =
+      shipping_options.find((option) => wantsFree && Number(option.amount ?? 0) === 0) ||
+      shipping_options.find((option) => !wantsFree && Number(option.amount ?? 0) > 0) ||
+      shipping_options[0];
+
+    cart = (await medusa.cart.addShippingMethod(cartId, { option_id: selectedShipping.id })).cart;
+
+    setBackendTotal(Number(cart.total ?? 0) / 100);
+    return cart;
+  };
+
   const placeOrder = async () => {
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("checkout", {
-        body: {
-          items: items.map(i => ({ product_id: i.product_id || i.id, variant_id: i.variant_id || undefined, quantity: i.quantity })),
-          shipping: { name: shipping.name, phone: shipping.phone, line1: shipping.line1, city: shipping.city, country: shipping.country },
-          payment_method: paymentMethod,
-          coupon_code: couponApplied ? couponCode.toUpperCase() : undefined,
-          guest_email: !user ? shipping.email : undefined,
-          guest_name: !user ? shipping.name : undefined,
-        },
+      const cart = await prepareCheckoutCart();
+
+      const regionId = cart.region_id || MEDUSA_REGION_ID;
+      const { payment_providers } = await medusa.payment.listProviders(regionId);
+      const enabledProviders = (payment_providers || []).filter((provider) => provider.is_enabled !== false);
+
+      const isPaynow = paymentMethod === "paynow_ecocash" || paymentMethod === "paynow_onemoney";
+      const providerId = isPaynow
+        ? (enabledProviders.find((provider) => provider.id === "pp_paynow_paynow") ||
+            enabledProviders.find((provider) => provider.id.toLowerCase().includes("paynow"))?.id)
+        : paymentMethod === "cash_on_delivery"
+          ? (enabledProviders.find((provider) => provider.id === "pp_system") ||
+              enabledProviders.find((provider) => provider.id.toLowerCase().includes("system"))?.id)
+          : enabledProviders.find((provider) => provider.id.toLowerCase().includes("stripe"))?.id;
+
+      if (!providerId) {
+        throw new Error(
+          isPaynow
+            ? "Paynow is not enabled for the Zimbabwe region in Medusa."
+            : paymentMethod === "cash_on_delivery"
+              ? "Cash on Delivery is not enabled for the Zimbabwe region in Medusa."
+              : "Card payment is not configured in Medusa."
+        );
+      }
+
+      let paymentCollection = cart.payment_collection;
+      if (!paymentCollection?.id) {
+        paymentCollection = (await medusa.payment.createCollection(cartId!)).payment_collection;
+      }
+
+      const paymentResponse = await medusa.payment.initiatePaymentSession(
+        paymentCollection.id,
+        providerId
+      );
+      const paymentSession =
+        paymentResponse.payment_collection.payment_sessions?.find(
+          (session) => session.provider_id === providerId
+        ) ||
+        paymentResponse.payment_collection.payment_sessions?.[
+          paymentResponse.payment_collection.payment_sessions.length - 1
+        ];
+
+      if (!paymentSession) {
+        throw new Error("Medusa did not return a payment session.");
+      }
+
+      const paymentData = paymentSession.data || {};
+      const browserUrl =
+        typeof paymentData.browser_url === "string"
+          ? paymentData.browser_url
+          : typeof paymentData.browserUrl === "string"
+            ? paymentData.browserUrl
+            : "";
+
+      // Paynow is completed outside the storefront. Paynow's webhook will
+      // authorize the session and Medusa can then complete the cart.
+      if (isPaynow) {
+        if (!browserUrl) {
+          throw new Error("Paynow did not return a browser URL.");
+        }
+
+        toast.success("Paynow payment session created. Redirecting to Paynow...");
+        window.location.assign(browserUrl);
+        return;
+      }
+
+      const completed = await medusa.cart.complete(cartId);
+      if (completed.type !== "order" || !completed.order) {
+        throw new Error(completed.error?.message || "Medusa could not complete the order.");
+      }
+
+      const order = completed.order;
+      const orderNumber = order.display_id ? String(order.display_id) : order.id;
+      const orderTotal = Number(order.total ?? cart.total ?? 0) / 100;
+      const whatsappMessage = encodeURIComponent(
+        `Hello Tech Innovation, I placed Medusa order ${orderNumber}. Please confirm stock and delivery details.`
+      );
+
+      await clearCart();
+      setOrderResult({
+        order_number: orderNumber,
+        total: orderTotal,
+        status: order.payment_status || "awaiting",
+        whatsapp_url: `https://wa.me/263778158984?text=${whatsappMessage}`,
       });
-      if (res.error || !res.data?.success) throw new Error(res.data?.error || "Checkout failed");
-      clearCart();
-      setOrderResult(res.data);
       setStep("confirm");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong. Please try again.");
-    } finally { setLoading(false); }
+      toast.error(err?.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── WhatsApp direct order (bypass online checkout) ───────────────────
@@ -335,7 +501,7 @@ export default function Checkout() {
                       disabled={couponApplied}
                       className="rounded-sm h-9 uppercase font-mono text-sm max-w-xs" />
                     <Button variant={couponApplied ? "ghost" : "outline"} size="sm"
-                      onClick={couponApplied ? () => { setCouponApplied(false); setDiscount(0); setCouponCode(""); } : validateCoupon}
+                      onClick={couponApplied ? removeCoupon : validateCoupon}
                       disabled={couponLoading || (!couponApplied && !couponCode.trim())}
                       className="rounded-sm h-9 px-5">
                       {couponLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : couponApplied ? "Remove" : "Apply"}
