@@ -37,6 +37,8 @@ interface CartContextType {
   totalPrice: number;
   isInCart: (id: string) => boolean;
   refreshing: boolean;
+  cartId: string | null;
+  refreshCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -82,6 +84,7 @@ function mapMedusaCartItems(cartItems: NonNullable<import("@/lib/medusa").Medusa
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartId, setCartId] = useState<string | null>(cartIdRef.current);
   const [refreshing, setRefreshing] = useState(false);
   const cartIdRef = useRef<string | null>(readCartId());
   const cartPromiseRef = useRef<Promise<string> | null>(null);
@@ -112,6 +115,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           ...(MEDUSA_SALES_CHANNEL_ID ? { sales_channel_id: MEDUSA_SALES_CHANNEL_ID } : {}),
         });
         cartIdRef.current = cart.id;
+        setCartId(cart.id);
         writeCartId(cart.id);
         return cart.id;
       })().finally(() => {
@@ -229,6 +233,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = useCallback(async () => {
     // Clear the client reference. The old Medusa cart can remain abandoned.
     cartIdRef.current = null;
+    setCartId(null);
     writeCartId(null);
     setItems([]);
   }, []);
