@@ -49,7 +49,7 @@ const STEPS: { key: Step; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function Checkout() {
-  const { items, totalPrice, clearCart, updateQuantity, removeFromCart, medusaCartId, syncWithBackend } = useCart();
+  const { items, totalPrice, clearCart, updateQuantity, removeFromCart, syncWithBackend } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -619,6 +619,7 @@ export default function Checkout() {
                     {[
                       {
                         id: "cash_on_delivery" as PaymentMethod,
+                        disabled: false,
                         icon: Banknote,
                         iconBg: "bg-amber-100 text-amber-600",
                         label: "Cash on Delivery",
