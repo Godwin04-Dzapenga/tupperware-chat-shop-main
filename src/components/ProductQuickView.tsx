@@ -73,9 +73,21 @@ export const ProductQuickView = ({ product, category, isOpen, onClose, onOrder }
   const originalPrice = media.originalPrice > product.price ? media.originalPrice : Math.round(product.price * 1.18);
   const savings = originalPrice - product.price;
 
-  const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) addToCart(product);
-    toast.success(`${qty > 1 ? qty + "× " : ""}${product.name} added to cart!`);
+  const handleAddToCart = async () => {
+    try {
+      await addToCart({
+        id: product.id,
+        product_id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: qty,
+        image_url: product.image_url,
+        stock_quantity: product.stock_quantity,
+      });
+      toast.success(`${qty > 1 ? qty + "× " : ""}${product.name} added to cart!`);
+    } catch {
+      // addToCart already reports the backend error.
+    }
   };
 
   const handleOrder = () => {
