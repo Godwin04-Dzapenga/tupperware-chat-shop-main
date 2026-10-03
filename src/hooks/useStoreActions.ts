@@ -31,8 +31,11 @@ export function useStoreActions() {
     try {
       await addToCart({
         id: product.id,
-        product_id: product.product_id || product.id,
-        variant_id: product.variant_id || product.default_variant_id || null,
+        product_id: "product_id" in product && product.product_id ? product.product_id : product.id,
+        variant_id:
+          ("variant_id" in product ? product.variant_id : null) ||
+          ("default_variant_id" in product ? product.default_variant_id : null) ||
+          null,
         name: product.name,
         price: product.price,
         image_url: product.image_url,
