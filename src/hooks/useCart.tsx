@@ -32,10 +32,12 @@ interface CartContextType {
   removeFromCart: (id: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  resetCart: () => void;
   totalItems: number;
   totalPrice: number;
   isInCart: (id: string) => boolean;
   loading: boolean;
+  cartId: string | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -275,6 +277,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [cartId, loadCart]);
 
+  const resetCart = useCallback(() => {
+    setItems([]);
+    setCartId(null);
+    setStoredCartId(null);
+  }, []);
+
   const isInCart = useCallback((id: string) => {
     return items.some((item) => item.id === id || item.product_id === id || item.variant_id === id);
   }, [items]);
@@ -294,6 +302,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         totalPrice,
         isInCart,
         loading,
+        cartId,
       }}
     >
       {children}

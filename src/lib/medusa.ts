@@ -96,6 +96,7 @@ export interface MedusaCategory {
 export interface MedusaCart {
   id: string;
   currency_code: string;
+  region_id?: string;
   email?: string | null;
   items?: Array<{
     id: string;
@@ -111,6 +112,31 @@ export interface MedusaCart {
   shipping_total?: number;
   discount_total?: number;
   metadata?: Record<string, unknown> | null;
+}
+
+export interface MedusaShippingOption {
+  id: string;
+  name: string;
+  amount?: number;
+  price_type?: "flat" | "calculated";
+  currency_code?: string;
+}
+
+export interface MedusaPaymentProvider {
+  id: string;
+  is_enabled?: boolean;
+  name?: string;
+}
+
+export interface MedusaPaymentCollection {
+  id: string;
+  amount?: number;
+  currency_code?: string;
+  payment_sessions?: Array<{
+    id: string;
+    provider_id: string;
+    status?: string;
+  }>;
 }
 
 export interface MedusaOrder {
@@ -178,10 +204,43 @@ export const medusa = {
         { method: "DELETE" },
       );
     },
+    async addShippingMethod(id: string, payload: { option_id: string; data?: Record<string, unknown> }) {
+      return medusaRequest<{ cart: MedusaCart }>(
+        `/store/carts/${encodeURIComponent(id)}/shipping-methods`,
+        { method: "POST", body: JSON.stringify(payload) },
+      );
+    },
     async complete(id: string) {
       return medusaRequest<{ type: string; order?: MedusaOrder; cart?: MedusaCart }>(
         `/store/carts/${encodeURIComponent(id)}/complete`,
         { method: "POST" },
+      );
+    },
+    async listShippingOptions(cartId: string) {
+      return medusaRequest<{ shipping_options: MedusaShippingOption[] }>(
+        "/store/shipping-options",
+        { query: { cart_id: cartId } },
+      );
+    },
+  },
+
+  payment: {
+    async listProviders(regionId: string) {
+      return medusaRequest<{ payment_providers: MedusaPaymentProvider[] }>(
+        "/store/payment-providers",
+        { query: { region_id: regionId } },
+      );
+    },
+    async createCollection(cartId: string) {
+      return medusaRequest<{ payment_collection: MedusaPaymentCollection }>(
+        "/store/payment-collections",
+        { method: "POST", body: JSON.stringify({ cart_id: cartId }) },
+      );
+    },
+    async initializeSession(paymentCollectionId: string, providerId: string) {
+      return medusaRequest<{ payment_collection: MedusaPaymentCollection }>(
+        `/store/payment-collections/${encodeURIComponent(paymentCollectionId)}/payment-sessions`,
+        { method: "POST", body: JSON.stringify({ provider_id: providerId }) },
       );
     },
   },
