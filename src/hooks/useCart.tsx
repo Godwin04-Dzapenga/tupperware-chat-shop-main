@@ -59,27 +59,6 @@ function parseCartItem(value: Json): CartItem | null {
   };
 }
 
-function mapMedusaCart(cart: MedusaCart): CartItem[] {
-  return (cart.items || []).map((item) => {
-    const variant = item.variant;
-    const product = item.product;
-    const price = (item.unit_price || variant?.calculated_price?.calculated_amount || 0) / 100;
-    const variantId = item.variant_id || variant?.id || null;
-    const productId = item.product_id || product?.id || "";
-    return {
-      id: variantId ? `${productId || variantId}::${variantId}` : item.id,
-      product_id: productId || undefined,
-      variant_id: variantId,
-      variant_name: variant?.title || item.title || null,
-      name: product?.title ? (variant?.title ? `${product.title} — ${variant.title}` : product.title) : item.title || "Product",
-      price,
-      quantity: item.quantity,
-      image_url: product?.thumbnail || product?.images?.[0]?.url || null,
-      stock_quantity: variant?.inventory_quantity,
-    };
-  });
-}
-
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [items, setItemsRaw] = useState<CartItem[]>(readLocalCart);
