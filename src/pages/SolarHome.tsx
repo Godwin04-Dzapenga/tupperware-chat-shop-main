@@ -22,7 +22,6 @@ import {
   Cpu,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useCart } from "@/hooks/useCart";
 import { useProducts, useCategories } from "@/hooks/useCatalog";
 import { useStoreUI } from "@/hooks/useStoreUI";
 import { useStoreActions, WHATSAPP_NUMBER } from "@/hooks/useStoreActions";
@@ -74,7 +73,6 @@ const CATEGORY_ICONS: Record<string, typeof Sun> = {
 
 const SolarHome = () => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
   const { compareProducts, toggleCompare, setQuickViewProduct } = useStoreUI();
