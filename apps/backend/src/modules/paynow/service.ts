@@ -105,12 +105,12 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
       additionalinfo: "Tech Innovation ecommerce order",
       returnurl: returnUrl,
       resulturl: resultUrl,
-      status: "Message",
     }
     const email = String(input.data?.email || "")
     const phone = String(input.data?.phone || "")
     if (email) fields.authemail = email
     if (phone) fields.authphone = phone
+    fields.status = "Message"
     const hashFields = [
       fields.id,
       fields.reference,
