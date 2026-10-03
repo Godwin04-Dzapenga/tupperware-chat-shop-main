@@ -172,6 +172,8 @@ export default function Checkout() {
         const whatsapp_url = `https://wa.me/263778158984?text=${encodeURIComponent(
           `Hi Tech Innovation, I have placed order #${orderNumber}.\n\n${itemsList}\n\nTotal: $${total.toFixed(2)} USD\nDelivery: ${shipping.city}, Zimbabwe`
         )}`;
+        const history = JSON.parse(localStorage.getItem("tech_innovation_order_ids") || "[]") as string[];
+        localStorage.setItem("tech_innovation_order_ids", JSON.stringify([order.id, ...history.filter((id) => id !== order.id)].slice(0, 20)));
         clearCart();
         setOrderResult({ order_number: orderNumber, total, whatsapp_url });
         setStep("confirm");
