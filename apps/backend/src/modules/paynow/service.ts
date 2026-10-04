@@ -42,8 +42,6 @@ type PaynowData = {
   currency_code?: string
 }
 
-const PAYNOW_INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction"
-
 class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   protected options_: Options
 
@@ -128,10 +126,19 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
   }
 
   private async poll(pollUrl: string) {
-    const response = await fetch(pollUrl)
-    const raw = await response.text()
-    if (!response.ok) throw new Error(`Paynow status request failed with HTTP ${response.status}`)
-    return parsePaynowResponse(raw)
+    const paynow = new Paynow(
+      this.options_.integrationId.trim(),
+      this.options_.integrationKey.trim(),
+      this.options_.resultUrl,
+      this.options_.returnUrl,
+    )
+
+    const response = await paynow.pollTransaction(pollUrl)
+    if (!response) {
+      throw new Error("Paynow returned no transaction status response.")
+    }
+
+    return response
   }
 
   async authorizePayment(input: AuthorizePaymentInput): Promise<AuthorizePaymentOutput> {
@@ -145,7 +152,7 @@ class PaynowPaymentProviderService extends AbstractPaymentProvider<Options> {
 
     if (current === "paid") {
       return {
-        data: { ...data, status: status.status, paynow_reference: status.paynowreference },
+        data: { ...data, status: status.status },
         status: "authorized" as PaymentSessionStatus,
       }
     }
