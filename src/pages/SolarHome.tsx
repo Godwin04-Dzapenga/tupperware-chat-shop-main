@@ -94,7 +94,7 @@ const SolarHome = () => {
   }, [products]);
 
   const scrollToFeatured = () => {
-    document.getElementById("featured")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleAddSizerPreset = (preset: SizerPreset) => {
@@ -397,7 +397,7 @@ const SolarHome = () => {
       </div>
 
       {/* ── 7. Featured Products Grid ── */}
-      <section id="featured" className="store-shell py-8">
+      <section id="products" className="store-shell py-8 scroll-mt-32">
         <div className="mb-6 flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">
