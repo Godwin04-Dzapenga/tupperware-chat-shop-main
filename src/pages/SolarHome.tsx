@@ -240,7 +240,48 @@ const SolarHome = () => {
         </div>
       </section>
 
-      {/* ── 3. Top Deals Horizontal Row ── */}
+      {/* ── 3. How Shopping Works ── */}
+      <section id="how-it-works" className="store-shell py-8 scroll-mt-32">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">New here?</span>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-bb-ink">Shopping is simple</h2>
+              <p className="mt-1 max-w-2xl text-sm text-slate-500">
+                Choose equipment, add it to your cart, enter where you want it delivered, then choose how you want to pay.
+              </p>
+            </div>
+            <Link
+              to="/#system-sizer"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-bb-blue hover:underline"
+            >
+              Not sure what you need? Use System Finder <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-4">
+            {[
+              { n: "01", icon: Sun, title: "Find your equipment", text: "Browse by department or search for a panel, inverter, battery, kit or accessory." },
+              { n: "02", icon: PackageCheck, title: "Choose your option", text: "Open the product page to check price, specifications, warranty and available variants." },
+              { n: "03", icon: Truck, title: "Checkout & delivery", text: "Add your delivery details. Your order total and shipping option are shown before payment." },
+              { n: "04", icon: CheckCircle2, title: "Pay & confirm", text: "Use EcoCash, OneMoney or cash on delivery. We then confirm the order and next steps." },
+            ].map(({ n, icon: Icon, title, text }) => (
+              <div key={n} className="relative rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bb-blue text-white">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-black text-slate-300">{n}</span>
+                </div>
+                <h3 className="mt-4 text-sm font-black text-bb-ink">{title}</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-500">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. Top Deals Horizontal Row ── */}
       <section className="store-shell py-8">
         <div className="mb-4 flex items-end justify-between border-b border-slate-200 pb-3">
           <div>
