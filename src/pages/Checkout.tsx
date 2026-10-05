@@ -421,7 +421,7 @@ export default function Checkout() {
           <div className="flex items-center gap-2 font-black text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink"><Sun className="h-5 w-5 fill-bb-ink text-bb-ink" /></span> TECH INNOVATION</div>
 
           {/* Step breadcrumb — Amazon style */}
-          <div className="ml-auto hidden sm:flex items-center gap-1">
+          <div className="ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto scrollbar-none">
             {STEPS.map((s, idx) => {
               const done   = idx < currentStepIdx;
               const active = idx === currentStepIdx;
@@ -429,7 +429,7 @@ export default function Checkout() {
               return (
                 <div key={s.key} className="flex items-center gap-1">
                   <span className={`text-xs font-semibold px-1 ${active ? "text-primary border-b-2 border-primary pb-0.5" : done ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
-                    {done ? "✓ " : ""}{s.label}
+                    <span className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-current/10 text-[9px]">{done ? "✓" : idx + 1}</span>{s.label}
                   </span>
                   {idx < STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground/30" />}
                 </div>
@@ -444,7 +444,7 @@ export default function Checkout() {
         </div>
       </header>
 
-      <div className="container mx-auto max-w-6xl px-4 py-6">
+      <div className="container mx-auto max-w-6xl px-4 py-5 sm:py-6">
         <div className="grid gap-6 lg:grid-cols-5">
 
           {/* ── MAIN ── */}
@@ -591,7 +591,10 @@ export default function Checkout() {
                   <button onClick={() => setStep("cart")} className="flex h-8 w-8 items-center justify-center rounded-full border bg-white hover:bg-muted transition-colors">
                     <ArrowLeft className="h-4 w-4" />
                   </button>
-                  <h2 className="text-xl font-extrabold text-bb-ink">Delivery Address</h2>
+                  <div>
+                    <h2 className="text-xl font-extrabold text-bb-ink">Where should we deliver?</h2>
+                    <p className="mt-1 text-sm text-slate-500">Enter your contact and delivery details. You can review the final total before you pay.</p>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-2xl border shadow-sm p-5 space-y-4">
@@ -822,9 +825,12 @@ export default function Checkout() {
                 </div>
 
                 {/* Security note */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span>Prices verified server-side. Your payment details are never stored by Tech Innovation.</span>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                  <div className="flex items-center gap-2 font-semibold text-slate-800">
+                    <Lock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    Secure checkout
+                  </div>
+                  <p className="mt-1 pl-5 leading-4">Your order total is verified by the store. Payment details are handled by the selected payment provider.</p>
                 </div>
 
                 {/* CTA */}
@@ -838,8 +844,8 @@ export default function Checkout() {
                         : <>Place cash-on-delivery order · ${finalTotal.toFixed(2)}</>
                     }
                   </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    By placing your order you agree to Tech Innovation's terms of service.
+                  <p className="text-center text-[11px] leading-4 text-muted-foreground">
+                    By continuing, you confirm that your delivery details are correct and agree to Tech Innovation's terms of service.
                   </p>
 
                   {/* WhatsApp escape hatch */}
