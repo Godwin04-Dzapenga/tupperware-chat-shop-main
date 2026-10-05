@@ -366,7 +366,7 @@ export default function ProductDetail() {
   if (!product) return null;
 
   return (
-    <div className="store-shell py-6">
+    <div className="store-shell py-6 pb-24 md:pb-6">
       {/* Breadcrumb line */}
       <div className="mb-4 flex items-center gap-1.5 text-xs text-slate-500">
         <Link to="/" className="hover:text-bb-blue">Home</Link>
