@@ -68,13 +68,13 @@ export const ProductCard = ({
 
   return (
     <div
-      className="group relative flex flex-col rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm hover:shadow-xl hover:border-bb-blue/40 transition-all duration-300 cursor-pointer"
+      className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-bb-blue/40 hover:shadow-xl sm:p-3.5"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleCardClick}
     >
       {/* ── Image & Top Badges ── */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-50">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-50">
         {product.video_url && !imgError ? (
           <video
             src={product.video_url}
@@ -182,8 +182,8 @@ export const ProductCard = ({
           </div>
 
           {/* Price Block */}
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl font-black text-bb-ink">
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-xl font-black tracking-tight text-bb-ink">
               ${product.price.toFixed(2)}
             </span>
             {savings > 0 && (
@@ -194,17 +194,17 @@ export const ProductCard = ({
           </div>
 
           {/* Store Pickup & Delivery status pills */}
-          <div className="mt-2 space-y-0.5 text-[11px]">
-            <p className="text-emerald-700 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
-              <span>Free Pickup Today in Harare</span>
+          <div className="mt-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[11px]">
+            <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
+              <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
+              <span>Pickup available in Harare</span>
             </p>
-            <p className="text-slate-500 pl-4">Delivery available nationwide</p>
+            <p className="mt-0.5 pl-4 text-slate-500">Nationwide delivery available</p>
           </div>
         </div>
 
         {/* ── Yellow Add to Cart & Actions ── */}
-        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+        <div className="mt-auto pt-4 border-t border-slate-100 space-y-2.5">
           {!outOfStock ? (
             <button
               type="button"
@@ -238,33 +238,31 @@ export const ProductCard = ({
             </button>
           )}
 
-          {/* Secondary Row: Compare Checkbox & WhatsApp Order */}
-          <div className="flex items-center justify-between text-xs pt-1">
+          {/* Secondary actions */}
+          <div className="flex items-center justify-between gap-2 pt-0.5">
             {onToggleCompare && (
               <label
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 cursor-pointer text-slate-600 hover:text-slate-900 select-none text-[11px] font-semibold"
+                className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-slate-900 select-none"
               >
                 <input
                   type="checkbox"
                   checked={isCompared}
                   onChange={() => onToggleCompare(product)}
-                  className="rounded border-slate-300 text-bb-blue focus:ring-0"
+                  className="h-3.5 w-3.5 rounded border-slate-300 accent-bb-blue"
                 />
-                <Layers className="h-3 w-3 text-slate-400" />
                 <span>Compare</span>
               </label>
             )}
-
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onOrder(product);
               }}
-              className="text-[11px] font-bold text-bb-blue hover:underline flex items-center gap-1 ml-auto"
+              className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
             >
-              <MessageCircle className="h-3 w-3 text-wa" /> WhatsApp Order
+              <MessageCircle className="h-3 w-3 text-wa" /> Ask on WhatsApp
             </button>
           </div>
         </div>
