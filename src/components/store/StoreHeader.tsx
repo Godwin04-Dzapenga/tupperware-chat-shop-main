@@ -430,6 +430,13 @@ export const StoreHeader = () => {
               <span>Solar System Finder</span>
             </Link>
 
+            <Link
+              to="/#how-it-works"
+              className="px-3 py-1.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 hover:text-bb-blue hover:border-blue-200 transition-colors"
+            >
+              How to Shop
+            </Link>
+
             <span className="h-4 w-px bg-slate-200 mx-1" />
 
             {categories.slice(0, 6).map((cat) => (
