@@ -43,10 +43,10 @@ const ZW_CITIES = [
 ];
 
 const STEPS: { key: Step; label: string }[] = [
-  { key:"cart",     label:"Cart"     },
+  { key:"cart",     label:"Review"   },
   { key:"shipping", label:"Delivery" },
   { key:"payment",  label:"Payment"  },
-  { key:"confirm",  label:"Confirm"  },
+  { key:"confirm",  label:"Done"     },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -455,7 +455,10 @@ export default function Checkout() {
             ════════════════════════════════════════════ */}
             {step === "cart" && (
               <div className="space-y-4">
-                <h1 className="text-2xl font-extrabold text-bb-ink">Shopping Cart</h1>
+                <div>
+                  <h1 className="text-2xl font-extrabold text-bb-ink">Review your order</h1>
+                  <p className="mt-1 text-sm text-slate-500">Check your items and quantities before entering your delivery details.</p>
+                </div>
 
                 {/* Cart items */}
                 <div className="bg-white rounded-2xl border overflow-hidden shadow-sm">
@@ -721,7 +724,8 @@ export default function Checkout() {
                 {/* Payment methods */}
                 <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
                   <div className="px-5 py-3 border-b bg-bb-surface">
-                    <h3 className="font-bold text-sm">Select payment method</h3>
+                    <h3 className="font-bold text-sm">How would you like to pay?</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Choose one option below. You will see the final total before payment is completed.</p>
                   </div>
                   <div className="p-4 space-y-2">
                     {[
@@ -828,8 +832,10 @@ export default function Checkout() {
                   <Button className="w-full rounded-sm h-12 text-sm font-bold gap-2 shadow-md"
                     onClick={placeOrder} disabled={loading}>
                     {loading
-                      ? <><Loader2 className="h-4 w-4 animate-spin" />Placing order…</>
-                      : `Place Order · $${finalTotal.toFixed(2)}`
+                      ? <><Loader2 className="h-4 w-4 animate-spin" />Processing…</>
+                      : (paymentMethod === "paynow_ecocash" || paymentMethod === "paynow_onemoney")
+                        ? <>Continue to secure payment · ${finalTotal.toFixed(2)}</>
+                        : <>Place cash-on-delivery order · ${finalTotal.toFixed(2)}</>
                     }
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
