@@ -39,6 +39,8 @@ interface Variant {
   sku: string | null;
   price: number;
   stock_quantity: number;
+  manage_inventory?: boolean;
+  allow_backorder?: boolean;
   image_url: string | null;
   attributes: Record<string, string>;
   is_active: boolean;
@@ -493,7 +495,7 @@ export default function ProductDetail() {
             {/* ── Pricing Box ── */}
             <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
               <div className="flex items-baseline gap-3">
-                <span className="text-2xl font-black text-bb-ink sm:text-3xl">
+                <span className="text-2xl font-black tracking-tight text-bb-ink sm:text-3xl">
                   ${price.toFixed(2)} USD
                 </span>
                 {savings > 0 && (
@@ -507,17 +509,24 @@ export default function ProductDetail() {
                   </Badge>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Cash on Delivery, EcoCash, Zipit or Bank Transfer accepted. Price inclusive of VAT.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                <span>USD price</span>
+                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                <span>Warranty shown below</span>
+                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                <span>Delivery calculated at checkout</span>
+              </div>
             </div>
 
             {/* Variant Selector Pills */}
             {variants.length > 0 && (
               <div className="mt-6">
-                <div className="flex justify-between text-xs mb-2">
-                  <span className="font-black text-slate-900">Select Power / Capacity Option:</span>
-                  <span className="text-slate-500">{variants.length} configurations</span>
+                <div className="mb-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-black text-sm text-slate-900">Choose your option</span>
+                    <span className="text-[11px] text-slate-500">{variants.length} available</span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Select the power, capacity or model that matches your setup. The price updates with your selection.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {variants.map((v) => {
@@ -540,8 +549,8 @@ export default function ProductDetail() {
                       >
                         <span className="block text-xs font-black text-slate-900">{v.name}</span>
                         <span className="mt-1 block text-sm font-bold text-bb-blue">${v.price.toFixed(2)}</span>
-                        <span className={`mt-0.5 block text-[10px] font-semibold ${unavailable ? "text-red-500" : "text-emerald-700"}`}>
-                          {unavailable ? "Sold out" : `${v.stock_quantity} in stock`}
+                        <span className={`mt-1 block text-[10px] font-semibold ${unavailable ? "text-red-500" : "text-emerald-700"}`}>
+                          {unavailable ? "Unavailable" : "Available to order"}
                         </span>
                       </button>
                     );
@@ -599,6 +608,9 @@ export default function ProductDetail() {
           <div className="mt-8 pt-6 border-t border-slate-100">
             {!outOfStock ? (
               <>
+                <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
+                  <span className="font-bold">Ready to buy?</span> Choose your quantity, add it to the cart, then continue to checkout for delivery and payment.
+                </div>
                 <div className="flex items-center gap-4 mb-4">
                   <span className="text-xs font-bold text-slate-700">Quantity:</span>
                   <div className="flex items-center border border-slate-300 rounded-lg bg-white">
@@ -652,6 +664,25 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Mobile purchase bar */}
+      {!outOfStock && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_30px_-20px_rgba(15,23,42,0.45)] backdrop-blur md:hidden">
+          <div className="store-shell flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-semibold text-slate-500">{selected?.name || product.name}</p>
+              <p className="text-base font-black text-bb-ink">${(price * quantity).toFixed(2)}</p>
+            </div>
+            <Button
+              onClick={add}
+              className="h-11 shrink-0 rounded-lg bg-bb-yellow px-5 text-xs font-black text-black hover:bg-bb-yellow-dark"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              {inCart ? "Added" : "Add to Cart"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Frequently Bought Together Bundle ── */}
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
