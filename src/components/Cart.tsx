@@ -143,11 +143,18 @@ export const Cart = ({ onOrder }: CartProps) => {
               </div>
             </div>
 
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5">
+              <p className="text-[11px] font-black text-bb-ink">What happens at checkout?</p>
+              <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                Review your items → enter delivery details → choose payment → confirm your order.
+              </p>
+            </div>
+
             <Button
               className="w-full bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-sm h-12 rounded-lg shadow-sm"
               onClick={() => navigate("/checkout")}
             >
-              Checkout Now <ArrowRight className="ml-2 h-4 w-4" />
+              Continue to Checkout <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
 
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
