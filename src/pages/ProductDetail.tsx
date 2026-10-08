@@ -86,8 +86,8 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [avgRating, setAvgRating] = useState(4.9);
-  const [reviewCount, setReviewCount] = useState(16);
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [tab, setTab] = useState<TabId>("overview");
   const [bundleAdded, setBundleAdded] = useState(false);
 
@@ -157,6 +157,8 @@ export default function ProductDetail() {
         };
 
         setProduct(mapped);
+        setAvgRating(typeof metadata.avg_rating === "number" ? metadata.avg_rating : Number(metadata.avg_rating) || 0);
+        setReviewCount(typeof metadata.review_count === "number" ? metadata.review_count : Number(metadata.review_count) || 0);
         setVariants(loaded);
         setSelectedVariantId(loaded[0]?.id || null);
         setActiveImage(firstImage);
