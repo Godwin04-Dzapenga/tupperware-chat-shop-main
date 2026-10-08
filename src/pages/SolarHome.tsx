@@ -27,7 +27,6 @@ import { useProducts, useCategories } from "@/hooks/useCatalog";
 import { useStoreUI } from "@/hooks/useStoreUI";
 import { useStoreActions, WHATSAPP_NUMBER } from "@/hooks/useStoreActions";
 import { ProductCard } from "@/components/ProductCard";
-import { DealOfTheDay } from "@/components/DealOfTheDay";
 import { SystemSizer } from "@/components/SystemSizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -339,15 +338,6 @@ const SolarHome = () => {
               ))}
         </div>
       </section>
-
-      {/* ── 4. Deal of the Day ── */}
-      <div className="store-shell">
-        <DealOfTheDay
-          onAddToCart={addProduct}
-          onOrderViaWhatsApp={orderViaWhatsApp}
-          onSelectProduct={(id) => navigate(`/product/${id}`)}
-        />
-      </div>
 
       {/* ── 5. Shop by Department ── */}
       <section className="store-shell py-8">
