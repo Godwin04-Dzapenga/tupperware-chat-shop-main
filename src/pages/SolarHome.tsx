@@ -285,7 +285,7 @@ const SolarHome = () => {
             </p>
           </div>
           <Link
-            to="/search?deals=1"
+            to="/search"
             className="hidden shrink-0 items-center gap-1 text-xs font-bold text-bb-blue hover:underline sm:flex"
           >
             See all products <ArrowRight className="h-3.5 w-3.5" />
