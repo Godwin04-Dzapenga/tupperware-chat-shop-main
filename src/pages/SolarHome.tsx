@@ -71,10 +71,10 @@ const SolarHome = () => {
       .slice(0, 4);
   }, [categories, products]);
 
-  const topDeals = useMemo(
-    () => [...products].sort((a, b) => b.savings - a.savings).slice(0, 10),
-    [products]
-  );
+  const topDeals = useMemo(() => {
+    const discounted = products.filter((product) => product.savings > 0).sort((a, b) => b.savings - a.savings);
+    return (discounted.length ? discounted : products).slice(0, 10);
+  }, [products]);
 
   const featured = useMemo(() => {
     const featuredItems = products.filter((p) => p.is_featured);
@@ -140,7 +140,7 @@ const SolarHome = () => {
                 Shop All Products <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Link
-                to="/search?deals=1"
+                to="/search"
                 className="flex h-12 items-center rounded-lg bg-bb-red px-6 text-sm font-black text-white shadow-lg transition-colors hover:bg-bb-red-dark"
               >
                 Shop Top Deals
@@ -279,7 +279,7 @@ const SolarHome = () => {
         <div className="mb-4 flex items-end justify-between border-b border-slate-200 pb-3">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-black tracking-tight text-bb-ink sm:text-2xl">
-              <Flame className="h-5 w-5 fill-bb-red text-bb-red" /> Top Deals This Week
+              <Flame className="h-5 w-5 fill-bb-red text-bb-red" /> Featured Catalogue
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               Live catalogue offers and products currently available in Medusa.
@@ -289,7 +289,7 @@ const SolarHome = () => {
             to="/search?deals=1"
             className="hidden shrink-0 items-center gap-1 text-xs font-bold text-bb-blue hover:underline sm:flex"
           >
-            See all deals <ArrowRight className="h-3.5 w-3.5" />
+            See all products <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
