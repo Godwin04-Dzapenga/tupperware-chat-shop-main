@@ -326,10 +326,9 @@ export function getProductMedia(product: {
   else if (type.includes("light") || name.includes("floodlight") || name.includes("lamp")) matchedType = "lighting";
   else if (type.includes("cable") || name.includes("cable") || name.includes("wire") || name.includes("mc4")) matchedType = "accessory";
   else if (type.includes("electrical") || name.includes("protector") || name.includes("breaker")) matchedType = "electrical";
+  else if (type.includes("smart") || type.includes("meter") || name.includes("energy meter") || name.includes("smart meter")) matchedType = "smart_device";
   else if (
-    type.includes("smart") ||
     type.includes("monitor") ||
-    type.includes("meter") ||
     type.includes("laptop") ||
     type.includes("phone") ||
     type.includes("tablet") ||
