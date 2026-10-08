@@ -52,6 +52,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price?: number;
   category_id: string | null;
   image_url: string | null;
   video_url: string | null;
@@ -130,6 +131,12 @@ export default function ProductDetail() {
           name: data.title,
           description: data.description ?? null,
           price: loaded.length ? Math.min(...loaded.map((v) => v.price)) : 0,
+          original_price:
+            typeof metadata.original_price === "number"
+              ? metadata.original_price
+              : typeof metadata.original_price === "string"
+                ? Number(metadata.original_price)
+                : undefined,
           category_id: data.categories?.[0]?.id ?? null,
           image_url: firstImage || null,
           video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
@@ -282,11 +289,7 @@ export default function ProductDetail() {
   const wishlisted = product ? isWishlisted(product.id) : false;
 
   const media = product ? getProductMedia(product) : null;
-  const explicitOriginalPrice =
-    product?.id && typeof (product as Product & { original_price?: number }).original_price === "number"
-      ? (product as Product & { original_price?: number }).original_price
-      : price;
-  const originalPrice = explicitOriginalPrice;
+  const originalPrice = product?.original_price ?? price;
   const savings = Math.max(0, originalPrice - price);
 
   const specs = useMemo(() => {
