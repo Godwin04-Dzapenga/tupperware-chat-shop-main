@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductMedia } from "@/data/solarProducts";
 import { commerceProvider } from "@/lib/commerce";
-import { medusa } from "@/lib/medusa";
+import { medusa, type MedusaVariant } from "@/lib/medusa";
 
 export interface StoreProduct {
   id: string;
