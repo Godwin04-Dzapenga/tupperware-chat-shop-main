@@ -326,10 +326,36 @@ export function getProductMedia(product: {
   else if (type.includes("light") || name.includes("floodlight") || name.includes("lamp")) matchedType = "lighting";
   else if (type.includes("cable") || name.includes("cable") || name.includes("wire") || name.includes("mc4")) matchedType = "accessory";
   else if (type.includes("electrical") || name.includes("protector") || name.includes("breaker")) matchedType = "electrical";
-  else if (type.includes("smart") || name.includes("monitor") || name.includes("meter")) matchedType = "smart_device";
+  else if (
+    type.includes("smart") ||
+    type.includes("monitor") ||
+    type.includes("meter") ||
+    type.includes("laptop") ||
+    type.includes("phone") ||
+    type.includes("tablet") ||
+    type.includes("computer") ||
+    type.includes("electronics") ||
+    name.includes("laptop") ||
+    name.includes("phone") ||
+    name.includes("tablet") ||
+    name.includes("computer") ||
+    name.includes("monitor")
+  ) matchedType = "electronics";
   else if (type.includes("panel") || name.includes("panel") || name.includes("mono")) matchedType = "solar_panel";
 
-  const preset = PRODUCT_MEDIA_MAP[matchedType] || PRODUCT_MEDIA_MAP["solar_panel"];
+  const preset =
+    matchedType === "electronics"
+      ? {
+          ...PRODUCT_MEDIA_MAP["smart_device"],
+          imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
+          galleryImages: [
+            "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop&q=85",
+            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop&q=85",
+          ],
+          badge: "Electronics",
+        }
+      : PRODUCT_MEDIA_MAP[matchedType] || PRODUCT_MEDIA_MAP["solar_panel"];
 
   return {
     ...preset,
