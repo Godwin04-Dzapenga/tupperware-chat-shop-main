@@ -110,7 +110,10 @@ export default function ProductDetail() {
           product_id: data.id,
           name: variant.title,
           sku: variant.sku ?? null,
-          price: (variant.calculated_price?.calculated_amount ?? 0) / 100,
+          price:
+            variant.calculated_price?.calculated_amount != null
+              ? variant.calculated_price.calculated_amount / 100
+              : (variant.prices?.[0]?.amount ?? 0) / 100,
           stock_quantity: Number(variant.inventory_quantity ?? 0),
           image_url: null,
           attributes:
@@ -169,7 +172,13 @@ export default function ProductDetail() {
               name: item.title,
               description: item.description ?? null,
               price: itemVariants.length
-                ? Math.min(...itemVariants.map((v) => (v.calculated_price?.calculated_amount ?? 0) / 100))
+                ? Math.min(
+                    ...itemVariants.map((v) =>
+                      v.calculated_price?.calculated_amount != null
+                        ? v.calculated_price.calculated_amount / 100
+                        : (v.prices?.[0]?.amount ?? 0) / 100
+                    )
+                  )
                 : 0,
               category_id: item.categories?.[0]?.id ?? null,
               image_url: item.thumbnail || item.images?.[0]?.url || null,
@@ -273,8 +282,12 @@ export default function ProductDetail() {
   const wishlisted = product ? isWishlisted(product.id) : false;
 
   const media = product ? getProductMedia(product) : null;
-  const originalPrice = media ? (media.originalPrice > price ? media.originalPrice : Math.round(price * 1.18)) : price;
-  const savings = originalPrice - price;
+  const explicitOriginalPrice =
+    product?.id && typeof (product as Product & { original_price?: number }).original_price === "number"
+      ? (product as Product & { original_price?: number }).original_price
+      : price;
+  const originalPrice = explicitOriginalPrice;
+  const savings = Math.max(0, originalPrice - price);
 
   const specs = useMemo(() => {
     if (!product) return [];
