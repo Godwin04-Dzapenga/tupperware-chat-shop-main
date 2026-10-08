@@ -27,39 +27,11 @@ import { useProducts, useCategories } from "@/hooks/useCatalog";
 import { useStoreUI } from "@/hooks/useStoreUI";
 import { useStoreActions, WHATSAPP_NUMBER } from "@/hooks/useStoreActions";
 import { ProductCard } from "@/components/ProductCard";
-import { DealOfTheDay } from "@/components/DealOfTheDay";
 import { SystemSizer } from "@/components/SystemSizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SizerPreset, getProductMedia } from "@/data/solarProducts";
-
-const HERO_CATEGORIES = [
-  {
-    slug: "solar-panels",
-    icon: Sun,
-    title: "Solar Panels",
-    desc: "450W • 550W • 600W Tier-1",
-  },
-  {
-    slug: "inverters",
-    icon: Bolt,
-    title: "Hybrid Inverters",
-    desc: "3.2kVA • 5kVA • 8kVA 48V",
-  },
-  {
-    slug: "batteries",
-    icon: BatteryCharging,
-    title: "Lithium LiFePO4",
-    desc: "5.12kWh • 10.24kWh Storage",
-  },
-  {
-    slug: "solar-kits",
-    icon: ShieldCheck,
-    title: "Complete Kits",
-    desc: "Turnkey home & office kits",
-  },
-];
 
 const CATEGORY_ICONS: Record<string, typeof Sun> = {
   "solar-panels": Sun,
@@ -83,10 +55,25 @@ const SolarHome = () => {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
-  const topDeals = useMemo(
-    () => [...products].sort((a, b) => b.savings - a.savings).slice(0, 10),
-    [products]
-  );
+  const heroCategories = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach((product) => {
+      if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) || 0) + 1);
+    });
+
+    return categories
+      .map((category) => ({
+        ...category,
+        productCount: counts.get(category.id) || 0,
+      }))
+      .sort((a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name))
+      .slice(0, 4);
+  }, [categories, products]);
+
+  const topDeals = useMemo(() => {
+    const discounted = products.filter((product) => product.savings > 0).sort((a, b) => b.savings - a.savings);
+    return (discounted.length ? discounted : products).slice(0, 10);
+  }, [products]);
 
   const featured = useMemo(() => {
     const featuredItems = products.filter((p) => p.is_featured);
@@ -140,8 +127,8 @@ const SolarHome = () => {
             </h1>
 
             <p className="mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-white/85">
-              Shop tier-1 monocrystalline panels, Deye & Sunsynk hybrid inverters, long-life LiFePO4
-              batteries and complete turnkey packages with official warranty and Harare in-store pickup.
+              Shop laptops, phones, smart devices, solar equipment, electrical products and accessories
+              from the Tech Innovation catalogue, with live prices and availability from Medusa.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -149,10 +136,10 @@ const SolarHome = () => {
                 onClick={scrollToFeatured}
                 className="h-12 rounded-lg bg-bb-yellow hover:bg-bb-yellow-dark px-7 font-black text-black text-sm shadow-xl"
               >
-                Shop All Solar Gear <ArrowRight className="ml-2 h-4 w-4" />
+                Shop All Products <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Link
-                to="/search?deals=1"
+                to="/search"
                 className="flex h-12 items-center rounded-lg bg-bb-red px-6 text-sm font-black text-white shadow-lg transition-colors hover:bg-bb-red-dark"
               >
                 Shop Top Deals
@@ -174,22 +161,27 @@ const SolarHome = () => {
 
           {/* Hero Quick Category Cards */}
           <div className="grid grid-cols-2 gap-3 z-10">
-            {HERO_CATEGORIES.map(({ slug, icon: Icon, title, desc }) => (
+            {heroCategories.map((category) => {
+              const Icon = CATEGORY_ICONS[category.slug] || PackageCheck;
+              return (
               <Link
-                key={slug}
-                to={`/c/${slug}`}
+                key={category.id}
+                to={`/c/${category.slug}`}
                 className="group relative overflow-hidden rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-md hover:bg-white/20 transition-all shadow-lg"
               >
                 <Icon className="h-6 w-6 text-bb-yellow mb-2" />
                 <p className="text-sm font-black text-white group-hover:text-bb-yellow transition-colors">
-                  {title}
+                  {category.name}
                 </p>
-                <p className="text-[11px] text-white/70 mt-0.5">{desc}</p>
+                <p className="text-[11px] text-white/70 mt-0.5">
+                  {category.productCount} {category.productCount === 1 ? "product" : "products"} available
+                </p>
                 <span className="text-[10px] font-bold text-bb-yellow mt-3 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   Explore <ArrowRight className="h-3 w-3" />
                 </span>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -286,17 +278,17 @@ const SolarHome = () => {
         <div className="mb-4 flex items-end justify-between border-b border-slate-200 pb-3">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-black tracking-tight text-bb-ink sm:text-2xl">
-              <Flame className="h-5 w-5 fill-bb-red text-bb-red" /> Top Deals This Week
+              <Flame className="h-5 w-5 fill-bb-red text-bb-red" /> Featured Catalogue
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Biggest savings on tier-1 solar hardware — while stock lasts.
+              Live catalogue offers and products currently available in Medusa.
             </p>
           </div>
           <Link
-            to="/search?deals=1"
+            to="/search"
             className="hidden shrink-0 items-center gap-1 text-xs font-bold text-bb-blue hover:underline sm:flex"
           >
-            See all deals <ArrowRight className="h-3.5 w-3.5" />
+            See all products <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -347,15 +339,6 @@ const SolarHome = () => {
         </div>
       </section>
 
-      {/* ── 4. Deal of the Day ── */}
-      <div className="store-shell">
-        <DealOfTheDay
-          onAddToCart={addProduct}
-          onOrderViaWhatsApp={orderViaWhatsApp}
-          onSelectProduct={(id) => navigate(`/product/${id}`)}
-        />
-      </div>
-
       {/* ── 5. Shop by Department ── */}
       <section className="store-shell py-8">
         <div className="mb-4 border-b border-slate-200 pb-3">
@@ -404,14 +387,14 @@ const SolarHome = () => {
               Featured Catalog
             </span>
             <h2 className="mt-1 text-2xl sm:text-3xl font-black text-bb-ink tracking-tight">
-              Solar, Backup Power & Electronics
+              Featured Products
             </h2>
             <p className="mt-1 text-xs font-bold text-slate-500">
               {isLoading ? "Loading…" : `${products.length} products available`}
             </p>
           </div>
           <Link
-            to="/search?q=solar"
+            to="/search"
             className="shrink-0 text-xs font-bold text-bb-blue hover:underline"
           >
             Browse the full catalog <ArrowRight className="ml-1 inline h-3.5 w-3.5" />

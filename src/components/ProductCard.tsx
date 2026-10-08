@@ -11,6 +11,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price?: number;
   category_id: string | null;
   image_url: string | null;
   video_url?: string | null;
@@ -53,11 +54,11 @@ export const ProductCard = ({
   const stock = product.stock_quantity ?? 999;
   const outOfStock = stock === 0;
   const lowStock = stock > 0 && stock <= 5;
-  const rating = product.avg_rating || 4.9;
-  const reviewCount = product.review_count || 14;
+  const rating = product.avg_rating ?? 0;
+  const reviewCount = product.review_count ?? 0;
 
-  const originalPrice = media.originalPrice > product.price ? media.originalPrice : Math.round(product.price * 1.18);
-  const savings = originalPrice - product.price;
+  const originalPrice = product.original_price ?? product.price;
+  const savings = Math.max(0, originalPrice - product.price);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("input")) return;

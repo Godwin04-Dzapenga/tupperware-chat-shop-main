@@ -398,7 +398,7 @@ export const StoreHeader = () => {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search solar panels, inverters, batteries..."
+                  placeholder="Search laptops, phones, solar equipment and more..."
                   className="h-10 rounded-l-md rounded-r-none bg-white text-slate-900 text-xs focus-visible:ring-0"
                 />
                 <button type="submit" className="h-10 px-3 bg-bb-yellow text-black font-bold rounded-r-md">
@@ -439,7 +439,7 @@ export const StoreHeader = () => {
 
             <span className="h-4 w-px bg-slate-200 mx-1" />
 
-            {categories.slice(0, 6).map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/c/${cat.slug}`}
@@ -486,7 +486,7 @@ export const StoreHeader = () => {
 
             <div className="p-4 overflow-y-auto flex-1 space-y-1">
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 py-1">
-                Solar & Power Equipment
+                Product Departments
               </div>
 
               {categories.map((cat, index) => {

@@ -52,6 +52,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price?: number;
   category_id: string | null;
   image_url: string | null;
   video_url: string | null;
@@ -85,8 +86,8 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [avgRating, setAvgRating] = useState(4.9);
-  const [reviewCount, setReviewCount] = useState(16);
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [tab, setTab] = useState<TabId>("overview");
   const [bundleAdded, setBundleAdded] = useState(false);
 
@@ -110,7 +111,10 @@ export default function ProductDetail() {
           product_id: data.id,
           name: variant.title,
           sku: variant.sku ?? null,
-          price: (variant.calculated_price?.calculated_amount ?? 0) / 100,
+          price:
+            variant.calculated_price?.calculated_amount != null
+              ? variant.calculated_price.calculated_amount / 100
+              : (variant.prices?.[0]?.amount ?? 0) / 100,
           stock_quantity: Number(variant.inventory_quantity ?? 0),
           image_url: null,
           attributes:
@@ -127,6 +131,12 @@ export default function ProductDetail() {
           name: data.title,
           description: data.description ?? null,
           price: loaded.length ? Math.min(...loaded.map((v) => v.price)) : 0,
+          original_price:
+            typeof metadata.original_price === "number"
+              ? metadata.original_price
+              : typeof metadata.original_price === "string"
+                ? Number(metadata.original_price)
+                : undefined,
           category_id: data.categories?.[0]?.id ?? null,
           image_url: firstImage || null,
           video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
@@ -147,6 +157,8 @@ export default function ProductDetail() {
         };
 
         setProduct(mapped);
+        setAvgRating(typeof metadata.avg_rating === "number" ? metadata.avg_rating : Number(metadata.avg_rating) || 0);
+        setReviewCount(typeof metadata.review_count === "number" ? metadata.review_count : Number(metadata.review_count) || 0);
         setVariants(loaded);
         setSelectedVariantId(loaded[0]?.id || null);
         setActiveImage(firstImage);
@@ -169,7 +181,13 @@ export default function ProductDetail() {
               name: item.title,
               description: item.description ?? null,
               price: itemVariants.length
-                ? Math.min(...itemVariants.map((v) => (v.calculated_price?.calculated_amount ?? 0) / 100))
+                ? Math.min(
+                    ...itemVariants.map((v) =>
+                      v.calculated_price?.calculated_amount != null
+                        ? v.calculated_price.calculated_amount / 100
+                        : (v.prices?.[0]?.amount ?? 0) / 100
+                    )
+                  )
                 : 0,
               category_id: item.categories?.[0]?.id ?? null,
               image_url: item.thumbnail || item.images?.[0]?.url || null,
@@ -273,8 +291,8 @@ export default function ProductDetail() {
   const wishlisted = product ? isWishlisted(product.id) : false;
 
   const media = product ? getProductMedia(product) : null;
-  const originalPrice = media ? (media.originalPrice > price ? media.originalPrice : Math.round(price * 1.18)) : price;
-  const savings = originalPrice - price;
+  const originalPrice = product?.original_price ?? price;
+  const savings = Math.max(0, originalPrice - price);
 
   const specs = useMemo(() => {
     if (!product) return [];

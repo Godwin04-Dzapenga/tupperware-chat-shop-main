@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductMedia } from "@/data/solarProducts";
 import { commerceProvider } from "@/lib/commerce";
-import { medusa } from "@/lib/medusa";
+import { medusa, type MedusaVariant } from "@/lib/medusa";
 
 export interface StoreProduct {
   id: string;
@@ -71,6 +71,20 @@ function toMajorCurrencyAmount(amount: number | undefined) {
   return amount / 100;
 }
 
+function variantPriceInMajorUnits(variant: MedusaVariant) {
+  const calculated = variant.calculated_price?.calculated_amount;
+  if (calculated !== undefined && Number.isFinite(Number(calculated))) {
+    return toMajorCurrencyAmount(Number(calculated));
+  }
+
+  const fallback = variant.prices?.[0]?.amount;
+  if (fallback !== undefined && Number.isFinite(Number(fallback))) {
+    return toMajorCurrencyAmount(Number(fallback));
+  }
+
+  return 0;
+}
+
 async function fetchSupabaseCategories(): Promise<StoreCategory[]> {
   const { data, error } = await supabase
     .from("categories")
@@ -134,7 +148,7 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
       description: product.description,
       price,
       original_price: originalPrice,
-      savings: originalPrice - price,
+      savings: Math.max(0, originalPrice - price),
       category_id: product.category_id,
       image_url: media.imageUrl,
       video_url: product.video_url,
@@ -184,10 +198,12 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
       const metadata = product.metadata || {};
       const variants = product.variants || [];
       const prices = variants
-        .map((variant) => toMajorCurrencyAmount(variant.calculated_price?.calculated_amount))
-        .filter((price) => price > 0);
+        .map(variantPriceInMajorUnits)
+        .filter((value) => value > 0);
       const price = prices.length ? Math.min(...prices) : 0;
-      const originalPrice = metadataNumber(metadata, "original_price") ?? Math.round(price * 1.18);
+      // Only show a comparison price when the catalogue explicitly supplies one.
+      // Never invent a discount in the storefront.
+      const originalPrice = metadataNumber(metadata, "original_price") ?? price;
       const hasUnlimitedVariant = variants.some((variant) => variant.manage_inventory === false);
       const stockQuantity = hasUnlimitedVariant
         ? 999999
