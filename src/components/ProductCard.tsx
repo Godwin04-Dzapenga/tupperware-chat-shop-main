@@ -56,8 +56,8 @@ export const ProductCard = ({
   const rating = product.avg_rating || 4.9;
   const reviewCount = product.review_count || 14;
 
-  const originalPrice = media.originalPrice > product.price ? media.originalPrice : Math.round(product.price * 1.18);
-  const savings = originalPrice - product.price;
+  const originalPrice = product.original_price ?? product.price;
+  const savings = Math.max(0, originalPrice - product.price);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("input")) return;
