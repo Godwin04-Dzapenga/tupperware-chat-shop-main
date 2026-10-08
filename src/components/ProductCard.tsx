@@ -11,6 +11,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price?: number;
   category_id: string | null;
   image_url: string | null;
   video_url?: string | null;
