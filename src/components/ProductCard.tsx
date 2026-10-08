@@ -54,8 +54,8 @@ export const ProductCard = ({
   const stock = product.stock_quantity ?? 999;
   const outOfStock = stock === 0;
   const lowStock = stock > 0 && stock <= 5;
-  const rating = product.avg_rating || 4.9;
-  const reviewCount = product.review_count || 14;
+  const rating = product.avg_rating ?? 0;
+  const reviewCount = product.review_count ?? 0;
 
   const originalPrice = product.original_price ?? product.price;
   const savings = Math.max(0, originalPrice - product.price);
