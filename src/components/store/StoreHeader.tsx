@@ -425,18 +425,11 @@ export const StoreHeader = () => {
             </Link>
 
             <Link
-              to="/search"
+              to="/#brands"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-bb-blue hover:bg-blue-100 transition-colors border border-blue-200 font-extrabold"
             >
               <Tag className="h-3.5 w-3.5" />
-              <span>Shop All Products</span>
-            </Link>
-
-            <Link
-              to="/#how-it-works"
-              className="px-3 py-1.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 hover:text-bb-blue hover:border-blue-200 transition-colors"
-            >
-              How to Shop
+              <span>Shop by Brand</span>
             </Link>
 
             <span className="h-4 w-px bg-slate-200 mx-1" />
@@ -453,12 +446,6 @@ export const StoreHeader = () => {
               </Link>
             ))}
 
-            <Link
-              to="/#why-us"
-              className="px-3 py-1.5 rounded-md hover:text-bb-blue transition-colors ml-auto text-slate-500 hover:text-slate-900"
-            >
-              Why Tech Innovation
-            </Link>
             <Link
               to="/about"
               className="px-3 py-1.5 rounded-md hover:text-bb-blue transition-colors text-slate-500 hover:text-slate-900"
