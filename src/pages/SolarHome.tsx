@@ -1,615 +1,217 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  BatteryCharging,
-  Bolt,
+  Cable,
+  Camera,
   CheckCircle2,
-  Flame,
-  Lightbulb,
-  MapPin,
-  PackageCheck,
-  Phone,
-  Mail,
-  Plug,
-  Send,
-  ShieldCheck,
-  Star,
-  Sun,
-  Truck,
-  Wrench,
-  Zap,
   Cpu,
+  Gamepad2,
+  Headphones,
+  Laptop,
+  PackageSearch,
+  Smartphone,
+  Tv,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useCart } from "@/hooks/useCart";
 import { useProducts, useCategories } from "@/hooks/useCatalog";
-import { useStoreUI } from "@/hooks/useStoreUI";
-import { useStoreActions, WHATSAPP_NUMBER } from "@/hooks/useStoreActions";
 import { ProductCard } from "@/components/ProductCard";
-import { SystemSizer } from "@/components/SystemSizer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { SizerPreset, getProductMedia } from "@/data/solarProducts";
+import { useStoreUI } from "@/hooks/useStoreUI";
+import { useStoreActions } from "@/hooks/useStoreActions";
 
-const CATEGORY_ICONS: Record<string, typeof Sun> = {
-  "solar-panels": Sun,
-  inverters: Zap,
-  batteries: BatteryCharging,
-  "solar-kits": ShieldCheck,
-  lighting: Lightbulb,
-  electrical: Plug,
-  electronics: Cpu,
-  "solar-accessories": Wrench,
+const CATEGORY_ICONS: Record<string, typeof Laptop> = {
+  "computers-laptops": Laptop,
+  "phones-tablets": Smartphone,
+  "tv-home-theatre": Tv,
+  "audio-headphones": Headphones,
+  gaming: Gamepad2,
+  "cameras-printers": Camera,
+  accessories: Cable,
+  "smart-home": Cpu,
+  "electronics-gadgets": PackageSearch,
 };
 
-const SolarHome = () => {
-  const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const { data: products = [], isLoading } = useProducts();
-  const { data: categories = [] } = useCategories();
+const Home = () => {
+  const { data: products = [], isLoading: productsLoading, isError: productsError } = useProducts();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { compareProducts, toggleCompare, setQuickViewProduct } = useStoreUI();
   const { addProduct, orderViaWhatsApp } = useStoreActions();
 
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+  const featured = useMemo(() => {
+    const marked = products.filter((product) => product.is_featured);
+    return (marked.length ? marked : products).slice(0, 8);
+  }, [products]);
 
-  const heroCategories = useMemo(() => {
+  const brands = useMemo(() => {
     const counts = new Map<string, number>();
     products.forEach((product) => {
-      if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) || 0) + 1);
+      if (product.brand && product.brand !== "Other") counts.set(product.brand, (counts.get(product.brand) || 0) + 1);
     });
-
-    return categories
-      .map((category) => ({
-        ...category,
-        productCount: counts.get(category.id) || 0,
-      }))
-      .sort((a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name))
-      .slice(0, 4);
-  }, [categories, products]);
-
-  const topDeals = useMemo(() => {
-    const discounted = products.filter((product) => product.savings > 0).sort((a, b) => b.savings - a.savings);
-    return (discounted.length ? discounted : products).slice(0, 10);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
   }, [products]);
-
-  const featured = useMemo(() => {
-    const featuredItems = products.filter((p) => p.is_featured);
-    return (featuredItems.length ? featuredItems : products).slice(0, 8);
-  }, [products]);
-
-  const scrollToFeatured = () => {
-    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const handleAddSizerPreset = (preset: SizerPreset) => {
-    addToCart({
-      id: `preset-${preset.id}`,
-      name: `${preset.title} Package`,
-      price: preset.estimatedPrice,
-      image_url:
-        preset.id === "family"
-          ? "https://images.unsplash.com/photo-1545208942-e1c9c916524b?w=800&h=800&fit=crop&q=85"
-          : "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 5,
-    });
-    toast.success(`${preset.title} complete solar kit added to cart!`);
-  };
-
-  const handleConsultWhatsApp = (preset: SizerPreset) => {
-    const text = encodeURIComponent(
-      `Hello Tech Innovation Engineer,\n\nI would like a quotation for the *${preset.title} Package* ($${preset.estimatedPrice.toLocaleString()}).\n\nIncluded Components:\n• Inverter: ${preset.recommendedInverter}\n• Battery: ${preset.recommendedBattery}\n• Solar Panels: ${preset.recommendedPanels}\n\nPlease advise on site inspection and installation schedule.`
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank");
-  };
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail) return;
-    setNewsletterSubmitted(true);
-    toast.success("Thank you for subscribing! Your $10 coupon code is: POWER10");
-  };
 
   return (
-    <div>
-      {/* ── 1. Hero Promo Banner ── */}
-      <section className="bg-gradient-to-r from-bb-blue-ink via-bb-blue-darker to-bb-blue text-white overflow-hidden relative">
-        <div className="store-shell py-12 lg:py-16 grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="max-w-2xl z-10">
-            <div className="inline-flex items-center gap-2 rounded-full bg-bb-yellow px-3.5 py-1 text-xs font-black uppercase tracking-wider text-bb-ink shadow-sm">
-              <Flame className="h-4 w-4 fill-bb-ink" /> Zimbabwe National Power Sale
+    <main className="min-h-screen bg-slate-50 pb-12">
+      <section className="bg-bb-blue text-white">
+        <div className="store-shell grid gap-8 py-10 sm:py-14 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold">
+              <CheckCircle2 className="h-4 w-4 text-bb-yellow" />
+              Tech Innovation online store
             </div>
-
-            <h1 className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight">
-              Quality solar systems & electronics designed to last.
+            <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+              The tech you need. <span className="text-bb-yellow">All in one place.</span>
             </h1>
-
-            <p className="mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-white/85">
-              Shop laptops, phones, smart devices, solar equipment, electrical products and accessories
-              from the Tech Innovation catalogue, with live prices and availability from Medusa.
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/80 sm:text-base">
+              Explore laptops, phones, smart devices and accessories from the products currently available in our catalogue.
             </p>
-
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button
-                onClick={scrollToFeatured}
-                className="h-12 rounded-lg bg-bb-yellow hover:bg-bb-yellow-dark px-7 font-black text-black text-sm shadow-xl"
-              >
-                Shop All Products <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Link
-                to="/search"
-                className="flex h-12 items-center rounded-lg bg-bb-red px-6 text-sm font-black text-white shadow-lg transition-colors hover:bg-bb-red-dark"
-              >
-                Shop Top Deals
+              <Link to="/search" className="inline-flex items-center gap-2 rounded-md bg-bb-yellow px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-yellow-300">
+                Shop all products <ArrowRight className="h-4 w-4" />
               </Link>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-white/80">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-bb-yellow" /> Genuine Tier-1 Hardware
-              </span>
-              <span className="flex items-center gap-2">
-                <Wrench className="h-4 w-4 text-bb-yellow" /> Professional Installation
-              </span>
-              <span className="flex items-center gap-2">
-                <PackageCheck className="h-4 w-4 text-bb-yellow" /> Harare Showroom Pickup
-              </span>
+              <Link to="/search?q=laptop" className="inline-flex items-center gap-2 rounded-md border border-white/30 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10">
+                Explore laptops
+              </Link>
             </div>
           </div>
+          <div className="hidden grid-cols-2 gap-3 sm:grid lg:grid">
+            <div className="rounded-xl border border-white/15 bg-white/10 p-5">
+              <Laptop className="mb-5 h-8 w-8 text-bb-yellow" />
+              <p className="text-lg font-extrabold">Computers</p>
+              <p className="mt-1 text-xs text-white/70">Laptops and everyday essentials</p>
+            </div>
+            <div className="mt-7 rounded-xl border border-white/15 bg-white/10 p-5">
+              <Smartphone className="mb-5 h-8 w-8 text-bb-yellow" />
+              <p className="text-lg font-extrabold">Smart devices</p>
+              <p className="mt-1 text-xs text-white/70">Devices for work and life</p>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/10 p-5">
+              <Headphones className="mb-5 h-8 w-8 text-bb-yellow" />
+              <p className="text-lg font-extrabold">Audio</p>
+              <p className="mt-1 text-xs text-white/70">Sound and accessories</p>
+            </div>
+            <div className="mt-7 rounded-xl border border-white/15 bg-white/10 p-5">
+              <Cpu className="mb-5 h-8 w-8 text-bb-yellow" />
+              <p className="text-lg font-extrabold">Electronics</p>
+              <p className="mt-1 text-xs text-white/70">Useful tech for every day</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          {/* Hero Quick Category Cards */}
-          <div className="grid grid-cols-2 gap-3 z-10">
-            {heroCategories.map((category) => {
-              const Icon = CATEGORY_ICONS[category.slug] || PackageCheck;
+      <section className="store-shell pt-8 sm:pt-10">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-bb-blue">Shop by department</p>
+            <h2 className="mt-1 text-xl font-black text-bb-ink sm:text-2xl">Find what you need</h2>
+          </div>
+          <Link to="/search" className="hidden items-center gap-1 text-sm font-bold text-bb-blue hover:underline sm:inline-flex">
+            All products <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {categoriesLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-xl border bg-white" />)}
+          </div>
+        ) : categories.length ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.map((category) => {
+              const Icon = CATEGORY_ICONS[category.slug] || Cpu;
+              const count = products.filter((product) => product.category_id === category.id).length;
               return (
-              <Link
-                key={category.id}
-                to={`/c/${category.slug}`}
-                className="group relative overflow-hidden rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-md hover:bg-white/20 transition-all shadow-lg"
-              >
-                <Icon className="h-6 w-6 text-bb-yellow mb-2" />
-                <p className="text-sm font-black text-white group-hover:text-bb-yellow transition-colors">
-                  {category.name}
-                </p>
-                <p className="text-[11px] text-white/70 mt-0.5">
-                  {category.productCount} {category.productCount === 1 ? "product" : "products"} available
-                </p>
-                <span className="text-[10px] font-bold text-bb-yellow mt-3 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Explore <ArrowRight className="h-3 w-3" />
-                </span>
-              </Link>
+                <Link key={category.id} to={`/c/${category.slug}`} className="group flex min-h-28 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-bb-blue/40 hover:shadow-md">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-bb-blue transition group-hover:bg-bb-blue group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-extrabold text-bb-ink">{category.name}</span>
+                    <span className="mt-1 block text-xs text-slate-500">{count} {count === 1 ? "product" : "products"}</span>
+                  </span>
+                </Link>
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* ── 2. Value Props Bar ── */}
-      <section className="bg-white border-b border-slate-200">
-        <div className="store-shell py-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-          {[
-            {
-              icon: Truck,
-              bg: "bg-blue-50",
-              color: "text-bb-blue",
-              title: "Harare & Nationwide Delivery",
-              desc: "Free delivery on orders over $50",
-            },
-            {
-              icon: MapPin,
-              bg: "bg-amber-50",
-              color: "text-amber-700",
-              title: "Showroom Pickup in 2 Hours",
-              desc: "Inspect and test before leaving",
-            },
-            {
-              icon: ShieldCheck,
-              bg: "bg-emerald-50",
-              color: "text-emerald-700",
-              title: "Official 1–5 Year Warranty",
-              desc: "Direct manufacturer backed",
-            },
-            {
-              icon: Wrench,
-              bg: "bg-purple-50",
-              color: "text-purple-700",
-              title: "Expert Engineering Support",
-              desc: "WhatsApp & on-site technicians",
-            },
-          ].map(({ icon: Icon, bg, color, title, desc }) => (
-            <div key={title} className="flex items-center gap-3">
-              <div className={`h-9 w-9 rounded-lg ${bg} ${color} flex items-center justify-center shrink-0`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">{title}</p>
-                <p className="text-slate-500 text-[11px]">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 3. How Shopping Works ── */}
-      <section id="how-it-works" className="store-shell py-8 scroll-mt-32">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">New here?</span>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-bb-ink">Shopping is simple</h2>
-              <p className="mt-1 max-w-2xl text-sm text-slate-500">
-                Choose equipment, add it to your cart, enter where you want it delivered, then choose how you want to pay.
-              </p>
-            </div>
-            <Link
-              to="/#system-sizer"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-bb-blue hover:underline"
-            >
-              Not sure what you need? Use System Finder <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-4">
-            {[
-              { n: "01", icon: Sun, title: "Find your equipment", text: "Browse by department or search for a panel, inverter, battery, kit or accessory." },
-              { n: "02", icon: PackageCheck, title: "Choose your option", text: "Open the product page to check price, specifications, warranty and available variants." },
-              { n: "03", icon: Truck, title: "Checkout & delivery", text: "Add your delivery details. Your order total and shipping option are shown before payment." },
-              { n: "04", icon: CheckCircle2, title: "Pay & confirm", text: "Use EcoCash, OneMoney or cash on delivery. We then confirm the order and next steps." },
-            ].map(({ n, icon: Icon, title, text }) => (
-              <div key={n} className="relative rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bb-blue text-white">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="text-xs font-black text-slate-300">{n}</span>
-                </div>
-                <h3 className="mt-4 text-sm font-black text-bb-ink">{title}</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-500">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. Top Deals Horizontal Row ── */}
-      <section className="store-shell py-8">
-        <div className="mb-4 flex items-end justify-between border-b border-slate-200 pb-3">
-          <div>
-            <h2 className="flex items-center gap-2 text-xl font-black tracking-tight text-bb-ink sm:text-2xl">
-              <Flame className="h-5 w-5 fill-bb-red text-bb-red" /> Featured Catalogue
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Live catalogue offers and products currently available in Medusa.
-            </p>
-          </div>
-          <Link
-            to="/search"
-            className="hidden shrink-0 items-center gap-1 text-xs font-bold text-bb-blue hover:underline sm:flex"
-          >
-            See all products <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        <div className="-mx-2 flex snap-x gap-3 overflow-x-auto px-2 pb-2 scrollbar-none">
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-44 shrink-0 animate-pulse rounded-xl border border-slate-200 bg-white p-3 snap-start"
-                >
-                  <div className="aspect-square rounded-lg bg-slate-100" />
-                  <div className="mt-3 h-3 w-1/2 rounded bg-slate-100" />
-                  <div className="mt-2 h-4 w-4/5 rounded bg-slate-100" />
-                  <div className="mt-2 h-5 w-1/3 rounded bg-slate-100" />
-                </div>
-              ))
-            : topDeals.map((product) => (
-                <Link
-                  key={product.id}
-                  to={`/product/${product.id}`}
-                  className="group w-44 shrink-0 rounded-xl border border-slate-200 bg-white p-3 snap-start transition-all hover:border-bb-blue/40 hover:shadow-lg"
-                >
-                  <div className="aspect-square overflow-hidden rounded-lg bg-slate-50">
-                    <img
-                      src={product.image_url || getProductMedia(product).imageUrl}
-                      alt={product.name}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  {product.savings > 0 && (
-                    <p className="mt-2 text-xs font-black text-bb-red">Save ${product.savings}</p>
-                  )}
-                  <p className="mt-1 line-clamp-2 text-xs font-bold leading-snug text-bb-ink group-hover:text-bb-blue">
-                    {product.name}
-                  </p>
-                  <div className="mt-1.5 flex items-baseline gap-1.5">
-                    <span className="text-base font-black text-bb-ink">${product.price.toFixed(2)}</span>
-                    <span className="text-[10px] text-slate-400 line-through">
-                      ${product.original_price.toFixed(2)}
-                    </span>
-                  </div>
-                  <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-700">
-                    <CheckCircle2 className="h-3 w-3" /> Pickup today
-                  </p>
-                </Link>
-              ))}
-        </div>
-      </section>
-
-      {/* ── 5. Shop by Department ── */}
-      <section className="store-shell py-8">
-        <div className="mb-4 border-b border-slate-200 pb-3">
-          <h2 className="text-xl font-black tracking-tight text-bb-ink sm:text-2xl">
-            Shop by Department
-          </h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Everything for backup power, solar and smart living — in one place.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {categories.map((category) => {
-            const Icon = CATEGORY_ICONS[category.slug] || Plug;
-            return (
-              <Link
-                key={category.id}
-                to={`/c/${category.slug}`}
-                className="group flex flex-col items-center rounded-xl border border-slate-200 bg-white p-5 text-center transition-all hover:border-bb-blue/40 hover:shadow-md"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-bb-blue transition-colors group-hover:bg-bb-blue group-hover:text-white">
-                  <Icon className="h-7 w-7" />
-                </div>
-                <p className="mt-3 text-sm font-bold text-bb-ink group-hover:text-bb-blue">
-                  {category.name}
-                </p>
-                <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 group-hover:text-bb-blue">
-                  Shop now <ArrowRight className="h-3 w-3" />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── 6. Solar System Sizer (Solution Finder) ── */}
-      <div className="store-shell">
-        <SystemSizer onAddPresetToCart={handleAddSizerPreset} onConsultWhatsApp={handleConsultWhatsApp} />
-      </div>
-
-      {/* ── 7. Featured Products Grid ── */}
-      <section id="products" className="store-shell py-8 scroll-mt-32">
-        <div className="mb-6 flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">
-              Featured Catalog
-            </span>
-            <h2 className="mt-1 text-2xl sm:text-3xl font-black text-bb-ink tracking-tight">
-              Featured Products
-            </h2>
-            <p className="mt-1 text-xs font-bold text-slate-500">
-              {isLoading ? "Loading…" : `${products.length} products available`}
-            </p>
-          </div>
-          <Link
-            to="/search"
-            className="shrink-0 text-xs font-bold text-bb-blue hover:underline"
-          >
-            Browse the full catalog <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-3.5">
-                <div className="aspect-square rounded-lg bg-slate-100" />
-                <div className="mt-3 h-3 w-1/3 rounded bg-slate-100" />
-                <div className="mt-2 h-4 w-4/5 rounded bg-slate-100" />
-                <div className="mt-2 h-5 w-1/2 rounded bg-slate-100" />
-                <div className="mt-4 h-10 w-full rounded-md bg-slate-100" />
-              </div>
-            ))}
-          </div>
         ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+            <PackageSearch className="mx-auto h-8 w-8 text-slate-400" />
+            <p className="mt-3 font-bold text-bb-ink">Your departments will appear here</p>
+            <p className="mt-1 text-sm text-slate-500">Add products in Medusa and they will be grouped automatically.</p>
+          </div>
+        )}
+      </section>
+
+      {brands.length > 0 && (
+        <section className="store-shell pt-9">
+          <div className="mb-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-bb-blue">Shop by brand</p>
+            <h2 className="mt-1 text-xl font-black text-bb-ink sm:text-2xl">Brands in our catalogue</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {brands.map(([brand, count]) => (
+              <Link key={brand} to={`/search?q=${encodeURIComponent(brand)}`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-bb-blue hover:text-bb-blue">
+                {brand}<span className="text-xs font-medium text-slate-400">{count}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section id="products" className="store-shell pt-10">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-bb-blue">From our live catalogue</p>
+            <h2 className="mt-1 text-xl font-black text-bb-ink sm:text-2xl">Featured products</h2>
+            <p className="mt-1 text-sm text-slate-500">Products and prices are loaded from Medusa.</p>
+          </div>
+          <Link to="/search" className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-bb-blue hover:underline">
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {productsError ? (
+          <div className="rounded-xl border border-red-200 bg-white p-8 text-center">
+            <p className="font-bold text-bb-ink">We couldn't load the catalogue.</p>
+            <p className="mt-1 text-sm text-slate-500">Check that Medusa is running and the storefront publishable key is configured.</p>
+          </div>
+        ) : productsLoading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-3"><div className="aspect-square rounded-lg bg-slate-100" /><div className="mt-3 h-4 rounded bg-slate-100" /><div className="mt-2 h-5 w-1/3 rounded bg-slate-100" /></div>)}
+          </div>
+        ) : featured.length ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
             {featured.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 onOrder={orderViaWhatsApp}
-                onAddToCart={addProduct}
                 onQuickView={setQuickViewProduct}
-                isCompared={compareProducts.some((cp) => cp.id === product.id)}
+                onAddToCart={addProduct}
+                isCompared={compareProducts.some((item) => item.id === product.id)}
                 onToggleCompare={toggleCompare}
               />
             ))}
           </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <PackageSearch className="mx-auto h-9 w-9 text-slate-400" />
+            <p className="mt-3 font-bold text-bb-ink">No products are available yet</p>
+            <p className="mt-1 text-sm text-slate-500">Publish your products in Medusa and they will appear here automatically.</p>
+          </div>
         )}
       </section>
 
-      {/* ── 8. Why Shop With Tech Innovation ── */}
-      <section className="bg-white border-t border-slate-200 py-16">
-        <div className="store-shell">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">
-              Total Customer Confidence
-            </span>
-            <h2 className="text-3xl font-black text-bb-ink mt-1">
-              Why Thousands Choose Tech Innovation
-            </h2>
-            <p className="text-sm text-slate-600 mt-2">
-              We combine genuine tier-1 solar products with experienced local technical engineers to
-              deliver reliable, long-term power solutions.
-            </p>
+      <section className="store-shell pt-10">
+        <div className="flex flex-col gap-3 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div>
+            <h2 className="text-lg font-black text-bb-ink">Looking for a specific model?</h2>
+            <p className="mt-1 text-sm text-slate-500">Search by brand, model name or product type.</p>
           </div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: ShieldCheck,
-                title: "Genuine Manufacturer Warranty",
-                desc: "All panels come with 12–25 year performance warranties, and inverters & batteries come with 3–5 year replacement coverage.",
-              },
-              {
-                icon: Wrench,
-                title: "Certified Engineering & COC",
-                desc: "Our licensed electrical engineers provide full site surveys, wiring design, surge protection, and compliant commissioning.",
-              },
-              {
-                icon: MapPin,
-                title: "Harare Showroom & Warehouse",
-                desc: "Visit our physical showroom to inspect, test, and collect your hardware in person with direct engineer assistance.",
-              },
-              {
-                icon: Truck,
-                title: "Nationwide Zimbabwe Freight",
-                desc: "Fast, insured freight dispatch to Bulawayo, Mutare, Gweru, Masvingo, Victoria Falls and all rural farming districts.",
-              },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div
-                key={title}
-                className="rounded-xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="h-12 w-12 rounded-xl bg-bb-blue/10 text-bb-blue flex items-center justify-center mb-4">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h4 className="text-base font-black text-bb-ink">{title}</h4>
-                <p className="text-xs leading-relaxed text-slate-600 mt-2">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 9. Verified Customer Reviews ── */}
-      <section className="bg-slate-50 border-t border-slate-200 py-16">
-        <div className="store-shell">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
-            <div>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">
-                Real Customer Experiences
-              </span>
-              <h2 className="text-3xl font-black text-bb-ink mt-1">
-                Trusted Across Homes & Businesses
-              </h2>
-            </div>
-            <div className="mt-3 md:mt-0 flex items-center gap-2 text-sm font-bold text-slate-700">
-              <div className="flex items-center text-amber-400">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className="h-4 w-4 fill-amber-400" />
-                ))}
-              </div>
-              <span>4.9 / 5.0 Average Rating (180+ Zimbabwe Reviews)</span>
-            </div>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                name: "Tinashe Moyo",
-                location: "Borrowdale, Harare",
-                system: "5kVA Deye + 5.12kWh Lithium Battery + 6x 550W Panels",
-                comment:
-                  "Installed two months ago. We haven't experienced a single second of blackout since. Inverter powers the borehole pump and all household fridges seamlessly.",
-              },
-              {
-                name: "Dr. Farai Chikwanha",
-                location: "Bulawayo Medical Centre",
-                system: "8kVA Hybrid System + 10.24kWh Battery Bank",
-                comment:
-                  "Tech Innovation delivered the hardware promptly to Bulawayo. The build quality and genuine warranty paperwork gave us full confidence for our clinic.",
-              },
-              {
-                name: "Grace Mutasa",
-                location: "Gweru Commercial Farm",
-                system: "Solar Borehole Pumping Inverter & 3.2kVA Starter Kit",
-                comment:
-                  "The solar system sizer tool was spot on. Engineer assisted on WhatsApp and installation was done cleanly. Excellent after-sales service.",
-              },
-            ].map(({ name, location, system, comment }) => (
-              <div
-                key={name}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="h-4 w-4 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-xs font-bold text-bb-blue uppercase tracking-wide">{system}</p>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-700 italic">"{comment}"</p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <div>
-                    <p className="font-bold text-bb-ink">{name}</p>
-                    <p className="text-[11px] text-slate-500">{location}</p>
-                  </div>
-                  <Badge className="bg-emerald-50 text-emerald-700 text-[10px] font-bold border-0">
-                    Verified Buyer
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 10. Newsletter Discount Bar ── */}
-      <section className="bg-bb-blue-night text-white py-10">
-        <div className="store-shell max-w-4xl text-center">
-          <h3 className="text-2xl font-black">Get $10 Off Your First Solar Purchase</h3>
-          <p className="text-xs text-white/80 mt-1 max-w-md mx-auto">
-            Join our newsletter for exclusive solar deals, load shedding alerts, and new equipment
-            arrivals in Zimbabwe.
-          </p>
-          {newsletterSubmitted ? (
-            <div className="mt-4 p-3 bg-emerald-600/30 border border-emerald-400/40 rounded-lg text-xs font-bold text-emerald-200 inline-block">
-              Success! Use coupon code <strong className="text-white">POWER10</strong> at checkout for $10 off.
-            </div>
-          ) : (
-            <form
-              onSubmit={handleNewsletterSubmit}
-              className="mt-5 flex flex-col sm:flex-row gap-2 justify-center max-w-md mx-auto"
-            >
-              <Input
-                type="email"
-                required
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="h-11 bg-white text-slate-900 text-xs rounded-lg"
-              />
-              <Button
-                type="submit"
-                className="h-11 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs px-6 rounded-lg shrink-0"
-              >
-                <Send className="h-3.5 w-3.5 mr-1.5" /> Get $10 Voucher
-              </Button>
-            </form>
-          )}
-        </div>
-      </section>
-
-      {/* ── 11. Contact strip ── */}
-      <section className="bg-white py-6 border-t border-slate-200">
-        <div className="store-shell flex flex-col items-center justify-between gap-3 text-xs text-slate-500 sm:flex-row">
-          <p className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-bb-blue" /> 0778158984 / 0784721912
-          </p>
-          <p className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-bb-blue" /> infotitechinnovations@gmail.com
-          </p>
-          <Link to="/about" className="flex items-center gap-2 font-bold text-bb-blue hover:underline">
-            <MapPin className="h-4 w-4" /> Harare Showroom & Distribution Hub
+          <Link to="/search" className="inline-flex items-center justify-center gap-2 rounded-md bg-bb-blue px-5 py-3 text-sm font-black text-white transition hover:bg-bb-blue-deep">
+            Browse catalogue <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
-    </div>
+    </main>
   );
 };
 
-export default SolarHome;
+export default Home;
