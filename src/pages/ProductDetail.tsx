@@ -150,7 +150,7 @@ export default function ProductDetail() {
           video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
           stock_quantity: loaded.reduce((sum, v) => sum + Math.max(0, v.stock_quantity), 0),
           brand: inferBrand(data.title, typeof metadata.brand === "string" ? metadata.brand : ""),
-          model_number: typeof metadata.model_number === "string" ? metadata.model_number : null,
+          model_number: typeof metadata.model_number === "string" ? metadata.model_number : loaded[0]?.sku ?? null,
           product_type: metadataProductType || department.name,
           power_watts: typeof metadata.power_watts === "number" ? metadata.power_watts : null,
           voltage: typeof metadata.voltage === "string" ? metadata.voltage : null,
@@ -722,7 +722,7 @@ export default function ProductDetail() {
                 </p>
               </div>
 
-              {media && media.features && (
+              {media && media.features && media.features.length > 0 && (
                 <div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">Key Features</h4>
                   <ul className="mt-3 space-y-2 text-xs text-slate-700">
