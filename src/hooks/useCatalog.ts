@@ -65,7 +65,7 @@ const KNOWN_BRANDS = [
   "Oppo", "Vivo", "Realme", "Jabra", "Sandisk", "SanDisk",
 ].sort((a, b) => b.length - a.length);
 
-const SOLAR_PRODUCT_PATTERN = /\b(solar panel|photovoltaic|pv module|solar kit|solar inverter|hybrid inverter|lifepo4|solar cable|solar floodlight|solar system|solar battery|monocrystalline|borehole solar)\b/i;
+const SOLAR_PRODUCT_PATTERN = /\b(solar|photovoltaic|pv module|inverter|lifepo4|solar cable|solar floodlight|solar system|solar battery|lithium iron phosphate|monocrystalline|borehole pump)\b/i;
 
 export const isLegacyCategory = (category: { name: string }) => {
   const name = category.name.toLowerCase();
