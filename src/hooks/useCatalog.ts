@@ -72,11 +72,11 @@ export const isLegacyCategory = (category: { name: string }) => {
   return LEGACY_CATEGORY_PATTERNS.some((pattern) => name.includes(pattern));
 };
 
-function isSolarProduct(name: string, productType = "") {
+export function isSolarProduct(name: string, productType = "") {
   return SOLAR_PRODUCT_PATTERN.test(name) || /solar|photovoltaic|lifepo4/i.test(productType);
 }
 
-function inferBrand(name: string, metadataBrand = "") {
+export function inferBrand(name: string, metadataBrand = "") {
   const cleanedMetadata = metadataBrand.trim();
   const genericMetadata = /^(tech innovation|electronics|generic|other|unknown)$/i.test(cleanedMetadata);
   const normalizedName = name.trim().toLowerCase();
@@ -90,11 +90,11 @@ function inferBrand(name: string, metadataBrand = "") {
   return "Other";
 }
 
-function inferDepartment(name: string, productType = "") {
+export function inferDepartment(name: string, productType = "") {
   const value = `${name} ${productType}`.toLowerCase();
   if (/laptop|notebook|chromebook|desktop|workstation|all-in-one pc|computer|macbook|thinkpad|probook|elitebook|monitor|ram|ssd|hard drive|graphics card/.test(value)) return DEPARTMENTS[0];
   if (/smartphone|mobile phone|cell phone|iphone|galaxy [asfz]|tablet|ipad|redmi|tecno|infinix|oppo|vivo/.test(value)) return DEPARTMENTS[1];
-  if (/television|\\btv\\b|smart tv|projector|home theatre|home theater/.test(value)) return DEPARTMENTS[2];
+  if (/television|tv|projector|home theatre|home theater/.test(value)) return DEPARTMENTS[2];
   if (/headphone|earbud|earphone|speaker|soundbar|microphone|bluetooth audio/.test(value)) return DEPARTMENTS[3];
   if (/playstation|xbox|nintendo|gaming|game controller|gaming mouse|gaming keyboard/.test(value)) return DEPARTMENTS[4];
   if (/camera|printer|scanner|toner|ink cartridge|webcam/.test(value)) return DEPARTMENTS[5];
