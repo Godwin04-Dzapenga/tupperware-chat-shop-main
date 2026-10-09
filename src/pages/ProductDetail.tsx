@@ -121,7 +121,9 @@ export default function ProductDetail() {
             variant.calculated_price?.calculated_amount != null
               ? variant.calculated_price.calculated_amount / 100
               : (variant.prices?.[0]?.amount ?? 0) / 100,
-          stock_quantity: Number(variant.inventory_quantity ?? 0),
+          stock_quantity: variant.manage_inventory === false ? 999999 : Number(variant.inventory_quantity ?? 0),
+          manage_inventory: variant.manage_inventory,
+          allow_backorder: variant.allow_backorder,
           image_url: null,
           attributes:
             variant.metadata?.attributes && typeof variant.metadata.attributes === "object" && !Array.isArray(variant.metadata.attributes)
