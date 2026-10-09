@@ -163,7 +163,7 @@ async function fetchMedusaCategories(): Promise<StoreCategory[]> {
   const { products } = await medusa.product.list({
     limit: 100,
     offset: 0,
-    fields: "*categories",
+    fields: "+metadata,*categories",
   });
   const presentDepartments = new Map<string, StoreCategory>();
   (products || []).forEach((product) => {
@@ -261,7 +261,7 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
     limit: 100,
     offset: 0,
     ...(regionId ? { region_id: regionId } : {}),
-    fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+    fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
   });
 
   return (products || [])
