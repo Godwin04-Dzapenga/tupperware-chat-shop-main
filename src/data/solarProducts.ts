@@ -319,14 +319,14 @@ export function getProductMedia(product: {
   const type = product.product_type?.toLowerCase() || "";
   const name = (product.name || "").toLowerCase();
 
-  let matchedType = "solar_panel";
+  let matchedType = "electronics";
   if (type.includes("inverter") || name.includes("inverter")) matchedType = "inverter";
   else if (type.includes("battery") || name.includes("battery") || name.includes("lifepo4")) matchedType = "battery";
   else if (type.includes("kit") || name.includes("kit") || name.includes("starter")) matchedType = "solar_kit";
   else if (type.includes("light") || name.includes("floodlight") || name.includes("lamp")) matchedType = "lighting";
   else if (type.includes("cable") || name.includes("cable") || name.includes("wire") || name.includes("mc4")) matchedType = "accessory";
   else if (type.includes("electrical") || name.includes("protector") || name.includes("breaker")) matchedType = "electrical";
-  else if (type.includes("smart") || type.includes("meter") || name.includes("energy meter") || name.includes("smart meter")) matchedType = "smart_device";
+  else if (name.includes("energy meter") || name.includes("smart meter")) matchedType = "smart_device";
   else if (
     type.includes("monitor") ||
     type.includes("laptop") ||
@@ -345,16 +345,25 @@ export function getProductMedia(product: {
   const preset =
     matchedType === "electronics"
       ? {
-          ...PRODUCT_MEDIA_MAP["smart_device"],
           imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
           galleryImages: [
             "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
             "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop&q=85",
             "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop&q=85",
           ],
+          brand: "Electronics",
+          modelNumber: "See product details",
+          originalPrice: product.price ?? 0,
+          savings: 0,
           badge: "Electronics",
+          keySpecs: ["See the product description for specifications."],
+          warranty: "See product listing for warranty information.",
+          pickupStatus: "Check availability",
+          deliveryStatus: "Delivery options shown at checkout",
+          features: [],
+          whatsInTheBox: [],
         }
-      : PRODUCT_MEDIA_MAP[matchedType] || PRODUCT_MEDIA_MAP["solar_panel"];
+      : PRODUCT_MEDIA_MAP[matchedType] || PRODUCT_MEDIA_MAP["smart_device"];
 
   return {
     ...preset,
