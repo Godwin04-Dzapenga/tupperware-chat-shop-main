@@ -100,7 +100,7 @@ export default function ProductDetail() {
         const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
         const { product: data } = await medusa.product.retrieve(productId, {
           ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
         });
 
         const metadata = data.metadata || {};
@@ -175,7 +175,7 @@ export default function ProductDetail() {
           limit: 100,
           offset: 0,
           ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
         });
 
         const relatedProducts: Product[] = (relatedResult.products || [])
