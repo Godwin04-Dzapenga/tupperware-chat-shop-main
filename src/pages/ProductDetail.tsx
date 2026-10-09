@@ -356,34 +356,6 @@ export default function ProductDetail() {
     toast.success("Link copied to clipboard");
   };
 
-  const handleAddBundle = () => {
-    if (!product) return;
-    // Accessories must exist as Medusa variants before they can be placed in a
-    // Medusa cart. Never add frontend-only products to a real checkout.
-    add();
-    if (isMedusaCommerce) {
-      setBundleAdded(true);
-      toast.success("Main product added. Bundle accessories will be available once they are added to the Medusa catalogue.");
-      return;
-    }
-    addToCart({
-      id: "bundle-cables",
-      name: "6mm² Solar DC Cable (20m Roll)",
-      price: 50,
-      image_url: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 20,
-    });
-    addToCart({
-      id: "bundle-protector",
-      name: "Automatic Voltage Protector 63A",
-      price: 65,
-      image_url: "https://images.unsplash.com/photo-1558441719-8b449c6ff673?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 15,
-    });
-    setBundleAdded(true);
-    toast.success("Complete 3-piece installation bundle added to cart! Save $15.");
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -712,66 +684,6 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
-
-      {/* ── Frequently Bought Together Bundle ── */}
-      <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-bb-blue">
-          <Sparkles className="h-4 w-4" /> Frequently Bought Together
-        </div>
-        <h3 className="text-xl font-black text-slate-900 mt-1">Complete Installation Accessories Bundle</h3>
-        <p className="text-xs text-slate-500 mt-0.5">Protect your investment with certified DC cables and surge protection.</p>
-
-        <div className="mt-6 flex flex-col lg:flex-row items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img src={activeImage} alt={product.name} className="h-14 w-14 object-cover rounded" />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900 truncate max-w-[150px]">{product.name}</p>
-                <p className="text-bb-blue font-black">${price.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <span className="text-xl font-bold text-slate-400">+</span>
-
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img
-                src="https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=200&h=200&fit=crop&q=80"
-                alt="Cables"
-                className="h-14 w-14 object-cover rounded"
-              />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900">6mm² PV Cable (20m Roll)</p>
-                <p className="text-bb-blue font-black">$50.00</p>
-              </div>
-            </div>
-
-            <span className="text-xl font-bold text-slate-400">+</span>
-
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img
-                src="https://images.unsplash.com/photo-1558441719-8b449c6ff673?w=200&h=200&fit=crop&q=80"
-                alt="Protector"
-                className="h-14 w-14 object-cover rounded"
-              />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900">Automatic Voltage Protector 63A</p>
-                <p className="text-bb-blue font-black">$65.00</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right shrink-0">
-            <div className="text-xs text-slate-500 font-semibold">Bundle Total Price:</div>
-            <div className="text-2xl font-black text-slate-900">${(price + 50 + 65).toFixed(2)} USD</div>
-            <Button
-              onClick={handleAddBundle}
-              className="mt-3 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-10 px-5 shadow-sm"
-            >
-              {bundleAdded ? "Added All 3 to Cart" : "Add All 3 Items to Cart"}
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* ── Tabs: Overview, Specs, What's in the Box, Reviews ── */}
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
