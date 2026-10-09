@@ -44,10 +44,72 @@ export interface StoreCategory {
 const LEGACY_PRODUCT_PATTERNS = ["eco bottle", "tupperware"];
 const LEGACY_CATEGORY_PATTERNS = ["bottle", "container", "lunch", "bowl"];
 
+const DEPARTMENTS = [
+  { slug: "computers-laptops", name: "Computers & Laptops", description: "Laptops, desktops, monitors and computer hardware." },
+  { slug: "phones-tablets", name: "Phones & Tablets", description: "Smartphones, tablets and mobile devices." },
+  { slug: "tv-home-theatre", name: "TVs & Home Theatre", description: "Televisions and home entertainment." },
+  { slug: "audio-headphones", name: "Audio & Headphones", description: "Headphones, speakers and audio equipment." },
+  { slug: "gaming", name: "Gaming", description: "Gaming consoles, controllers and accessories." },
+  { slug: "cameras-printers", name: "Cameras & Printers", description: "Cameras, printers and imaging supplies." },
+  { slug: "accessories", name: "Accessories", description: "Chargers, cables, bags, keyboards, mice and adapters." },
+  { slug: "smart-home", name: "Smart Home", description: "Smart devices and connected home products." },
+  { slug: "electronics-gadgets", name: "Electronics & Gadgets", description: "Other electronics and smart devices." },
+] as const;
+
+const KNOWN_BRANDS = [
+  "Hewlett-Packard", "Samsung", "Lenovo", "Microsoft", "Apple", "Huawei", "Xiaomi",
+  "Logitech", "PlayStation", "Nintendo", "Hisense", "Panasonic", "Toshiba", "Kingston",
+  "Western Digital", "Seagate", "TP-Link", "Ubiquiti", "Anker", "JBL", "Canon", "Epson",
+  "Brother", "Acer", "Asus", "ASUS", "Dell", "HP", "MSI", "LG", "Sony", "TCL", "AOC",
+  "Intel", "AMD", "Google", "Amazon", "Oraimo", "Hikvision", "Dahua", "Tecno", "Infinix",
+  "Oppo", "Vivo", "Realme", "Jabra", "Sandisk", "SanDisk",
+].sort((a, b) => b.length - a.length);
+
+const SOLAR_PRODUCT_PATTERN = /\b(solar|photovoltaic|pv module|inverter|lifepo4|solar cable|solar floodlight|solar system|solar battery|lithium iron phosphate|monocrystalline|borehole pump)\b/i;
+
 export const isLegacyCategory = (category: { name: string }) => {
   const name = category.name.toLowerCase();
   return LEGACY_CATEGORY_PATTERNS.some((pattern) => name.includes(pattern));
 };
+
+export function isSolarProduct(name: string, productType = "") {
+  return SOLAR_PRODUCT_PATTERN.test(name) || /solar|photovoltaic|lifepo4/i.test(productType);
+}
+
+export function inferBrand(name: string, metadataBrand = "") {
+  const cleanedMetadata = metadataBrand.trim();
+  const genericMetadata = /^(tech innovation|electronics|generic|other|unknown)$/i.test(cleanedMetadata);
+  const normalizedName = name.trim().toLowerCase();
+  const titleBrand = KNOWN_BRANDS.find((brand) => {
+    const normalizedBrand = brand.toLowerCase();
+    const index = normalizedName.indexOf(normalizedBrand);
+    if (index < 0) return false;
+    const before = index === 0 || /[^a-z0-9]/.test(normalizedName[index - 1]);
+    const afterIndex = index + normalizedBrand.length;
+    const after = afterIndex === normalizedName.length || /[^a-z0-9]/.test(normalizedName[afterIndex]);
+    return before && after;
+  });
+  if (titleBrand) return titleBrand.toLowerCase() === "hewlett-packard" ? "HP" : titleBrand;
+  if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) return cleanedMetadata;
+  return "Other";
+}
+
+export function inferDepartment(name: string, productType = "") {
+  const value = `${name} ${productType}`.toLowerCase();
+  if (/laptop|notebook|chromebook|desktop|workstation|all-in-one pc|computer|macbook|thinkpad|probook|elitebook|monitor|ram|ssd|hard drive|graphics card/.test(value)) return DEPARTMENTS[0];
+  if (/smartphone|mobile phone|cell phone|iphone|galaxy [asfz]|tablet|ipad|redmi|tecno|infinix|oppo|vivo/.test(value)) return DEPARTMENTS[1];
+  if (/television|tv|projector|home theatre|home theater/.test(value)) return DEPARTMENTS[2];
+  if (/headphone|earbud|earphone|speaker|soundbar|microphone|bluetooth audio/.test(value)) return DEPARTMENTS[3];
+  if (/playstation|xbox|nintendo|gaming|game controller|gaming mouse|gaming keyboard/.test(value)) return DEPARTMENTS[4];
+  if (/camera|printer|scanner|toner|ink cartridge|webcam/.test(value)) return DEPARTMENTS[5];
+  if (/charger|adapter|usb cable|hdmi cable|keyboard|mouse|laptop bag|laptop sleeve|power bank|hub|dongle|memory card|flash drive/.test(value)) return DEPARTMENTS[6];
+  if (/smart home|smart plug|smart bulb|smart watch|smartwatch|smart device|wifi plug|security camera|router|mesh wifi|smart lock/.test(value)) return DEPARTMENTS[7];
+  return DEPARTMENTS[8];
+}
+
+function departmentId(name: string, productType = "") {
+  return `department:${inferDepartment(name, productType).slug}`;
+}
 
 export const catalogKeys = {
   products: ["catalog", "products", commerceProvider] as const,
@@ -98,16 +160,26 @@ async function fetchSupabaseCategories(): Promise<StoreCategory[]> {
 }
 
 async function fetchMedusaCategories(): Promise<StoreCategory[]> {
-  const { product_categories } = await medusa.category.list({ limit: 100, offset: 0 });
-  return (product_categories || [])
-    .filter((category) => !isLegacyCategory({ name: category.name }))
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      slug: category.handle,
-      description: category.description ?? null,
-      image_url: metadataString(category.metadata, "image_url") || null,
-    }));
+  const { products } = await medusa.product.list({
+    limit: 100,
+    offset: 0,
+    fields: "+metadata,*categories",
+  });
+  const presentDepartments = new Map<string, StoreCategory>();
+  (products || []).forEach((product) => {
+    const metadata = product.metadata || {};
+    const productType = metadataString(metadata, "product_type");
+    if (isSolarProduct(product.title, productType) || LEGACY_PRODUCT_PATTERNS.some((pattern) => product.title.toLowerCase().includes(pattern))) return;
+    const department = inferDepartment(product.title, productType);
+    presentDepartments.set(department.slug, {
+      id: `department:${department.slug}`,
+      name: department.name,
+      slug: department.slug,
+      description: department.description,
+      image_url: null,
+    });
+  });
+  return [...presentDepartments.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
@@ -139,8 +211,8 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
     const price = productVariants.length
       ? Math.min(...productVariants.map((v) => Number(v.price)))
       : product.price;
-    const originalPrice =
-      media.originalPrice > price ? media.originalPrice : Math.round(price * 1.18);
+    const suppliedOriginalPrice = Number((product as { original_price?: number }).original_price ?? price);
+    const originalPrice = Number.isFinite(suppliedOriginalPrice) ? suppliedOriginalPrice : price;
 
     return {
       id: product.id,
@@ -154,9 +226,9 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
       video_url: product.video_url,
       stock_quantity: product.stock_quantity ?? 0,
       is_featured: product.is_featured ?? false,
-      avg_rating: product.avg_rating || 4.9,
-      review_count: product.review_count || 16,
-      brand: product.brand || media.brand.split("/")[0],
+      avg_rating: product.avg_rating ?? 0,
+      review_count: product.review_count ?? 0,
+      brand: inferBrand(product.name, product.brand || ""),
       model_number: product.model_number || media.modelNumber,
       product_type: product.product_type || "",
       variant_count: productVariants.length,
@@ -189,14 +261,20 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
     limit: 100,
     offset: 0,
     ...(regionId ? { region_id: regionId } : {}),
-    fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+    fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
   });
 
   return (products || [])
-    .filter((product) => !LEGACY_PRODUCT_PATTERNS.some((pattern) => product.title.toLowerCase().includes(pattern)))
+    .filter((product) => {
+      const productType = metadataString(product.metadata, "product_type");
+      return !LEGACY_PRODUCT_PATTERNS.some((pattern) => product.title.toLowerCase().includes(pattern)) &&
+        !isSolarProduct(product.title, productType);
+    })
     .map((product) => {
       const metadata = product.metadata || {};
       const variants = product.variants || [];
+      const inferredDepartment = inferDepartment(product.title, metadataString(metadata, "product_type"));
+      const brand = inferBrand(product.title, metadataString(metadata, "brand"));
       const prices = variants
         .map(variantPriceInMajorUnits)
         .filter((value) => value > 0);
@@ -236,16 +314,16 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
         price,
         original_price: originalPrice,
         savings: Math.max(0, originalPrice - price),
-        category_id: product.categories?.[0]?.id ?? null,
+        category_id: departmentId(product.title, metadataString(metadata, "product_type")),
         image_url: product.thumbnail ?? product.images?.[0]?.url ?? null,
         video_url: metadataString(metadata, "video_url") || null,
         stock_quantity: stockQuantity,
         is_featured: metadataString(metadata, "is_featured") === "true",
         avg_rating: metadataNumber(metadata, "avg_rating") ?? 0,
         review_count: metadataNumber(metadata, "review_count") ?? 0,
-        brand: metadataString(metadata, "brand"),
-        model_number: metadataString(metadata, "model_number"),
-        product_type: metadataString(metadata, "product_type"),
+        brand,
+        model_number: metadataString(metadata, "model_number") || variants[0]?.sku || "",
+        product_type: metadataString(metadata, "product_type") || inferredDepartment.name,
         variant_count: variants.length,
         default_variant_id: defaultVariantId,
         variant_names: variants.map((variant) => variant.title),

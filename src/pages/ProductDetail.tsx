@@ -14,8 +14,6 @@ import {
   ChevronRight,
   MapPin,
   Package,
-  Wrench,
-  Sparkles,
   Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getProductMedia } from "@/data/solarProducts";
+import { inferBrand, inferDepartment, isSolarProduct } from "@/hooks/useCatalog";
 import { commerceProvider, isMedusaCommerce } from "@/lib/commerce";
 import { medusa } from "@/lib/medusa";
 
@@ -89,7 +88,6 @@ export default function ProductDetail() {
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [tab, setTab] = useState<TabId>("overview");
-  const [bundleAdded, setBundleAdded] = useState(false);
 
   useEffect(() => {
     if (id) load(id);
@@ -102,10 +100,18 @@ export default function ProductDetail() {
         const regionId = import.meta.env.VITE_MEDUSA_REGION_ID || undefined;
         const { product: data } = await medusa.product.retrieve(productId, {
           ...(regionId ? { region_id: regionId } : {}),
-          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
         });
 
         const metadata = data.metadata || {};
+        const metadataProductType = typeof metadata.product_type === "string" ? metadata.product_type : "";
+        if (isSolarProduct(data.title, metadataProductType)) {
+          toast.error("This product is not currently available in the electronics catalogue.");
+          navigate("/search");
+          setLoading(false);
+          return;
+        }
+        const department = inferDepartment(data.title, metadataProductType);
         const loaded: Variant[] = (data.variants || []).map((variant) => ({
           id: variant.id,
           product_id: data.id,
@@ -115,7 +121,9 @@ export default function ProductDetail() {
             variant.calculated_price?.calculated_amount != null
               ? variant.calculated_price.calculated_amount / 100
               : (variant.prices?.[0]?.amount ?? 0) / 100,
-          stock_quantity: Number(variant.inventory_quantity ?? 0),
+          stock_quantity: variant.manage_inventory === false ? 999999 : Number(variant.inventory_quantity ?? 0),
+          manage_inventory: variant.manage_inventory,
+          allow_backorder: variant.allow_backorder,
           image_url: null,
           attributes:
             variant.metadata?.attributes && typeof variant.metadata.attributes === "object" && !Array.isArray(variant.metadata.attributes)
@@ -125,7 +133,7 @@ export default function ProductDetail() {
           sort_order: 0,
         }));
 
-        const firstImage = data.thumbnail || data.images?.[0]?.url || "";
+        const firstImage = data.thumbnail || data.images?.[0]?.url || getProductMedia({ name: data.title, product_type: metadataProductType }).imageUrl;
         const mapped: Product = {
           id: data.id,
           name: data.title,
@@ -137,13 +145,13 @@ export default function ProductDetail() {
               : typeof metadata.original_price === "string"
                 ? Number(metadata.original_price)
                 : undefined,
-          category_id: data.categories?.[0]?.id ?? null,
+          category_id: `department:${department.slug}`,
           image_url: firstImage || null,
           video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
           stock_quantity: loaded.reduce((sum, v) => sum + Math.max(0, v.stock_quantity), 0),
-          brand: typeof metadata.brand === "string" ? metadata.brand : null,
-          model_number: typeof metadata.model_number === "string" ? metadata.model_number : null,
-          product_type: typeof metadata.product_type === "string" ? metadata.product_type : "general",
+          brand: inferBrand(data.title, typeof metadata.brand === "string" ? metadata.brand : ""),
+          model_number: typeof metadata.model_number === "string" ? metadata.model_number : loaded[0]?.sku ?? null,
+          product_type: metadataProductType || department.name,
           power_watts: typeof metadata.power_watts === "number" ? metadata.power_watts : null,
           voltage: typeof metadata.voltage === "string" ? metadata.voltage : null,
           capacity: typeof metadata.capacity === "string" ? metadata.capacity : null,
@@ -153,7 +161,7 @@ export default function ProductDetail() {
             metadata.specifications && typeof metadata.specifications === "object" && !Array.isArray(metadata.specifications)
               ? Object.fromEntries(Object.entries(metadata.specifications).map(([key, value]) => [key, String(value)]))
               : {},
-          categories: data.categories?.[0] ? { name: data.categories[0].name } : undefined,
+          categories: { name: department.name },
         };
 
         setProduct(mapped);
@@ -163,46 +171,51 @@ export default function ProductDetail() {
         setSelectedVariantId(loaded[0]?.id || null);
         setActiveImage(firstImage);
 
-        const relatedResult = mapped.category_id
-          ? await medusa.product.list({
-              limit: 4,
-              category_id: mapped.category_id,
-              ...(regionId ? { region_id: regionId } : {}),
-              fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
-            })
-          : null;
+        const relatedResult = await medusa.product.list({
+          limit: 100,
+          offset: 0,
+          ...(regionId ? { region_id: regionId } : {}),
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,+metadata,+variants.metadata,*images,*categories",
+        });
 
-        const relatedProducts: Product[] = (relatedResult?.products || [])
-          .filter((item) => item.id !== data.id)
+        const relatedProducts: Product[] = (relatedResult.products || [])
+          .filter((item) => {
+            const itemType = typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "";
+            return item.id !== data.id &&
+              !isSolarProduct(item.title, itemType) &&
+              inferDepartment(item.title, itemType).slug === department.slug;
+          })
+          .slice(0, 4)
           .map((item) => {
             const itemVariants = item.variants || [];
+            const itemType = typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "";
+            const itemDepartment = inferDepartment(item.title, itemType);
             return {
               id: item.id,
               name: item.title,
               description: item.description ?? null,
               price: itemVariants.length
-                ? Math.min(
-                    ...itemVariants.map((v) =>
-                      v.calculated_price?.calculated_amount != null
-                        ? v.calculated_price.calculated_amount / 100
-                        : (v.prices?.[0]?.amount ?? 0) / 100
-                    )
-                  )
+                ? Math.min(...itemVariants.map((v) =>
+                    v.calculated_price?.calculated_amount != null
+                      ? v.calculated_price.calculated_amount / 100
+                      : (v.prices?.[0]?.amount ?? 0) / 100
+                  ))
                 : 0,
-              category_id: item.categories?.[0]?.id ?? null,
+              original_price: typeof item.metadata?.original_price === "number" ? item.metadata.original_price : undefined,
+              category_id: `department:${itemDepartment.slug}`,
               image_url: item.thumbnail || item.images?.[0]?.url || null,
               video_url: typeof item.metadata?.video_url === "string" ? item.metadata.video_url : null,
               stock_quantity: itemVariants.reduce((sum, v) => sum + Math.max(0, Number(v.inventory_quantity ?? 0)), 0),
-              brand: typeof item.metadata?.brand === "string" ? item.metadata.brand : null,
+              brand: inferBrand(item.title, typeof item.metadata?.brand === "string" ? item.metadata.brand : ""),
               model_number: typeof item.metadata?.model_number === "string" ? item.metadata.model_number : null,
-              product_type: typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "general",
+              product_type: itemType || itemDepartment.name,
               power_watts: typeof item.metadata?.power_watts === "number" ? item.metadata.power_watts : null,
               voltage: typeof item.metadata?.voltage === "string" ? item.metadata.voltage : null,
               capacity: typeof item.metadata?.capacity === "string" ? item.metadata.capacity : null,
               warranty_months: typeof item.metadata?.warranty_months === "number" ? item.metadata.warranty_months : null,
               installation_required: item.metadata?.installation_required === true,
               specifications: {},
-              categories: item.categories?.[0] ? { name: item.categories[0].name } : undefined,
+              categories: { name: itemDepartment.name },
             };
           });
         setRelated(relatedProducts);
@@ -275,7 +288,7 @@ export default function ProductDetail() {
     if (!product) return;
     document.title = `${product.name} | Tech Innovation`;
     return () => {
-      document.title = "Tech Innovation | Solar & Electronics Zimbabwe";
+      document.title = "Tech Innovation | Electronics & Smart Devices";
     };
   }, [product]);
 
@@ -305,7 +318,7 @@ export default function ProductDetail() {
       product.capacity && ["Capacity / Storage", product.capacity],
       product.warranty_months
         ? ["Warranty", `${product.warranty_months} Months`]
-        : ["Warranty", media?.warranty || "12 Months Official"],
+        : ["Warranty", media?.warranty || "See product listing"],
       product.installation_required && ["Professional Installation", "Certified Engineers Available"],
     ].filter((x): x is string[] => Boolean(x));
 
@@ -345,34 +358,6 @@ export default function ProductDetail() {
     toast.success("Link copied to clipboard");
   };
 
-  const handleAddBundle = () => {
-    if (!product) return;
-    // Accessories must exist as Medusa variants before they can be placed in a
-    // Medusa cart. Never add frontend-only products to a real checkout.
-    add();
-    if (isMedusaCommerce) {
-      setBundleAdded(true);
-      toast.success("Main product added. Bundle accessories will be available once they are added to the Medusa catalogue.");
-      return;
-    }
-    addToCart({
-      id: "bundle-cables",
-      name: "6mm² Solar DC Cable (20m Roll)",
-      price: 50,
-      image_url: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 20,
-    });
-    addToCart({
-      id: "bundle-protector",
-      name: "Automatic Voltage Protector 63A",
-      price: 65,
-      image_url: "https://images.unsplash.com/photo-1558441719-8b449c6ff673?w=800&h=800&fit=crop&q=85",
-      stock_quantity: 15,
-    });
-    setBundleAdded(true);
-    toast.success("Complete 3-piece installation bundle added to cart! Save $15.");
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -389,7 +374,7 @@ export default function ProductDetail() {
       <div className="mb-4 flex items-center gap-1.5 text-xs text-slate-500">
         <Link to="/" className="hover:text-bb-blue">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="font-semibold text-slate-800">{product.categories?.name || "Power Equipment"}</span>
+        <span className="font-semibold text-slate-800">{product.categories?.name || "Electronics"}</span>
         <ChevronRight className="h-3 w-3" />
         <span className="truncate text-slate-400">{product.name}</span>
       </div>
@@ -441,7 +426,7 @@ export default function ProductDetail() {
           {/* Value Guarantees Below Gallery */}
           <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
             {[
-              { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "12–60 Months" },
+              { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "See product listing" },
               { icon: Truck, title: "Nationwide Freight", desc: "Harare & All Provinces" },
               { icon: Wrench, title: "Tech Support", desc: "Expert Sizing & Setup" },
             ].map(({ icon: Icon, title, desc }) => (
@@ -544,7 +529,7 @@ export default function ProductDetail() {
                     <span className="font-black text-sm text-slate-900">Choose your option</span>
                     <span className="text-[11px] text-slate-500">{variants.length} available</span>
                   </div>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Select the power, capacity or model that matches your setup. The price updates with your selection.</p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Choose the option that matches the model or configuration you need. The price updates with your selection.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {variants.map((v) => {
@@ -702,66 +687,6 @@ export default function ProductDetail() {
         </div>
       )}
 
-      {/* ── Frequently Bought Together Bundle ── */}
-      <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-bb-blue">
-          <Sparkles className="h-4 w-4" /> Frequently Bought Together
-        </div>
-        <h3 className="text-xl font-black text-slate-900 mt-1">Complete Installation Accessories Bundle</h3>
-        <p className="text-xs text-slate-500 mt-0.5">Protect your investment with certified DC cables and surge protection.</p>
-
-        <div className="mt-6 flex flex-col lg:flex-row items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img src={activeImage} alt={product.name} className="h-14 w-14 object-cover rounded" />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900 truncate max-w-[150px]">{product.name}</p>
-                <p className="text-bb-blue font-black">${price.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <span className="text-xl font-bold text-slate-400">+</span>
-
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img
-                src="https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=200&h=200&fit=crop&q=80"
-                alt="Cables"
-                className="h-14 w-14 object-cover rounded"
-              />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900">6mm² PV Cable (20m Roll)</p>
-                <p className="text-bb-blue font-black">$50.00</p>
-              </div>
-            </div>
-
-            <span className="text-xl font-bold text-slate-400">+</span>
-
-            <div className="flex items-center gap-2 rounded-xl border p-3 bg-slate-50">
-              <img
-                src="https://images.unsplash.com/photo-1558441719-8b449c6ff673?w=200&h=200&fit=crop&q=80"
-                alt="Protector"
-                className="h-14 w-14 object-cover rounded"
-              />
-              <div className="text-xs">
-                <p className="font-bold text-slate-900">Automatic Voltage Protector 63A</p>
-                <p className="text-bb-blue font-black">$65.00</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right shrink-0">
-            <div className="text-xs text-slate-500 font-semibold">Bundle Total Price:</div>
-            <div className="text-2xl font-black text-slate-900">${(price + 50 + 65).toFixed(2)} USD</div>
-            <Button
-              onClick={handleAddBundle}
-              className="mt-3 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold text-xs h-10 px-5 shadow-sm"
-            >
-              {bundleAdded ? "Added All 3 to Cart" : "Add All 3 Items to Cart"}
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* ── Tabs: Overview, Specs, What's in the Box, Reviews ── */}
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="flex overflow-x-auto border-b bg-slate-50/50">
@@ -793,12 +718,11 @@ export default function ProductDetail() {
               <div>
                 <h3 className="text-lg font-black text-slate-900">Product Description</h3>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-                  {product.description ||
-                    "Engineered for high-yield solar harvesting and dependable backup power in Zimbabwe. Built with rugged industrial components to resist power grid surges, temperature swings, and prolonged high-load operation."}
+                  {product.description || "Product description and specifications will be updated as more information is added to the catalogue."}
                 </p>
               </div>
 
-              {media && media.features && (
+              {media && media.features && media.features.length > 0 && (
                 <div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">Key Features</h4>
                   <ul className="mt-3 space-y-2 text-xs text-slate-700">

@@ -318,49 +318,40 @@ export function getProductMedia(product: {
 }): ProductMediaData {
   const type = product.product_type?.toLowerCase() || "";
   const name = (product.name || "").toLowerCase();
+  let imageUrl = "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85";
 
-  let matchedType = "solar_panel";
-  if (type.includes("inverter") || name.includes("inverter")) matchedType = "inverter";
-  else if (type.includes("battery") || name.includes("battery") || name.includes("lifepo4")) matchedType = "battery";
-  else if (type.includes("kit") || name.includes("kit") || name.includes("starter")) matchedType = "solar_kit";
-  else if (type.includes("light") || name.includes("floodlight") || name.includes("lamp")) matchedType = "lighting";
-  else if (type.includes("cable") || name.includes("cable") || name.includes("wire") || name.includes("mc4")) matchedType = "accessory";
-  else if (type.includes("electrical") || name.includes("protector") || name.includes("breaker")) matchedType = "electrical";
-  else if (type.includes("smart") || type.includes("meter") || name.includes("energy meter") || name.includes("smart meter")) matchedType = "smart_device";
-  else if (
-    type.includes("monitor") ||
-    type.includes("laptop") ||
-    type.includes("phone") ||
-    type.includes("tablet") ||
-    type.includes("computer") ||
-    type.includes("electronics") ||
-    name.includes("laptop") ||
-    name.includes("phone") ||
-    name.includes("tablet") ||
-    name.includes("computer") ||
-    name.includes("monitor")
-  ) matchedType = "electronics";
-  else if (type.includes("panel") || name.includes("panel") || name.includes("mono")) matchedType = "solar_panel";
+  if (/phone|smartphone|tablet|iphone|ipad/.test(`${name} ${type}`)) {
+    imageUrl = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop&q=85";
+  } else if (/headphone|earbud|speaker|audio/.test(`${name} ${type}`)) {
+    imageUrl = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop&q=85";
+  } else if (/camera|printer|scanner/.test(`${name} ${type}`)) {
+    imageUrl = "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=800&fit=crop&q=85";
+  } else if (/tv|television|gaming|console/.test(`${name} ${type}`)) {
+    imageUrl = "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&h=800&fit=crop&q=85";
+  }
 
-  const preset =
-    matchedType === "electronics"
-      ? {
-          ...PRODUCT_MEDIA_MAP["smart_device"],
-          imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
-          galleryImages: [
-            "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&q=85",
-            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop&q=85",
-            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop&q=85",
-          ],
-          badge: "Electronics",
-        }
-      : PRODUCT_MEDIA_MAP[matchedType] || PRODUCT_MEDIA_MAP["solar_panel"];
+  if (
+    product.image_url &&
+    !product.image_url.includes("0.2930892299948875") &&
+    !product.image_url.includes("photo-1584308972272-9e4e7685e80f")
+  ) {
+    imageUrl = product.image_url;
+  }
 
   return {
-    ...preset,
-    imageUrl: product.image_url && !product.image_url.includes("0.2930892299948875") && !product.image_url.includes("photo-1584308972272-9e4e7685e80f")
-      ? product.image_url
-      : preset.imageUrl,
+    imageUrl,
+    galleryImages: [imageUrl],
+    brand: "Electronics",
+    modelNumber: "See product details",
+    originalPrice: product.price ?? 0,
+    savings: 0,
+    badge: "Electronics",
+    keySpecs: ["See the product description for specifications."],
+    warranty: "See product listing for warranty information.",
+    pickupStatus: "Check availability",
+    deliveryStatus: "Delivery options shown at checkout",
+    features: [],
+    whatsInTheBox: [],
   };
 }
 
