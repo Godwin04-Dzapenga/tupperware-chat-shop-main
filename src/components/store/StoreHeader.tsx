@@ -10,8 +10,14 @@ import {
   ChevronDown,
   Layers,
   Zap,
-  Sun,
-  BatteryCharging,
+  Smartphone,
+  Tv,
+  Cpu,
+  Cable,
+  Camera,
+  Gamepad2,
+  Headphones,
+  Laptop,
   ShieldCheck,
   Flame,
   Wrench,
@@ -32,7 +38,7 @@ import { useCategories, useProducts } from "@/hooks/useCatalog";
 import { useStoreUI } from "@/hooks/useStoreUI";
 import { useStoreActions, WHATSAPP_NUMBER } from "@/hooks/useStoreActions";
 
-const CATEGORY_ICONS = [Sun, Zap, BatteryCharging, Layers, ShieldCheck, Flame, Wrench, Tag];
+const CATEGORY_ICONS = [Laptop, Smartphone, Tv, Headphones, Gamepad2, Camera, Cable, Cpu];
 
 export const StoreHeader = () => {
   const navigate = useNavigate();
@@ -85,7 +91,7 @@ export const StoreHeader = () => {
         .slice(0, 5)
     : [];
 
-  const popularSearches = ["5kVA Inverter", "Lithium Battery", "550W Panel", "Solar Kit", "Floodlight"];
+  const popularSearches = [...new Set(products.map((product) => product.brand).filter((brand) => brand && brand !== "Other"))].slice(0, 5);
 
   const submitSearch = (term: string) => {
     const q = term.trim();
@@ -107,17 +113,17 @@ export const StoreHeader = () => {
           >
             <MapPin className="h-3.5 w-3.5 text-bb-yellow shrink-0" />
             <span>
-              <strong>Harare Showroom:</strong> Open today until 5:30 PM •{" "}
+              <strong>Tech Innovation Zimbabwe</strong> •{" "}
               <span className="text-bb-yellow underline font-bold">Store & Pickup Info</span>
             </span>
           </button>
 
           <div className="hidden lg:flex items-center gap-3 text-white/80">
-            <span>Same-day dispatch in Harare</span>
+            <span>Delivery options at checkout</span>
             <span>•</span>
-            <span>12–36 Month Official Warranty</span>
+            <span>Product details and warranty shown on listings</span>
             <span>•</span>
-            <span>Free Delivery on Orders $50+</span>
+            <span>Shop laptops, phones and smart devices</span>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
@@ -125,7 +131,7 @@ export const StoreHeader = () => {
               Track Order
             </Link>
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello Tech Innovation, I need sizing assistance with a solar system.")}`}
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello Tech Innovation, I have a question about a product in your online store.")}`}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 hover:text-bb-yellow font-bold text-white transition-colors"
@@ -144,7 +150,7 @@ export const StoreHeader = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 shrink-0 select-none group">
               <span className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink shadow-md font-black transition-transform group-hover:scale-105">
-                <Sun className="h-6 w-6 fill-bb-ink text-bb-ink" />
+                <Cpu className="h-6 w-6 text-bb-ink" />
                 <span className="absolute -top-1 -right-1 h-3 w-3 bg-bb-yellow rotate-45" />
               </span>
               <div className="text-left">
@@ -152,7 +158,7 @@ export const StoreHeader = () => {
                   TECH INNOVATION
                 </span>
                 <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.22em] text-bb-yellow">
-                  Solar & Tech Superstore
+                  Electronics & Smart Devices
                 </span>
               </div>
             </Link>
@@ -243,7 +249,7 @@ export const StoreHeader = () => {
                     </div>
                   ) : (
                     <div className="p-4">
-                      <div className="text-[11px] font-bold text-slate-500 mb-2">Popular Solar Searches:</div>
+                      <div className="text-[11px] font-bold text-slate-500 mb-2">Popular brands:</div>
                       <div className="flex flex-wrap gap-1.5">
                         {popularSearches.map((term) => (
                           <button
@@ -398,7 +404,7 @@ export const StoreHeader = () => {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search laptops, phones, solar equipment and more..."
+                  placeholder="Search laptops, phones, brands and model numbers..."
                   className="h-10 rounded-l-md rounded-r-none bg-white text-slate-900 text-xs focus-visible:ring-0"
                 />
                 <button type="submit" className="h-10 px-3 bg-bb-yellow text-black font-bold rounded-r-md">
@@ -423,11 +429,11 @@ export const StoreHeader = () => {
             </Link>
 
             <Link
-              to="/#system-sizer"
+              to="/search"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-bb-blue hover:bg-blue-100 transition-colors border border-blue-200 font-extrabold"
             >
-              <Zap className="h-3.5 w-3.5" />
-              <span>Solar System Finder</span>
+              <Tag className="h-3.5 w-3.5" />
+              <span>Shop All Products</span>
             </Link>
 
             <Link
@@ -515,15 +521,15 @@ export const StoreHeader = () => {
                 </div>
                 <button
                   onClick={() => {
-                    navigate("/#system-sizer");
+                    navigate("/search");
                     setMegaMenuOpen(false);
                   }}
                   className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-blue-50 text-left text-sm font-bold text-bb-blue"
                 >
                   <span className="flex items-center gap-3">
-                    <Zap className="h-4 w-4 text-bb-blue" /> Solar Sizer Calculator
+                    <Package className="h-4 w-4 text-bb-blue" /> Browse all products
                   </span>
-                  <Badge className="bg-bb-yellow text-black text-[10px] border-0">Interactive</Badge>
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
                 </button>
 
                 <button
@@ -539,7 +545,7 @@ export const StoreHeader = () => {
                 </button>
 
                 <button
-                  onClick={() => orderViaWhatsApp({ name: "a solar engineer consultation", price: 0 })}
+                  onClick={() => orderViaWhatsApp({ name: "a product enquiry", price: 0 })}
                   className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-emerald-50 text-left text-sm font-bold text-emerald-700"
                 >
                   <span className="flex items-center gap-3">
