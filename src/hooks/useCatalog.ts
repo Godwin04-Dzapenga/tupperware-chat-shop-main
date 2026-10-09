@@ -207,8 +207,8 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
     const price = productVariants.length
       ? Math.min(...productVariants.map((v) => Number(v.price)))
       : product.price;
-    const originalPrice =
-      media.originalPrice > price ? media.originalPrice : Math.round(price * 1.18);
+    const suppliedOriginalPrice = Number((product as { original_price?: number }).original_price ?? price);
+    const originalPrice = Number.isFinite(suppliedOriginalPrice) ? suppliedOriginalPrice : price;
 
     return {
       id: product.id,
@@ -222,9 +222,9 @@ async function fetchSupabaseProducts(): Promise<StoreProduct[]> {
       video_url: product.video_url,
       stock_quantity: product.stock_quantity ?? 0,
       is_featured: product.is_featured ?? false,
-      avg_rating: product.avg_rating || 4.9,
-      review_count: product.review_count || 16,
-      brand: product.brand || media.brand.split("/")[0],
+      avg_rating: product.avg_rating ?? 0,
+      review_count: product.review_count ?? 0,
+      brand: inferBrand(product.name, product.brand || ""),
       model_number: product.model_number || media.modelNumber,
       product_type: product.product_type || "",
       variant_count: productVariants.length,
