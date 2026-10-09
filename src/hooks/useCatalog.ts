@@ -65,7 +65,7 @@ const KNOWN_BRANDS = [
   "Oppo", "Vivo", "Realme", "Jabra", "Sandisk", "SanDisk",
 ].sort((a, b) => b.length - a.length);
 
-const SOLAR_PRODUCT_PATTERN = /\\b(solar panel|photovoltaic|pv module|solar kit|solar inverter|hybrid inverter|lifepo4|solar cable|solar floodlight|solar system|solar battery|monocrystalline|borehole solar)\\b/i;
+const SOLAR_PRODUCT_PATTERN = /\b(solar panel|photovoltaic|pv module|solar kit|solar inverter|hybrid inverter|lifepo4|solar cable|solar floodlight|solar system|solar battery|monocrystalline|borehole solar)\b/i;
 
 export const isLegacyCategory = (category: { name: string }) => {
   const name = category.name.toLowerCase();
@@ -79,14 +79,13 @@ function isSolarProduct(name: string, productType = "") {
 function inferBrand(name: string, metadataBrand = "") {
   const cleanedMetadata = metadataBrand.trim();
   const genericMetadata = /^(tech innovation|electronics|generic|other|unknown)$/i.test(cleanedMetadata);
-  const titleBrand = KNOWN_BRANDS.find((brand) => new RegExp("^" + brand.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\const LEGACY_PRODUCT_PATTERNS = ["eco bottle", "tupperware"];
-const LEGACY_CATEGORY_PATTERNS = ["bottle", "container", "lunch", "bowl"];
-
-export const isLegacyCategory = (category: { name: string }) => {
-  const name = category.name.toLowerCase();
-  return LEGACY_CATEGORY_PATTERNS.some((pattern) => name.includes(pattern));
-};") + "(?:\\\\b|\\\\s)", "i").test(name.trim()));
-  if (titleBrand) return titleBrand === "Hewlett-Packard" ? "HP" : titleBrand;
+  const normalizedName = name.trim().toLowerCase();
+  const titleBrand = KNOWN_BRANDS.find((brand) => {
+    const normalizedBrand = brand.toLowerCase();
+    return normalizedName.startsWith(normalizedBrand) &&
+      (normalizedName.length === normalizedBrand.length || /[\s-]/.test(normalizedName[normalizedBrand.length]));
+  });
+  if (titleBrand) return titleBrand.toLowerCase() === "hewlett-packard" ? "HP" : titleBrand;
   if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) return cleanedMetadata;
   return "Other";
 }
