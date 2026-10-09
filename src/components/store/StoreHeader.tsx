@@ -462,7 +462,7 @@ export const StoreHeader = () => {
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="bg-bb-blue text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-2 font-black text-lg">
-                <Sun className="h-5 w-5 text-bb-yellow" />
+                <Cpu className="h-5 w-5 text-bb-yellow" />
                 <span>All Departments</span>
               </div>
               <button
