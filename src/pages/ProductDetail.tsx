@@ -133,7 +133,7 @@ export default function ProductDetail() {
           sort_order: 0,
         }));
 
-        const firstImage = data.thumbnail || data.images?.[0]?.url || "";
+        const firstImage = data.thumbnail || data.images?.[0]?.url || getProductMedia({ name: data.title, product_type: metadataProductType }).imageUrl;
         const mapped: Product = {
           id: data.id,
           name: data.title,
