@@ -82,8 +82,12 @@ export function inferBrand(name: string, metadataBrand = "") {
   const normalizedName = name.trim().toLowerCase();
   const titleBrand = KNOWN_BRANDS.find((brand) => {
     const normalizedBrand = brand.toLowerCase();
-    return normalizedName.startsWith(normalizedBrand) &&
-      (normalizedName.length === normalizedBrand.length || /[\s-]/.test(normalizedName[normalizedBrand.length]));
+    const index = normalizedName.indexOf(normalizedBrand);
+    if (index < 0) return false;
+    const before = index === 0 || /[^a-z0-9]/.test(normalizedName[index - 1]);
+    const afterIndex = index + normalizedBrand.length;
+    const after = afterIndex === normalizedName.length || /[^a-z0-9]/.test(normalizedName[afterIndex]);
+    return before && after;
   });
   if (titleBrand) return titleBrand.toLowerCase() === "hewlett-packard" ? "HP" : titleBrand;
   if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) return cleanedMetadata;
