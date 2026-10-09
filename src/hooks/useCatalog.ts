@@ -322,7 +322,7 @@ async function fetchMedusaProducts(): Promise<StoreProduct[]> {
         avg_rating: metadataNumber(metadata, "avg_rating") ?? 0,
         review_count: metadataNumber(metadata, "review_count") ?? 0,
         brand,
-        model_number: metadataString(metadata, "model_number"),
+        model_number: metadataString(metadata, "model_number") || variants[0]?.sku || "",
         product_type: metadataString(metadata, "product_type") || inferredDepartment.name,
         variant_count: variants.length,
         default_variant_id: defaultVariantId,
