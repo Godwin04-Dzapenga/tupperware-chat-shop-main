@@ -14,8 +14,6 @@ import {
   ChevronRight,
   MapPin,
   Package,
-  Wrench,
-  Sparkles,
   Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getProductMedia } from "@/data/solarProducts";
+import { inferBrand, inferDepartment, isSolarProduct } from "@/hooks/useCatalog";
 import { commerceProvider, isMedusaCommerce } from "@/lib/commerce";
 import { medusa } from "@/lib/medusa";
 
@@ -89,7 +88,6 @@ export default function ProductDetail() {
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [tab, setTab] = useState<TabId>("overview");
-  const [bundleAdded, setBundleAdded] = useState(false);
 
   useEffect(() => {
     if (id) load(id);
@@ -106,6 +104,14 @@ export default function ProductDetail() {
         });
 
         const metadata = data.metadata || {};
+        const metadataProductType = typeof metadata.product_type === "string" ? metadata.product_type : "";
+        if (isSolarProduct(data.title, metadataProductType)) {
+          toast.error("This product is not currently available in the electronics catalogue.");
+          navigate("/search");
+          setLoading(false);
+          return;
+        }
+        const department = inferDepartment(data.title, metadataProductType);
         const loaded: Variant[] = (data.variants || []).map((variant) => ({
           id: variant.id,
           product_id: data.id,
@@ -137,13 +143,13 @@ export default function ProductDetail() {
               : typeof metadata.original_price === "string"
                 ? Number(metadata.original_price)
                 : undefined,
-          category_id: data.categories?.[0]?.id ?? null,
+          category_id: `department:${department.slug}`,
           image_url: firstImage || null,
           video_url: typeof metadata.video_url === "string" ? metadata.video_url : null,
           stock_quantity: loaded.reduce((sum, v) => sum + Math.max(0, v.stock_quantity), 0),
-          brand: typeof metadata.brand === "string" ? metadata.brand : null,
+          brand: inferBrand(data.title, typeof metadata.brand === "string" ? metadata.brand : ""),
           model_number: typeof metadata.model_number === "string" ? metadata.model_number : null,
-          product_type: typeof metadata.product_type === "string" ? metadata.product_type : "general",
+          product_type: metadataProductType || department.name,
           power_watts: typeof metadata.power_watts === "number" ? metadata.power_watts : null,
           voltage: typeof metadata.voltage === "string" ? metadata.voltage : null,
           capacity: typeof metadata.capacity === "string" ? metadata.capacity : null,
@@ -153,7 +159,7 @@ export default function ProductDetail() {
             metadata.specifications && typeof metadata.specifications === "object" && !Array.isArray(metadata.specifications)
               ? Object.fromEntries(Object.entries(metadata.specifications).map(([key, value]) => [key, String(value)]))
               : {},
-          categories: data.categories?.[0] ? { name: data.categories[0].name } : undefined,
+          categories: { name: department.name },
         };
 
         setProduct(mapped);
@@ -275,7 +281,7 @@ export default function ProductDetail() {
     if (!product) return;
     document.title = `${product.name} | Tech Innovation`;
     return () => {
-      document.title = "Tech Innovation | Solar & Electronics Zimbabwe";
+      document.title = "Tech Innovation | Electronics & Smart Devices";
     };
   }, [product]);
 
@@ -305,7 +311,7 @@ export default function ProductDetail() {
       product.capacity && ["Capacity / Storage", product.capacity],
       product.warranty_months
         ? ["Warranty", `${product.warranty_months} Months`]
-        : ["Warranty", media?.warranty || "12 Months Official"],
+        : ["Warranty", media?.warranty || "See product listing"],
       product.installation_required && ["Professional Installation", "Certified Engineers Available"],
     ].filter((x): x is string[] => Boolean(x));
 
@@ -389,7 +395,7 @@ export default function ProductDetail() {
       <div className="mb-4 flex items-center gap-1.5 text-xs text-slate-500">
         <Link to="/" className="hover:text-bb-blue">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="font-semibold text-slate-800">{product.categories?.name || "Power Equipment"}</span>
+        <span className="font-semibold text-slate-800">{product.categories?.name || "Electronics"}</span>
         <ChevronRight className="h-3 w-3" />
         <span className="truncate text-slate-400">{product.name}</span>
       </div>
@@ -544,7 +550,7 @@ export default function ProductDetail() {
                     <span className="font-black text-sm text-slate-900">Choose your option</span>
                     <span className="text-[11px] text-slate-500">{variants.length} available</span>
                   </div>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Select the power, capacity or model that matches your setup. The price updates with your selection.</p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Choose the option that matches the model or configuration you need. The price updates with your selection.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {variants.map((v) => {
@@ -793,8 +799,7 @@ export default function ProductDetail() {
               <div>
                 <h3 className="text-lg font-black text-slate-900">Product Description</h3>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-                  {product.description ||
-                    "Engineered for high-yield solar harvesting and dependable backup power in Zimbabwe. Built with rugged industrial components to resist power grid surges, temperature swings, and prolonged high-load operation."}
+                  {product.description || "Product description and specifications will be updated as more information is added to the catalogue."}
                 </p>
               </div>
 
