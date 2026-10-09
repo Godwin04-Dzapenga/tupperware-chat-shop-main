@@ -140,7 +140,7 @@ const Home = () => {
       </section>
 
       {brands.length > 0 && (
-        <section className="store-shell pt-9">
+        <section id="brands" className="store-shell pt-9">
           <div className="mb-4">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-bb-blue">Shop by brand</p>
             <h2 className="mt-1 text-xl font-black text-bb-ink sm:text-2xl">Brands in our catalogue</h2>
