@@ -169,46 +169,51 @@ export default function ProductDetail() {
         setSelectedVariantId(loaded[0]?.id || null);
         setActiveImage(firstImage);
 
-        const relatedResult = mapped.category_id
-          ? await medusa.product.list({
-              limit: 4,
-              category_id: mapped.category_id,
-              ...(regionId ? { region_id: regionId } : {}),
-              fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
-            })
-          : null;
+        const relatedResult = await medusa.product.list({
+          limit: 100,
+          offset: 0,
+          ...(regionId ? { region_id: regionId } : {}),
+          fields: "*variants,*variants.calculated_price,+variants.inventory_quantity,*images,*categories",
+        });
 
-        const relatedProducts: Product[] = (relatedResult?.products || [])
-          .filter((item) => item.id !== data.id)
+        const relatedProducts: Product[] = (relatedResult.products || [])
+          .filter((item) => {
+            const itemType = typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "";
+            return item.id !== data.id &&
+              !isSolarProduct(item.title, itemType) &&
+              inferDepartment(item.title, itemType).slug === department.slug;
+          })
+          .slice(0, 4)
           .map((item) => {
             const itemVariants = item.variants || [];
+            const itemType = typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "";
+            const itemDepartment = inferDepartment(item.title, itemType);
             return {
               id: item.id,
               name: item.title,
               description: item.description ?? null,
               price: itemVariants.length
-                ? Math.min(
-                    ...itemVariants.map((v) =>
-                      v.calculated_price?.calculated_amount != null
-                        ? v.calculated_price.calculated_amount / 100
-                        : (v.prices?.[0]?.amount ?? 0) / 100
-                    )
-                  )
+                ? Math.min(...itemVariants.map((v) =>
+                    v.calculated_price?.calculated_amount != null
+                      ? v.calculated_price.calculated_amount / 100
+                      : (v.prices?.[0]?.amount ?? 0) / 100
+                  ))
                 : 0,
-              category_id: item.categories?.[0]?.id ?? null,
+              original_price: typeof item.metadata?.original_price === "number" ? item.metadata.original_price : undefined,
+              category_id: `department:${itemDepartment.slug}`,
               image_url: item.thumbnail || item.images?.[0]?.url || null,
               video_url: typeof item.metadata?.video_url === "string" ? item.metadata.video_url : null,
               stock_quantity: itemVariants.reduce((sum, v) => sum + Math.max(0, Number(v.inventory_quantity ?? 0)), 0),
-              brand: typeof item.metadata?.brand === "string" ? item.metadata.brand : null,
+              brand: inferBrand(item.title, typeof item.metadata?.brand === "string" ? item.metadata.brand : ""),
               model_number: typeof item.metadata?.model_number === "string" ? item.metadata.model_number : null,
-              product_type: typeof item.metadata?.product_type === "string" ? item.metadata.product_type : "general",
+              product_type: itemType || itemDepartment.name,
               power_watts: typeof item.metadata?.power_watts === "number" ? item.metadata.power_watts : null,
               voltage: typeof item.metadata?.voltage === "string" ? item.metadata.voltage : null,
               capacity: typeof item.metadata?.capacity === "string" ? item.metadata.capacity : null,
               warranty_months: typeof item.metadata?.warranty_months === "number" ? item.metadata.warranty_months : null,
               installation_required: item.metadata?.installation_required === true,
               specifications: {},
-              categories: item.categories?.[0] ? { name: item.categories[0].name } : undefined,
+              categories: { name: itemDepartment.name },
             };
           });
         setRelated(relatedProducts);
