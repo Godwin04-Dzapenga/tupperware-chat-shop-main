@@ -426,7 +426,7 @@ export default function ProductDetail() {
           {/* Value Guarantees Below Gallery */}
           <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
             {[
-              { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "12–60 Months" },
+              { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "See product listing" },
               { icon: Truck, title: "Nationwide Freight", desc: "Harare & All Provinces" },
               { icon: Wrench, title: "Tech Support", desc: "Expert Sizing & Setup" },
             ].map(({ icon: Icon, title, desc }) => (
