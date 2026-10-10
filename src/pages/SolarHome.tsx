@@ -73,27 +73,35 @@ const Home = () => {
               </Link>
             </div>
           </div>
-          <div className="hidden grid-cols-2 gap-3 sm:grid lg:grid">
-            <div className="rounded-xl border border-white/15 bg-white/10 p-5">
-              <Laptop className="mb-5 h-8 w-8 text-bb-yellow" />
-              <p className="text-lg font-extrabold">Computers</p>
-              <p className="mt-1 text-xs text-white/70">Laptops and everyday essentials</p>
+          <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-white/15 bg-slate-900 shadow-2xl sm:min-h-[340px]">
+            <img
+              src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1400&q=85"
+              alt="Laptop open on a clean modern desk"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/20 to-transparent" />
+            <div className="absolute left-5 top-5 max-w-[58%] sm:left-7 sm:top-7">
+              <span className="rounded-full bg-bb-yellow px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-950">Laptop spotlight</span>
+              <p className="mt-4 text-2xl font-black leading-tight text-white sm:text-3xl">Work smarter.<br />Go further.</p>
+              <p className="mt-2 text-sm text-white/85">Find your next everyday laptop.</p>
             </div>
-            <div className="mt-7 rounded-xl border border-white/15 bg-white/10 p-5">
-              <Smartphone className="mb-5 h-8 w-8 text-bb-yellow" />
-              <p className="text-lg font-extrabold">Smart devices</p>
-              <p className="mt-1 text-xs text-white/70">Devices for work and life</p>
+            <div className="absolute bottom-4 right-4 w-36 overflow-hidden rounded-xl border-2 border-white/80 bg-white shadow-xl sm:bottom-6 sm:right-6 sm:w-48">
+              <img
+                src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=700&q=85"
+                alt="Slim laptop displayed on a desk"
+                className="h-24 w-full object-cover sm:h-32"
+                loading="lazy"
+              />
+              <div className="px-3 py-2 text-xs font-extrabold text-slate-900">Laptops for every day</div>
             </div>
-            <div className="rounded-xl border border-white/15 bg-white/10 p-5">
-              <Headphones className="mb-5 h-8 w-8 text-bb-yellow" />
-              <p className="text-lg font-extrabold">Audio</p>
-              <p className="mt-1 text-xs text-white/70">Sound and accessories</p>
-            </div>
-            <div className="mt-7 rounded-xl border border-white/15 bg-white/10 p-5">
-              <Cpu className="mb-5 h-8 w-8 text-bb-yellow" />
-              <p className="text-lg font-extrabold">Electronics</p>
-              <p className="mt-1 text-xs text-white/70">Useful tech for every day</p>
-            </div>
+            <Link
+              to="/search?q=laptop"
+              aria-label="Shop laptops"
+              className="absolute bottom-5 left-5 rounded-md bg-bb-yellow px-4 py-2.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-yellow-300 sm:bottom-7 sm:left-7"
+            >
+              Shop laptops <ArrowRight className="ml-1 inline h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
