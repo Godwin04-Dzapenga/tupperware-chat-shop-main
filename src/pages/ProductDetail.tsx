@@ -120,8 +120,8 @@ export default function ProductDetail() {
           sku: variant.sku ?? null,
           price:
             variant.calculated_price?.calculated_amount != null
-              ? variant.calculated_price.calculated_amount / 100
-              : (variant.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0) / 100,
+              ? variant.calculated_price.calculated_amount
+              : (variant.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0),
           stock_quantity: variant.manage_inventory === false ? 999999 : Number(variant.inventory_quantity ?? 0),
           manage_inventory: variant.manage_inventory,
           allow_backorder: variant.allow_backorder,
@@ -202,8 +202,8 @@ export default function ProductDetail() {
               price: itemVariants.length
                 ? Math.min(...itemVariants.map((v) =>
                     v.calculated_price?.calculated_amount != null
-                      ? v.calculated_price.calculated_amount / 100
-                      : (v.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0) / 100
+                      ? v.calculated_price.calculated_amount
+                      : (v.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0)
                   ))
                 : 0,
               original_price: typeof item.metadata?.original_price === "number" ? item.metadata.original_price : undefined,
