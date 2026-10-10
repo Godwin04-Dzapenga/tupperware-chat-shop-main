@@ -101,7 +101,7 @@ export const StoreHeader = () => {
   return (
     <>
       {/* ── 1. Top Utility Bar ── */}
-      <div className="bg-bb-blue-deep text-white text-xs border-b border-white/10">
+      <div className="bg-[#07172a] text-white text-xs border-b border-white/10">
         <div className="container mx-auto px-4 flex min-h-9 items-center justify-between gap-4">
           <button
             onClick={() => setStoreModalOpen(true)}
@@ -140,20 +140,17 @@ export const StoreHeader = () => {
       </div>
 
       {/* ── 2. Main Blue Header ── */}
-      <header className="sticky top-0 z-50 bg-bb-blue text-white shadow-md">
+      <header className="sticky top-0 z-50 bg-[#061a2e] text-white shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex h-16 sm:h-[72px] items-center gap-3 sm:gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 shrink-0 select-none group">
-              <span className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink shadow-md font-black transition-transform group-hover:scale-105">
-                <Cpu className="h-6 w-6 text-bb-ink" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-bb-yellow rotate-45" />
-              </span>
+              <span className="flex h-10 w-10 items-center justify-center text-4xl font-black leading-none text-[#12a8ff] transition-transform group-hover:scale-105 sm:h-11 sm:w-11">T</span>
               <div className="text-left">
-                <span className="block text-base sm:text-lg font-black tracking-tight leading-none text-white">
-                  TECH INNOVATION
+                <span className="block whitespace-nowrap text-base font-black tracking-tight leading-none text-white sm:text-xl">
+                  TECH <span className="text-[#12a8ff]">INNOVATION</span>
                 </span>
-                <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.22em] text-bb-yellow">
+                <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.18em] text-slate-300">
                   Electronics & Smart Devices
                 </span>
               </div>
@@ -162,7 +159,7 @@ export const StoreHeader = () => {
             {/* Departments Button */}
             <button
               onClick={() => setMegaMenuOpen(!megaMenuOpen)}
-              className="hidden lg:flex items-center gap-2 h-11 px-4 rounded-md bg-bb-blue-darker hover:bg-bb-blue-night font-black text-sm tracking-wide transition-colors shrink-0 shadow-inner border border-white/15"
+              className="hidden lg:flex items-center gap-2 h-11 px-4 rounded-md bg-[#102b49] hover:bg-[#173a60] font-black text-sm tracking-wide transition-colors shrink-0 shadow-inner border border-white/15"
             >
               <Menu className="h-4 w-4" />
               <span>Departments</span>
@@ -197,7 +194,7 @@ export const StoreHeader = () => {
                 <button
                   type="submit"
                   aria-label="Search"
-                  className="h-11 px-4 bg-bb-yellow hover:bg-bb-yellow-dark text-black font-extrabold flex items-center justify-center rounded-r-md transition-colors shadow-sm shrink-0"
+                  className="h-11 px-4 bg-[#087ef5] hover:bg-[#0069d9] text-white font-extrabold flex items-center justify-center rounded-r-md transition-colors shadow-sm shrink-0"
                 >
                   <Search className="h-5 w-5 stroke-[2.5]" />
                 </button>
