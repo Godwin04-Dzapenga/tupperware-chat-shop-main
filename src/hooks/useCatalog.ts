@@ -80,6 +80,12 @@ export function inferBrand(name: string, metadataBrand = "") {
   const cleanedMetadata = metadataBrand.trim();
   const genericMetadata = /^(tech innovation|electronics|generic|other|unknown)$/i.test(cleanedMetadata);
   const normalizedName = name.trim().toLowerCase();
+  // Prefer the normalized brand explicitly stored in Medusa/Supabase metadata.
+  // Product titles can contain sub-brands (e.g. PlayStation) that are not the manufacturer.
+  if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) {
+    return cleanedMetadata.toLowerCase() === "hewlett-packard" ? "HP" : cleanedMetadata;
+  }
+
   const titleBrand = KNOWN_BRANDS.find((brand) => {
     const normalizedBrand = brand.toLowerCase();
     const index = normalizedName.indexOf(normalizedBrand);
@@ -90,7 +96,6 @@ export function inferBrand(name: string, metadataBrand = "") {
     return before && after;
   });
   if (titleBrand) return titleBrand.toLowerCase() === "hewlett-packard" ? "HP" : titleBrand;
-  if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) return cleanedMetadata;
   return "Other";
 }
 
