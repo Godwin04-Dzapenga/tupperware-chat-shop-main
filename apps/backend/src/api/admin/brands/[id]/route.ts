@@ -27,7 +27,7 @@ export async function GET(
   res.json({ brand })
 }
 
-export async function POST(
+export async function PATCH(
   req: MedusaRequest,
   res: MedusaResponse
 ) {
