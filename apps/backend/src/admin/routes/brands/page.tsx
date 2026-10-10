@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { sdk } from "../../lib/sdk"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 
@@ -24,11 +25,6 @@ const emptyForm: BrandForm = {
   logo_url: "",
 }
 
-async function readError(response: Response) {
-  const payload = await response.json().catch(() => ({}))
-  return payload.message || "The request could not be completed."
-}
-
 export default function BrandsPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
@@ -39,19 +35,15 @@ export default function BrandsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-brands"],
     queryFn: async () => {
-      const response = await fetch("/admin/brands", { credentials: "include" })
-      if (!response.ok) throw new Error(await readError(response))
-      return (await response.json()) as { brands: Brand[] }
+      return (await sdk.client.fetch("/admin/brands")) as { brands: Brand[] }
     },
   })
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const endpoint = editingId ? `/admin/brands/${editingId}` : "/admin/brands"
-      const response = await fetch(endpoint, {
+      return sdk.client.fetch(endpoint, {
         method: editingId ? "PATCH" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           handle: form.handle,
@@ -59,8 +51,6 @@ export default function BrandsPage() {
           logo_url: form.logo_url || null,
         }),
       })
-      if (!response.ok) throw new Error(await readError(response))
-      return response.json()
     },
     onSuccess: async () => {
       setMessage(editingId ? "Brand updated." : "Brand created.")
@@ -75,11 +65,9 @@ export default function BrandsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/admin/brands/${id}`, {
+      await sdk.client.fetch(`/admin/brands/${id}`, {
         method: "DELETE",
-        credentials: "include",
       })
-      if (!response.ok) throw new Error(await readError(response))
     },
     onSuccess: async () => {
       setMessage("Brand deleted.")
