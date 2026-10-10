@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, CheckCircle2, AlertTriangle, Eye, Star, Layers, MessageCircle } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
-import { Badge } from "@/components/ui/badge";
 import { getProductMedia, resolveProductImage } from "@/data/solarProducts";
 
 interface Product {
@@ -56,7 +55,6 @@ export const ProductCard = ({
   const lowStock = stock > 0 && stock <= 5;
   const rating = product.avg_rating ?? 0;
   const reviewCount = product.review_count ?? 0;
-
   const originalPrice = product.original_price ?? product.price;
   const savings = Math.max(0, originalPrice - product.price);
 
@@ -68,14 +66,14 @@ export const ProductCard = ({
   const displayImage = !imgError ? resolveProductImage(product) : media.imageUrl;
 
   return (
-    <div
-      className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-bb-blue/40 hover:shadow-xl sm:p-3.5"
+    <article
+      className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0046be]/50 hover:shadow-lg"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleCardClick}
     >
-      {/* ── Image & Top Badges ── */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-50">
+      {/* Compact Best Buy-inspired product image area */}
+      <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden bg-white px-4 py-3 sm:h-44">
         {product.video_url && !imgError ? (
           <video
             src={product.video_url}
@@ -83,7 +81,7 @@ export const ProductCard = ({
             muted
             loop
             playsInline
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
           <img
@@ -91,134 +89,100 @@ export const ProductCard = ({
             alt={product.name}
             loading="lazy"
             onError={() => setImgError(true)}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
           />
         )}
 
-        {/* Badges on Image */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+        <div className="absolute left-2 top-2 z-10 flex max-w-[75%] flex-col items-start gap-1">
           {savings > 0 && !outOfStock && (
-            <span className="rounded bg-bb-red px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-              Save ${savings}
-            </span>
+            <span className="rounded-sm bg-[#bb0628] px-2 py-1 text-[10px] font-bold text-white">Save ${savings.toFixed(0)}</span>
           )}
           {outOfStock ? (
-            <span className="rounded bg-bb-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-              Sold out
-            </span>
+            <span className="rounded-sm bg-slate-800 px-2 py-1 text-[10px] font-bold text-white">Sold out</span>
           ) : lowStock ? (
-            <span className="rounded bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white flex items-center gap-1">
-              <AlertTriangle className="h-2.5 w-2.5" /> Only {stock} left
+            <span className="inline-flex items-center gap-1 rounded-sm bg-amber-500 px-2 py-1 text-[10px] font-bold text-white">
+              <AlertTriangle className="h-3 w-3" /> Only {stock} left
             </span>
           ) : null}
         </div>
 
-        {/* Wishlist Heart Button */}
         <button
+          type="button"
           aria-label={wishlisted ? "Remove from wishlist" : "Save product"}
           onClick={(e) => {
             e.stopPropagation();
             toggleWishlist(product.id, product.name);
           }}
-          className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md transition-all duration-200 ${
-            wishlisted ? "text-red-500 scale-100" : "text-slate-600 opacity-80 hover:opacity-100 hover:scale-110"
-          }`}
+          className={`absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition-colors hover:border-[#0046be] hover:text-[#0046be] ${wishlisted ? "text-red-600" : "text-slate-600"}`}
         >
-          <Heart className={`h-4 w-4 ${wishlisted ? "fill-red-500 text-red-500" : ""}`} />
+          <Heart className={`h-4 w-4 ${wishlisted ? "fill-red-600" : ""}`} />
         </button>
 
-        {/* Quick View Button on Hover */}
         {onQuickView && !outOfStock && (
-          <div
-            className={`absolute inset-0 z-10 flex items-center justify-center bg-black/15 transition-opacity duration-200 ${
-              hovered ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
+          <div className={`absolute inset-0 z-10 flex items-center justify-center bg-slate-900/10 transition-opacity ${hovered ? "opacity-100" : "pointer-events-none opacity-0"}`}>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onQuickView(product);
               }}
-              className="flex items-center gap-1.5 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl hover:bg-bb-blue hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-md hover:bg-[#0046be] hover:text-white"
             >
-              <Eye className="h-3.5 w-3.5" /> Quick View
+              <Eye className="h-4 w-4" /> Quick view
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Content Details ── */}
-      <div className="mt-3 flex flex-1 flex-col justify-between">
-        <div>
-          {/* Brand & Model */}
-          <div className="flex items-center justify-between gap-1 text-[11px]">
-            <span className="font-extrabold uppercase tracking-wider text-bb-blue">
-              {product.brand || media.brand.split("/")[0]}
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {product.model_number || media.modelNumber}
-            </span>
-          </div>
-
-          {/* Product Title */}
-          <h3 className="mt-1 text-sm font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-bb-blue transition-colors">
-            {product.name}
-          </h3>
-
-          {/* Star Rating */}
-          <div className="mt-1.5 flex items-center gap-1 text-xs">
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  className={`h-3 w-3 ${
-                    s <= Math.round(rating)
-                      ? "fill-amber-400 text-amber-400"
-                      : "fill-slate-200 text-slate-200"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-[11px] font-bold text-slate-700">({reviewCount})</span>
-          </div>
-
-          {/* Price Block — parent products show the lowest available variant price. */}
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-xl font-black tracking-tight text-bb-ink">
-              ${product.price.toFixed(2)}
-            </span>
-            {savings > 0 && (
-              <span className="text-xs text-slate-400 line-through">
-                ${originalPrice.toFixed(2)}
-              </span>
-            )}
-          </div>
-          {(product.variant_count ?? 0) > 0 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/product/${product.id}`);
-              }}
-              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-bb-blue hover:underline"
-            >
-              <Layers className="h-3.5 w-3.5" />
-              {(product.variant_count ?? 0) === 1 ? "View product option" : `Choose from ${product.variant_count} configurations`}
-            </button>
-          )}
-
-          {/* Store Pickup & Delivery status pills */}
-          <div className="mt-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[11px]">
-            <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
-              <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
-              <span>Pickup available in Harare</span>
-            </p>
-            <p className="mt-0.5 pl-4 text-slate-500">Nationwide delivery available</p>
-          </div>
+      <div className="flex flex-1 flex-col border-t border-slate-100 p-3">
+        <div className="mb-1 flex min-h-4 items-center justify-between gap-2">
+          <span className="truncate text-[11px] font-bold uppercase tracking-wide text-[#0046be]">
+            {product.brand || media.brand.split("/")[0]}
+          </span>
+          <span className="truncate text-[10px] text-slate-400">{product.model_number || media.modelNumber}</span>
         </div>
 
-        {/* ── Yellow Add to Cart & Actions ── */}
-        <div className="mt-auto pt-4 border-t border-slate-100 space-y-2.5">
+        <h3 className="min-h-[2.5rem] cursor-pointer text-sm font-semibold leading-5 text-[#0046be] line-clamp-2 hover:underline">
+          {product.name}
+        </h3>
+
+        <div className="mt-1.5 flex min-h-4 items-center gap-1.5">
+          <div className="flex items-center" aria-label={`Rated ${rating} out of 5`}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} className={`h-3 w-3 ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"}`} />
+            ))}
+          </div>
+          <span className="text-[11px] text-[#0046be]">{reviewCount > 0 ? reviewCount : "No"} reviews</span>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+          <span className="text-2xl font-extrabold leading-7 tracking-tight text-slate-950">${product.price.toFixed(2)}</span>
+          {savings > 0 && <span className="text-xs text-slate-500 line-through">${originalPrice.toFixed(2)}</span>}
+        </div>
+
+        {(product.variant_count ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/product/${product.id}`);
+            }}
+            className="mt-1.5 inline-flex items-center gap-1 text-left text-[11px] font-semibold text-[#0046be] hover:underline"
+          >
+            <Layers className="h-3.5 w-3.5 shrink-0" />
+            {(product.variant_count ?? 0) === 1 ? "View product option" : `Choose from ${product.variant_count} configurations`}
+          </button>
+        )}
+
+        <div className="mt-2 space-y-1 text-[11px]">
+          <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            <span>Pickup available in Harare</span>
+          </p>
+          <p className="pl-5 text-slate-500">Nationwide delivery available</p>
+        </div>
+
+        <div className="mt-auto pt-3">
           {!outOfStock ? (
             <button
               type="button"
@@ -227,60 +191,45 @@ export const ProductCard = ({
                 if (onAddToCart) onAddToCart(product);
                 else onOrder(product);
               }}
-              className={`w-full h-10 rounded-md font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all ${
+              className={`flex h-9 w-full items-center justify-center gap-2 rounded-md px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0046be] focus-visible:ring-offset-2 ${
                 inCart
                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "bg-bb-yellow text-black hover:bg-bb-yellow-dark"
+                  : "bg-[#ffe000] text-slate-950 hover:bg-[#f5d500]"
               }`}
             >
-              {inCart ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Added to Cart
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="h-4 w-4" /> Add to Cart
-                </>
-              )}
+              {inCart ? <><CheckCircle2 className="h-4 w-4" /> Added to cart</> : <><ShoppingCart className="h-4 w-4" /> Add to cart</>}
             </button>
           ) : (
-            <button
-              disabled
-              className="w-full h-10 rounded-md bg-slate-200 text-slate-500 font-bold text-xs uppercase cursor-not-allowed"
-            >
-              Currently Sold Out
+            <button type="button" disabled className="h-9 w-full cursor-not-allowed rounded-md bg-slate-200 text-xs font-bold text-slate-500">
+              Currently sold out
             </button>
           )}
 
-          {/* Secondary actions */}
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            {onToggleCompare && (
-              <label
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-slate-900 select-none"
-              >
+          <div className="mt-2 flex min-h-5 items-center justify-between gap-2">
+            {onToggleCompare ? (
+              <label onClick={(e) => e.stopPropagation()} className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-600">
                 <input
                   type="checkbox"
                   checked={isCompared}
                   onChange={() => onToggleCompare(product)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 accent-bb-blue"
+                  className="h-3.5 w-3.5 rounded border-slate-300 accent-[#0046be]"
                 />
-                <span>Compare</span>
+                Compare
               </label>
-            )}
+            ) : <span />}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onOrder(product);
               }}
-              className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline"
             >
-              <MessageCircle className="h-3 w-3 text-wa" /> Ask on WhatsApp
+              <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
