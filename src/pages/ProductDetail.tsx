@@ -121,7 +121,7 @@ export default function ProductDetail() {
           price:
             variant.calculated_price?.calculated_amount != null
               ? variant.calculated_price.calculated_amount / 100
-              : (variant.prices?.[0]?.amount ?? 0) / 100,
+              : (variant.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0) / 100,
           stock_quantity: variant.manage_inventory === false ? 999999 : Number(variant.inventory_quantity ?? 0),
           manage_inventory: variant.manage_inventory,
           allow_backorder: variant.allow_backorder,
@@ -203,7 +203,7 @@ export default function ProductDetail() {
                 ? Math.min(...itemVariants.map((v) =>
                     v.calculated_price?.calculated_amount != null
                       ? v.calculated_price.calculated_amount / 100
-                      : (v.prices?.[0]?.amount ?? 0) / 100
+                      : (v.prices?.find((price) => price.currency_code === "usd")?.amount ?? 0) / 100
                   ))
                 : 0,
               original_price: typeof item.metadata?.original_price === "number" ? item.metadata.original_price : undefined,
