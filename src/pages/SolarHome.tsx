@@ -2,9 +2,6 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Cable,
-  Camera,
-  Cpu,
   Gamepad2,
   Headphones,
   Heart,
