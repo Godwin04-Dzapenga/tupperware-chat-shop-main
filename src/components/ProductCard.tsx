@@ -182,7 +182,7 @@ export const ProductCard = ({
             <span className="text-[11px] font-bold text-slate-700">({reviewCount})</span>
           </div>
 
-          {/* Price Block */}
+          {/* Price Block — parent products show the lowest available variant price. */}
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-xl font-black tracking-tight text-bb-ink">
               ${product.price.toFixed(2)}
@@ -193,6 +193,19 @@ export const ProductCard = ({
               </span>
             )}
           </div>
+          {(product.variant_count ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/product/${product.id}`);
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-bb-blue hover:underline"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              {(product.variant_count ?? 0) === 1 ? "View product option" : `Choose from ${product.variant_count} configurations`}
+            </button>
+          )}
 
           {/* Store Pickup & Delivery status pills */}
           <div className="mt-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[11px]">
