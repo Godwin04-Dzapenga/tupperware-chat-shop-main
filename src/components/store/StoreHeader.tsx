@@ -156,13 +156,13 @@ export const StoreHeader = () => {
               </div>
             </Link>
 
-            {/* Departments Button */}
+            {/* All Categories Button */}
             <button
               onClick={() => setMegaMenuOpen(!megaMenuOpen)}
               className="hidden lg:flex items-center gap-2 h-11 px-4 rounded-md bg-[#102b49] hover:bg-[#173a60] font-black text-sm tracking-wide transition-colors shrink-0 shadow-inner border border-white/15"
             >
               <Menu className="h-4 w-4" />
-              <span>Departments</span>
+              <span>All Categories</span>
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${megaMenuOpen ? "rotate-180" : ""}`} />
             </button>
 
@@ -453,14 +453,14 @@ export const StoreHeader = () => {
         </div>
       </nav>
 
-      {/* ── 4. Departments Drawer ── */}
+      {/* ── 4. All Categories Drawer ── */}
       {megaMenuOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-start">
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="bg-bb-blue text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-2 font-black text-lg">
                 <Cpu className="h-5 w-5 text-bb-yellow" />
-                <span>All Departments</span>
+                <span>All Categories</span>
               </div>
               <button
                 onClick={() => setMegaMenuOpen(false)}
@@ -472,7 +472,7 @@ export const StoreHeader = () => {
 
             <div className="p-4 overflow-y-auto flex-1 space-y-1">
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 py-1">
-                Product Departments
+                Product Categories
               </div>
 
               {categories.map((cat, index) => {
