@@ -163,8 +163,9 @@ const Home = () => {
         </div>
       </section>
 
-      <section aria-label="Shop departments" className="border-b border-slate-100 bg-white">
+      <section aria-label="Shop by category" className="border-b border-slate-100 bg-white">
         <div className="store-shell py-5 sm:py-6">
+          <h2 className="mb-4 text-lg font-black tracking-tight text-[#091b32] sm:text-xl">Shop by Category</h2>
           <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1 sm:gap-4 lg:justify-between">
             {SHOP_SHORTCUTS.map((shortcut) => {
               const Icon = shortcut.icon;
