@@ -294,6 +294,44 @@ export default function ProductDetail() {
   }, [product]);
 
   const selected = variants.find((v) => v.id === selectedVariantId) || null;
+
+  // Build option groups from real variant attributes (for example RAM, SSD, colour).
+  // Every selectable combination must resolve to an actual sellable Medusa variant.
+  const variantOptionGroups = useMemo(() => {
+    const groups = new Map<string, Set<string>>();
+    variants.forEach((variant) => {
+      Object.entries(variant.attributes || {}).forEach(([key, value]) => {
+        const normalizedKey = key.trim();
+        const normalizedValue = String(value).trim();
+        if (!normalizedKey || !normalizedValue) return;
+        if (!groups.has(normalizedKey)) groups.set(normalizedKey, new Set<string>());
+        groups.get(normalizedKey)?.add(normalizedValue);
+      });
+    });
+    return [...groups.entries()].map(([key, values]) => ({
+      key,
+      values: [...values].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    }));
+  }, [variants]);
+
+  const selectVariantAttribute = (attribute: string, value: string) => {
+    const currentAttributes = selected?.attributes || {};
+    const match = variants.find((variant) =>
+      Object.entries(variant.attributes || {}).some(([key, candidate]) => key === attribute && String(candidate) === value) &&
+      Object.entries(currentAttributes).every(([key, currentValue]) =>
+        key === attribute || !currentValue || String((variant.attributes || {})[key] ?? "") === String(currentValue)
+      ) &&
+      (variant.manage_inventory === false || variant.allow_backorder === true || variant.stock_quantity > 0)
+    );
+    if (!match) {
+      toast.error("That combination is not currently available. Choose another option.");
+      return;
+    }
+    setSelectedVariantId(match.id);
+    setQuantity(1);
+    if (match.image_url) setActiveImage(match.image_url);
+  };
+
   const price = selected?.price ?? product?.price ?? 0;
   const stock = selected?.stock_quantity ?? product?.stock_quantity ?? 999;
   const cartId = selected && product ? product.id + "::" + selected.id : product?.id || "";
@@ -522,44 +560,92 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Variant Selector Pills */}
+            {/* Variant selectors: attribute groups first, real variants as a clear fallback. */}
             {variants.length > 0 && (
-              <div className="mt-6">
-                <div className="mb-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-black text-sm text-slate-900">Choose your option</span>
-                    <span className="text-[11px] text-slate-500">{variants.length} available</span>
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-black text-slate-900">Choose your configuration</span>
+                  <span className="text-[11px] text-slate-500">{variants.length} option{variants.length === 1 ? "" : "s"}</span>
+                </div>
+
+                {variantOptionGroups.length > 0 ? (
+                  variantOptionGroups.map((group) => (
+                    <div key={group.key}>
+                      <p className="mb-2 text-xs font-bold capitalize text-slate-700">
+                        {group.key.replace(/[_-]/g, " ")}
+                        {selected?.attributes?.[group.key] ? (
+                          <span className="ml-1 font-normal text-slate-500">· {selected.attributes[group.key]}</span>
+                        ) : null}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.values.map((value) => {
+                          const active = String(selected?.attributes?.[group.key] ?? "") === value;
+                          const available = variants.some((variant) =>
+                            String(variant.attributes?.[group.key] ?? "") === value &&
+                            (variant.manage_inventory === false || variant.allow_backorder === true || variant.stock_quantity > 0)
+                          );
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              disabled={!available}
+                              onClick={() => selectVariantAttribute(group.key, value)}
+                              className={`rounded-lg border-2 px-3 py-2 text-xs font-bold transition-all ${
+                                active
+                                  ? "border-bb-blue bg-blue-50 text-bb-blue"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                              } ${!available ? "cursor-not-allowed opacity-40 line-through" : ""}`}
+                            >
+                              {value}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : null}
+
+                <div>
+                  <p className="mb-2 text-xs font-bold text-slate-700">
+                    {variantOptionGroups.length > 0 ? "Available product configurations" : "Available options"}
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {variants.map((variant) => {
+                      const active = variant.id === selectedVariantId;
+                      const unavailable =
+                        variant.manage_inventory !== false &&
+                        variant.allow_backorder !== true &&
+                        variant.stock_quantity <= 0;
+                      return (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          disabled={unavailable}
+                          onClick={() => {
+                            setSelectedVariantId(variant.id);
+                            setQuantity(1);
+                            if (variant.image_url) setActiveImage(variant.image_url);
+                          }}
+                          className={`rounded-xl border-2 p-3 text-left transition-all ${
+                            active
+                              ? "border-bb-blue bg-blue-50/50 shadow-sm"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          } ${unavailable ? "cursor-not-allowed opacity-40" : ""}`}
+                        >
+                          <span className="block text-xs font-black text-slate-900">{variant.name}</span>
+                          <span className="mt-1 block text-sm font-bold text-bb-blue">${variant.price.toFixed(2)}</span>
+                          {variant.sku ? <span className="mt-1 block text-[10px] text-slate-500">SKU: {variant.sku}</span> : null}
+                          <span className={`mt-1 block text-[10px] font-semibold ${unavailable ? "text-red-500" : "text-emerald-700"}`}>
+                            {unavailable ? "Out of stock" : variant.manage_inventory === false ? "Available to order" : variant.allow_backorder ? "Backorder available" : variant.stock_quantity <= 5 ? `Only ${variant.stock_quantity} left` : "In stock"}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-500">Choose the option that matches the model or configuration you need. The price updates with your selection.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {variants.map((v) => {
-                    const active = v.id === selectedVariantId;
-                    const unavailable = v.stock_quantity <= 0;
-                    return (
-                      <button
-                        key={v.id}
-                        disabled={unavailable}
-                        onClick={() => {
-                          setSelectedVariantId(v.id);
-                          setQuantity(1);
-                          if (v.image_url) setActiveImage(v.image_url);
-                        }}
-                        className={`rounded-xl border-2 p-3 text-left transition-all ${
-                          active
-                            ? "border-bb-blue bg-blue-50/50 shadow-sm"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                        } ${unavailable ? "opacity-40 cursor-not-allowed" : ""}`}
-                      >
-                        <span className="block text-xs font-black text-slate-900">{v.name}</span>
-                        <span className="mt-1 block text-sm font-bold text-bb-blue">${v.price.toFixed(2)}</span>
-                        <span className={`mt-1 block text-[10px] font-semibold ${unavailable ? "text-red-500" : "text-emerald-700"}`}>
-                          {unavailable ? "Unavailable" : "Available to order"}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {selected?.sku ? (
+                  <p className="text-[11px] text-slate-500">Selected SKU: <span className="font-mono font-semibold text-slate-700">{selected.sku}</span></p>
+                ) : null}
               </div>
             )}
 
