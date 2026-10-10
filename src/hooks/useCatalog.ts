@@ -129,8 +129,8 @@ const metadataNumber = (metadata: Record<string, unknown> | null | undefined, ke
 
 function toMajorCurrencyAmount(amount: number | undefined) {
   if (amount === undefined || !Number.isFinite(amount)) return 0;
-  // Medusa amounts are represented in the currency's smallest unit.
-  return amount / 100;
+  // Medusa v2 price amounts are already in major currency units.
+  return amount;
 }
 
 function variantPriceInMajorUnits(variant: MedusaVariant) {
