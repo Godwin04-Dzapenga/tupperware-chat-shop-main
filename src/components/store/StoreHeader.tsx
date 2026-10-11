@@ -144,16 +144,8 @@ export const StoreHeader = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 sm:h-[72px] items-center gap-3 sm:gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 shrink-0 select-none group">
-              <span className="flex h-10 w-10 items-center justify-center text-4xl font-black leading-none text-[#12a8ff] transition-transform group-hover:scale-105 sm:h-11 sm:w-11">T</span>
-              <div className="text-left">
-                <span className="block whitespace-nowrap text-base font-black tracking-tight leading-none text-white sm:text-xl">
-                  TECH <span className="text-[#12a8ff]">INNOVATION</span>
-                </span>
-                <span className="mt-1 block text-[9px] font-black uppercase tracking-[0.18em] text-slate-300">
-                  Electronics & Smart Devices
-                </span>
-              </div>
+            <Link to="/" aria-label="Tech Innovations home" className="flex items-center shrink-0 select-none group">
+              <img src="/tech-innovations-logo.svg" alt="Tech Innovations — Innovative Solutions for a Better Tomorrow" className="h-12 w-auto max-w-[190px] rounded-sm object-contain transition-transform group-hover:scale-[1.02] sm:h-14 sm:max-w-[220px]" />
             </Link>
 
             {/* All Categories Button */}
