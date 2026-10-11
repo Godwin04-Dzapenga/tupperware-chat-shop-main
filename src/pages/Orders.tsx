@@ -77,10 +77,10 @@ export default function Orders() {
               id: order.id,
               order_number: order.display_id ? String(order.display_id) : order.id,
               status,
-              total: (order.total || 0) / 100,
-              subtotal: (order.subtotal || 0) / 100,
-              discount_total: (order.discount_total || 0) / 100,
-              shipping_fee: (order.shipping_total || 0) / 100,
+              total: (order.total || 0),
+              subtotal: (order.subtotal || 0),
+              discount_total: (order.discount_total || 0),
+              shipping_fee: (order.shipping_total || 0),
               currency: (order.currency_code || "usd").toUpperCase(),
               shipping_name: order.shipping_address
                 ? [order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ")
@@ -94,8 +94,8 @@ export default function Orders() {
                 product_name: item.product_title || item.title || "Product",
                 variant_name: item.variant_title || null,
                 quantity: item.quantity,
-                unit_price: (item.unit_price || 0) / 100,
-                line_total: (item.total || item.unit_price * item.quantity || 0) / 100,
+                unit_price: (item.unit_price || 0),
+                line_total: (item.total || item.unit_price * item.quantity || 0),
               })),
             } as Order;
           } catch {

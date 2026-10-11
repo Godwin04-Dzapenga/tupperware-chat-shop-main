@@ -65,6 +65,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [medusaCartId, setMedusaCartId] = useState<string | null>(() => localStorage.getItem(MEDUSA_CART_KEY));
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncing = useRef(false);
+  const syncPromise = useRef<Promise<MedusaCart | null> | null>(null);
 
   const setItems = useCallback((updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => {
     setItemsRaw((prev) => {
@@ -84,8 +85,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const syncWithBackend = useCallback(async (): Promise<MedusaCart | null> => {
     if (!isMedusaCommerce || items.length === 0) return null;
-    if (syncing.current) return null;
+    // Reuse an in-flight sync instead of returning null during checkout.
+    // This prevents background cart synchronization from making checkout fail intermittently.
+    if (syncing.current) return syncPromise.current ?? null;
     syncing.current = true;
+    const operation = (async (): Promise<MedusaCart | null> => {
     try {
       let cart: MedusaCart | null = null;
       const regionId = import.meta.env.VITE_MEDUSA_REGION_ID;
@@ -146,7 +150,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return finalCart;
     } finally {
       syncing.current = false;
+      syncPromise.current = null;
     }
+    })();
+    syncPromise.current = operation;
+    return operation;
   }, [items, medusaCartId]);
 
   useEffect(() => {

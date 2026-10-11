@@ -33,6 +33,14 @@ export interface StoreProduct {
   variant_attributes: Record<string, string[]>;
 }
 
+export interface StoreBrand {
+  id: string;
+  name: string;
+  handle: string;
+  description: string | null;
+  logo_url: string | null;
+}
+
 export interface StoreCategory {
   id: string;
   name: string;
@@ -80,6 +88,12 @@ export function inferBrand(name: string, metadataBrand = "") {
   const cleanedMetadata = metadataBrand.trim();
   const genericMetadata = /^(tech innovation|electronics|generic|other|unknown)$/i.test(cleanedMetadata);
   const normalizedName = name.trim().toLowerCase();
+  // Prefer the normalized brand explicitly stored in Medusa/Supabase metadata.
+  // Product titles can contain sub-brands (e.g. PlayStation) that are not the manufacturer.
+  if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) {
+    return cleanedMetadata.toLowerCase() === "hewlett-packard" ? "HP" : cleanedMetadata;
+  }
+
   const titleBrand = KNOWN_BRANDS.find((brand) => {
     const normalizedBrand = brand.toLowerCase();
     const index = normalizedName.indexOf(normalizedBrand);
@@ -90,7 +104,6 @@ export function inferBrand(name: string, metadataBrand = "") {
     return before && after;
   });
   if (titleBrand) return titleBrand.toLowerCase() === "hewlett-packard" ? "HP" : titleBrand;
-  if (cleanedMetadata && !genericMetadata && !/solar|sunsynk|deye|jinko/i.test(cleanedMetadata)) return cleanedMetadata;
   return "Other";
 }
 
@@ -129,8 +142,8 @@ const metadataNumber = (metadata: Record<string, unknown> | null | undefined, ke
 
 function toMajorCurrencyAmount(amount: number | undefined) {
   if (amount === undefined || !Number.isFinite(amount)) return 0;
-  // Medusa amounts are represented in the currency's smallest unit.
-  return amount / 100;
+  // Medusa v2 price amounts are already in major currency units.
+  return amount;
 }
 
 function variantPriceInMajorUnits(variant: MedusaVariant) {
@@ -369,4 +382,17 @@ export function useCategoryBySlug(slug: string | undefined) {
   const { data: categories, ...rest } = useCategories();
   const category = categories?.find((c) => c.slug === slug);
   return { category, categories, ...rest };
+}
+
+
+export function useBrands() {
+  return useQuery({
+    queryKey: ["catalog", "brands", commerceProvider],
+    queryFn: async (): Promise<StoreBrand[]> => {
+      if (commerceProvider !== "medusa") return [];
+      const { brands } = await medusa.brand.list();
+      return brands;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 }

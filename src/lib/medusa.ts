@@ -83,6 +83,20 @@ export interface MedusaVariant {
   calculated_price?: { calculated_amount?: number; currency_code?: string };
   prices?: Array<{ amount: number; currency_code: string }>;
   metadata?: Record<string, unknown> | null;
+  options?: Array<{
+    id?: string;
+    value?: string;
+    option_id?: string;
+    option?: { id?: string; title?: string };
+  }>;
+}
+
+export interface MedusaBrand {
+  id: string;
+  name: string;
+  handle: string;
+  description?: string | null;
+  logo_url?: string | null;
 }
 
 export interface MedusaCategory {
@@ -154,6 +168,12 @@ export const medusa = {
     },
     async retrieve(id: string, query?: Record<string, QueryValue>) {
       return medusaRequest<{ product: MedusaProduct }>(`/store/products/${encodeURIComponent(id)}`, { query });
+    },
+  },
+
+  brand: {
+    async list() {
+      return medusaRequest<{ brands: MedusaBrand[] }>("/store/brands");
     },
   },
 

@@ -100,9 +100,9 @@ export default function Checkout() {
         if (!cart?.id) throw new Error("Your cart is still syncing. Please try again.");
         const result = await medusa.cart.addPromotion(cart.id, couponCode.trim().toUpperCase());
         const updated = result.cart;
-        const discountAmount = (updated.discount_total || 0) / 100;
+        const discountAmount = (updated.discount_total || 0);
         setDiscount(discountAmount);
-        setBackendTotal((updated.total || 0) / 100);
+        setBackendTotal((updated.total || 0));
         setCouponApplied(true);
         toast.success(`Coupon applied — you save $${discountAmount.toFixed(2)}!`);
         return;
@@ -159,8 +159,8 @@ export default function Checkout() {
       const standard = options.shipping_options?.find((option) => /standard/i.test(option.name)) || options.shipping_options?.[0];
       if (!standard) throw new Error("No Zimbabwe shipping option is available for this cart.");
       checkoutCart = (await medusa.cart.addShippingMethod(checkoutCart.id, standard.id)).cart;
-      setBackendShipping((checkoutCart.shipping_total || 0) / 100);
-      setBackendTotal((checkoutCart.total || 0) / 100);
+      setBackendShipping((checkoutCart.shipping_total || 0));
+      setBackendTotal((checkoutCart.total || 0));
       setStep("payment");
     } catch (error: any) {
       toast.error(error?.message || "Could not prepare checkout.");
@@ -220,7 +220,7 @@ export default function Checkout() {
           throw new Error("Medusa could not complete the order. Please check the payment session and try again.");
         }
         const order = completed.order;
-        const total = (order.total || 0) / 100;
+        const total = (order.total || 0);
         const orderNumber = order.display_id ? String(order.display_id) : order.id;
         const itemsList = items.map(i => `• ${i.name} ×${i.quantity}`).join("\n");
         const whatsapp_url = `https://wa.me/263778158984?text=${encodeURIComponent(
@@ -287,7 +287,7 @@ export default function Checkout() {
           throw new Error("Paynow payment has not been confirmed yet. Please wait a moment and try again.");
         }
         const order = completed.order;
-        const total = (order.total || 0) / 100;
+        const total = (order.total || 0);
         const orderNumber = order.display_id ? String(order.display_id) : order.id;
         const itemsList = items.map(i => `• ${i.name} ×${i.quantity}`).join("\n");
         const whatsapp_url = `https://wa.me/263778158984?text=${encodeURIComponent(

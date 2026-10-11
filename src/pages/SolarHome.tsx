@@ -17,7 +17,7 @@ import {
   Truck,
   Tv,
 } from "lucide-react";
-import { useProducts, useCategories } from "@/hooks/useCatalog";
+import { useProducts, useCategories, useBrands } from "@/hooks/useCatalog";
 import { useWishlist } from "@/hooks/useWishlist";
 import { resolveProductImage } from "@/data/solarProducts";
 
@@ -82,6 +82,7 @@ const BrandMark = ({ brand }: { brand: string }) => {
 const Home = () => {
   const { data: products = [], isLoading: productsLoading, isError: productsError } = useProducts();
   const { data: categories = [] } = useCategories();
+  const { data: managedBrands = [] } = useBrands();
   const { toggle: toggleWishlist, isWishlisted } = useWishlist();
 
   const featured = useMemo(() => {
@@ -90,14 +91,35 @@ const Home = () => {
   }, [products]);
 
   const brands = useMemo(() => {
+    if (managedBrands.length > 0) {
+      return managedBrands
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((brand) => ({
+          id: brand.id,
+          name: brand.name,
+          handle: brand.handle,
+          logo_url: brand.logo_url,
+        }));
+    }
+
+    // Keep the storefront useful before brands have been added in Medusa Admin.
     const counts = new Map<string, number>();
     products.forEach((product) => {
       if (product.brand && product.brand !== "Other") {
         counts.set(product.brand, (counts.get(product.brand) || 0) + 1);
       }
     });
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 9);
-  }, [products]);
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 9)
+      .map(([name]) => ({
+        id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name,
+        handle: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        logo_url: null,
+      }));
+  }, [managedBrands, products]);
 
   return (
     <main className="min-h-screen bg-white pb-12">
@@ -133,8 +155,8 @@ const Home = () => {
 
             <div className="relative min-h-[230px] overflow-hidden lg:min-h-0">
               <img
-                src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1600&q=90"
-                alt="Laptop on a modern desk"
+                src={featured[0] ? resolveProductImage(featured[0]) : "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1600&q=90"}
+                alt={featured[0] ? featured[0].name : "Laptop on a modern desk"}
                 className="absolute inset-0 h-full w-full object-cover object-center"
                 loading="eager"
               />
@@ -159,6 +181,27 @@ const Home = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Store benefits" className="border-y border-slate-200 bg-[#f5f8fc]">
+        <div className="store-shell grid grid-cols-2 gap-3 py-4 sm:grid-cols-4 sm:gap-5">
+          <div className="flex items-center gap-2.5">
+            <Truck className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Delivery options</p><p className="text-[11px] text-slate-500">Convenient fulfilment</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Trusted technology</p><p className="text-[11px] text-slate-500">Products from known brands</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <PackageSearch className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Easy product discovery</p><p className="text-[11px] text-slate-500">Search by brand or model</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Tag className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Explore the catalogue</p><p className="text-[11px] text-slate-500">Find tech for work and play</p></div>
           </div>
         </div>
       </section>
@@ -205,14 +248,27 @@ const Home = () => {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-10">
-              {brands.map(([brand]) => (
+              {brands.map((brand) => (
                 <Link
-                  key={brand}
-                  to={"/search?q=" + encodeURIComponent(brand)}
-                  aria-label={"Shop " + brand}
+                  key={brand.id}
+                  to={"/search?q=" + encodeURIComponent(brand.name)}
+                  aria-label={"Shop " + brand.name}
+                  title={"Shop " + brand.name}
                   className="flex h-[70px] min-w-0 items-center justify-center rounded-lg border border-slate-100 bg-white px-2 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-sm sm:h-[76px]"
                 >
-                  <BrandMark brand={brand} />
+                  {brand.logo_url ? (
+                    <img
+                      src={brand.logo_url}
+                      alt={brand.name + " logo"}
+                      loading="lazy"
+                      className="max-h-10 max-w-full object-contain"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <BrandMark brand={brand.name} />
+                  )}
                 </Link>
               ))}
               <Link
