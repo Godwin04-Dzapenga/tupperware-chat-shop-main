@@ -33,6 +33,14 @@ export interface StoreProduct {
   variant_attributes: Record<string, string[]>;
 }
 
+export interface StoreBrand {
+  id: string;
+  name: string;
+  handle: string;
+  description: string | null;
+  logo_url: string | null;
+}
+
 export interface StoreCategory {
   id: string;
   name: string;
@@ -374,4 +382,17 @@ export function useCategoryBySlug(slug: string | undefined) {
   const { data: categories, ...rest } = useCategories();
   const category = categories?.find((c) => c.slug === slug);
   return { category, categories, ...rest };
+}
+
+
+export function useBrands() {
+  return useQuery({
+    queryKey: ["catalog", "brands", commerceProvider],
+    queryFn: async (): Promise<StoreBrand[]> => {
+      if (commerceProvider !== "medusa") return [];
+      const { brands } = await medusa.brand.list();
+      return brands;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 }
