@@ -412,9 +412,9 @@ export default function ProductDetail() {
   if (!product) return null;
 
   return (
-    <div className="store-shell py-6 pb-24 md:pb-6">
+    <div className="store-shell py-3 pb-20 md:py-3 md:pb-3">
       {/* Breadcrumb line */}
-      <div className="mb-4 flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] text-slate-500">
         <Link to="/" className="hover:text-bb-blue">Home</Link>
         <ChevronRight className="h-3 w-3" />
         <span className="font-semibold text-slate-800">{product.categories?.name || "Electronics"}</span>
@@ -422,10 +422,10 @@ export default function ProductDetail() {
         <span className="truncate text-slate-400">{product.name}</span>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr] lg:items-start">
         {/* ── Left Column: Image Gallery & Badges ── */}
         <div>
-          <div className="relative aspect-[4/3] sm:aspect-[5/4] lg:aspect-[5/4] overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-center sm:p-5">
+          <div className="relative aspect-[5/4] sm:aspect-[4/3] lg:aspect-square lg:max-h-[440px] overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-sm flex items-center justify-center sm:p-4">
             {savings > 0 && (
               <span className="absolute left-4 top-4 z-10 rounded bg-bb-red px-3 py-1 text-xs font-black text-white shadow-sm uppercase tracking-wider">
                 Save ${savings}
@@ -451,7 +451,7 @@ export default function ProductDetail() {
 
           {/* Thumbnail Row */}
           {media && media.galleryImages && (
-            <div className="mt-4 grid grid-cols-4 gap-3">
+            <div className="mt-2 grid grid-cols-4 gap-2">
               {media.galleryImages.map((img, i) => (
                 <button
                   key={i}
@@ -467,13 +467,13 @@ export default function ProductDetail() {
           )}
 
           {/* Value Guarantees Below Gallery */}
-          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="mt-2 grid grid-cols-3 gap-2">
             {[
               { icon: ShieldCheck, title: "Official Warranty", desc: media?.warranty || "See product listing" },
               { icon: Truck, title: "Nationwide Freight", desc: "Harare & All Provinces" },
               { icon: Wrench, title: "Tech Support", desc: "Expert Sizing & Setup" },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-xl border border-slate-200 bg-white p-2.5 text-center shadow-xs sm:p-3">
+              <div key={title} className="rounded-lg border border-slate-200 bg-white p-2 text-center shadow-xs">
                 <Icon className="h-4 w-4 text-bb-blue mx-auto mb-1 sm:h-5 sm:w-5" />
                 <p className="text-[10px] font-black text-slate-900 sm:text-xs">{title}</p>
                 <p className="mt-0.5 text-[9px] text-slate-500 sm:text-[10px]">{desc}</p>
@@ -483,7 +483,7 @@ export default function ProductDetail() {
         </div>
 
         {/* ── Right Column: Pricing, Specs & Buy Box ── */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
+        <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
           <div>
             {/* Brand and Model Header */}
             <div className="flex items-center justify-between gap-2">
@@ -512,13 +512,13 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <h1 className="mt-2 text-xl font-black text-bb-ink leading-tight sm:text-2xl lg:text-3xl">
+            <h1 className="mt-1 text-lg font-black text-bb-ink leading-tight sm:text-xl lg:text-2xl">
               {product.name}
             </h1>
             <p className="mt-1 text-xs text-slate-400 font-mono">Model: {product.model_number || media?.modelNumber}</p>
 
             {/* Star Rating */}
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-2 flex items-center gap-2">
               <div className="flex text-amber-400">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
@@ -539,7 +539,7 @@ export default function ProductDetail() {
             </div>
 
             {/* ── Pricing Box ── */}
-            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-baseline gap-3">
                 <span className="text-2xl font-black tracking-tight text-bb-ink sm:text-3xl">
                   ${price.toFixed(2)} USD
@@ -566,7 +566,7 @@ export default function ProductDetail() {
 
             {/* Variant selectors: attribute groups first, real variants as a clear fallback. */}
             {variants.length > 0 && (
-              <div className="mt-6 space-y-4">
+              <div className="mt-3 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-black text-slate-900">Choose your configuration</span>
                   <span className="text-[11px] text-slate-500">{variants.length} option{variants.length === 1 ? "" : "s"}</span>
@@ -575,7 +575,7 @@ export default function ProductDetail() {
                 {variantOptionGroups.length > 0 ? (
                   variantOptionGroups.map((group) => (
                     <div key={group.key}>
-                      <p className="mb-2 text-xs font-bold capitalize text-slate-700">
+                      <p className="mb-1.5 text-xs font-bold capitalize text-slate-700">
                         {group.key.replace(/[_-]/g, " ")}
                         {selected?.attributes?.[group.key] ? (
                           <span className="ml-1 font-normal text-slate-500">· {selected.attributes[group.key]}</span>
@@ -594,7 +594,7 @@ export default function ProductDetail() {
                               type="button"
                               disabled={!available}
                               onClick={() => selectVariantAttribute(group.key, value)}
-                              className={`rounded-lg border-2 px-3 py-2 text-xs font-bold transition-all ${
+                              className={`rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all ${
                                 active
                                   ? "border-bb-blue bg-blue-50 text-bb-blue"
                                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
@@ -613,7 +613,7 @@ export default function ProductDetail() {
                   <p className="mb-2 text-xs font-bold text-slate-700">
                     {variantOptionGroups.length > 0 ? "Available product configurations" : "Available options"}
                   </p>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                     {variants.map((variant) => {
                       const active = variant.id === selectedVariantId;
                       const unavailable =
@@ -630,7 +630,7 @@ export default function ProductDetail() {
                             setQuantity(1);
                             if (variant.image_url) setActiveImage(variant.image_url);
                           }}
-                          className={`rounded-xl border-2 p-3 text-left transition-all ${
+                          className={`rounded-lg border p-2.5 text-left transition-all ${
                             active
                               ? "border-bb-blue bg-blue-50/50 shadow-sm"
                               : "border-slate-200 bg-white hover:border-slate-300"
@@ -655,7 +655,7 @@ export default function ProductDetail() {
 
             {/* Key Specs Checklist */}
             {media && media.keySpecs && (
-              <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
                   Key Specifications at a Glance
                 </h4>
@@ -671,7 +671,7 @@ export default function ProductDetail() {
             )}
 
             {/* Fulfillment Options */}
-            <div className="mt-6 space-y-2 rounded-xl border border-slate-200 p-4 text-xs">
+            <div className="mt-3 space-y-2 rounded-lg border border-slate-200 p-3 text-xs">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5">
                   <MapPin className="h-4 w-4 text-bb-blue mt-0.5 shrink-0" />
@@ -699,13 +699,13 @@ export default function ProductDetail() {
           </div>
 
           {/* ── Yellow Purchase Actions ── */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
+          <div className="mt-4 pt-3 border-t border-slate-100">
             {!outOfStock ? (
               <>
-                <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
+                <div className="mb-2 rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] text-emerald-800">
                   <span className="font-bold">Ready to buy?</span> Choose your quantity, add it to the cart, then continue to checkout for delivery and payment.
                 </div>
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex flex-wrap items-center gap-3 mb-3">
                   <span className="text-xs font-bold text-slate-700">Quantity:</span>
                   <div className="flex items-center border border-slate-300 rounded-lg bg-white">
                     <button
@@ -779,7 +779,7 @@ export default function ProductDetail() {
       )}
 
       {/* ── Tabs: Overview, Specs, What's in the Box, Reviews ── */}
-      <section className="mt-12 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="flex overflow-x-auto border-b bg-slate-50/50">
           {(
             [
@@ -792,7 +792,7 @@ export default function ProductDetail() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-6 py-4 text-xs font-black uppercase tracking-wider transition-colors border-b-2 ${
+              className={`px-4 py-3 text-[11px] font-black uppercase tracking-wider transition-colors border-b-2 ${
                 tab === t.id
                   ? "border-bb-blue text-bb-blue bg-white"
                   : "border-transparent text-slate-500 hover:text-slate-900"
@@ -803,9 +803,9 @@ export default function ProductDetail() {
           ))}
         </div>
 
-        <div className="p-6 sm:p-8">
+        <div className="p-4 sm:p-5">
           {tab === "overview" && (
-            <div className="max-w-3xl space-y-6">
+            <div className="max-w-3xl space-y-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">Product Description</h3>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
@@ -873,12 +873,12 @@ export default function ProductDetail() {
 
       {/* ── Related Equipment ── */}
       {related.length > 0 && (
-        <section className="mt-14">
+        <section className="mt-8">
           <span className="text-xs font-black uppercase tracking-[0.2em] text-bb-blue">
             Related Hardware
           </span>
           <h3 className="text-2xl font-black text-slate-900 mt-1">Customers Also Viewed</h3>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {related.map((item) => (
               <ProductCard
                 key={item.id}
