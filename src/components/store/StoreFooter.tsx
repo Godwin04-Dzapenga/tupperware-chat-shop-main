@@ -11,12 +11,9 @@ export const StoreFooter = () => {
       <div className="container mx-auto px-4 grid gap-8 md:grid-cols-5">
         {/* Brand & Contact */}
         <div className="md:col-span-2 space-y-3">
-          <div className="flex items-center gap-2 font-black text-base">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bb-yellow text-bb-ink">
-              <Sun className="h-5 w-5 fill-bb-ink text-bb-ink" />
-            </span>
-            <span>TECH INNOVATION</span>
-          </div>
+          <Link to="/" aria-label="Tech Innovations home" className="inline-flex items-center">
+            <img src="/tech-innovations-logo.svg" alt="Tech Innovations — Innovative Solutions for a Better Tomorrow" className="h-20 w-auto max-w-[280px] rounded-sm object-contain" />
+          </Link>
           <p className="text-white/60 leading-relaxed max-w-sm">
             Zimbabwe's trusted destination for tier-1 solar panels, hybrid inverters, lithium batteries, backup
             electrical equipment and certified professional installations.
