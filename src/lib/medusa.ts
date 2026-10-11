@@ -91,6 +91,14 @@ export interface MedusaVariant {
   }>;
 }
 
+export interface MedusaBrand {
+  id: string;
+  name: string;
+  handle: string;
+  description?: string | null;
+  logo_url?: string | null;
+}
+
 export interface MedusaCategory {
   id: string;
   name: string;
@@ -160,6 +168,12 @@ export const medusa = {
     },
     async retrieve(id: string, query?: Record<string, QueryValue>) {
       return medusaRequest<{ product: MedusaProduct }>(`/store/products/${encodeURIComponent(id)}`, { query });
+    },
+  },
+
+  brand: {
+    async list() {
+      return medusaRequest<{ brands: MedusaBrand[] }>("/store/brands");
     },
   },
 
