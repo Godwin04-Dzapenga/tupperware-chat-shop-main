@@ -155,8 +155,8 @@ const Home = () => {
 
             <div className="relative min-h-[230px] overflow-hidden lg:min-h-0">
               <img
-                src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1600&q=90"
-                alt="Laptop on a modern desk"
+                src={featured[0] ? resolveProductImage(featured[0]) : "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1600&q=90"}
+                alt={featured[0] ? featured[0].name : "Laptop on a modern desk"}
                 className="absolute inset-0 h-full w-full object-cover object-center"
                 loading="eager"
               />
@@ -181,6 +181,27 @@ const Home = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Store benefits" className="border-y border-slate-200 bg-[#f5f8fc]">
+        <div className="store-shell grid grid-cols-2 gap-3 py-4 sm:grid-cols-4 sm:gap-5">
+          <div className="flex items-center gap-2.5">
+            <Truck className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Delivery options</p><p className="text-[11px] text-slate-500">Convenient fulfilment</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Trusted technology</p><p className="text-[11px] text-slate-500">Products from known brands</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <PackageSearch className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Easy product discovery</p><p className="text-[11px] text-slate-500">Search by brand or model</p></div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Tag className="h-5 w-5 shrink-0 text-[#0046be]" />
+            <div><p className="text-xs font-extrabold text-[#091b32] sm:text-sm">Explore the catalogue</p><p className="text-[11px] text-slate-500">Find tech for work and play</p></div>
           </div>
         </div>
       </section>
